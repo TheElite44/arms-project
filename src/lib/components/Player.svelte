@@ -1,30 +1,69 @@
 <script lang="ts">
-  // Register Vidstack custom elements (side effect import)
-  import 'vidstack/elements';
+  import { onMount } from 'svelte';
+  import Plyr from 'plyr';
+  import 'plyr/dist/plyr.css';
 
   export let src: string;
   export let poster: string = '';
   export let title: string = '';
   export let subtitles: Array<{ url: string; label: string; lang: string; default?: boolean }> = [];
+
+  let videoEl: HTMLVideoElement | null = null;
+  let player: Plyr | null = null;
+
+  function setSource() {
+    if (player && videoEl && src) {
+      player.source = {
+        type: 'video',
+        title,
+        sources: [
+          {
+            src,
+            type: src.endsWith('.m3u8') ? 'application/x-mpegURL' : 'video/mp4'
+          }
+        ],
+        poster,
+        tracks: subtitles.map(sub => ({
+          kind: 'subtitles',
+          label: sub.label || sub.lang,
+          srclang: sub.lang,
+          src: sub.url,
+          default: sub.default ?? false
+        }))
+      };
+    }
+  }
+
+  onMount(() => {
+    if (videoEl) {
+      player = new Plyr(videoEl, {
+        captions: { active: true, update: true, language: 'auto' }
+      });
+      setSource();
+    }
+    return () => {
+      player?.destroy();
+    };
+  });
+
+  $: setSource();
 </script>
 
-<media-player
-  src={src}
-  poster={poster}
-  title={title}
+<video
+  bind:this={videoEl}
+  class="w-full rounded-xl bg-black"
   controls
-  aspect-ratio="16/9"
-  crossorigin
+  playsinline
+  poster={poster}
+  crossorigin="anonymous"
 >
-  <media-provider></media-provider>
   {#each subtitles as sub}
     <track
       kind="subtitles"
-      src={sub.url}
-      label={sub.label}
+      label={sub.label || sub.lang}
       srclang={sub.lang}
-      default={sub.default}
+      src={sub.url}
+      default={sub.default ?? false}
     />
   {/each}
-  <media-poster></media-poster>
-</media-player>
+</video>

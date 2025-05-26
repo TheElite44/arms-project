@@ -49,6 +49,6 @@
 		"svelte"
 	],
 	"dependencies": {
-		"vidstack": "^0.6.15"
+		"plyr": "^3.7.8"
 	}
 }

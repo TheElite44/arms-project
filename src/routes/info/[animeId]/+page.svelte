@@ -1,5 +1,7 @@
 <script lang="ts">
   import Navbar from '$lib/components/Navbar.svelte';
+  import Sidebar from '$lib/components/Sidebar.svelte';
+  import Footer from '$lib/components/Footer.svelte'; // <-- Add this import
   import type { PageData } from './$types.js';
   export let data: PageData;
   const anime = data.anime?.info;
@@ -7,11 +9,16 @@
   const recommended = data.recommendedAnimes ?? [];
   const related = data.relatedAnimes ?? [];
 
-  // Add state for first episodeId
   let firstEpisodeId: string | null = null;
 
-  // Fetch episodes on mount
   import { onMount } from 'svelte';
+
+  // Sidebar state for tab switching
+  let sidebarTab: 'airing' | 'upcoming' = 'airing';
+  let topAiringAnimes: any[] = [];
+  let topUpcomingAnimes: any[] = [];
+
+  // Fetch sidebar data from /api/home
   onMount(async () => {
     if (anime?.id) {
       const resp = await fetch(`/api/episodes?animeId=${anime.id}`);
@@ -20,95 +27,124 @@
         firstEpisodeId = json.data.episodes[0].episodeId;
       }
     }
+
+    // Fetch sidebar anime lists from /api/home
+    try {
+      const resp = await fetch('/api/home');
+      const json = await resp.json();
+      if (json.success && json.data) {
+        topAiringAnimes = json.data.topAiringAnimes ?? [];
+        topUpcomingAnimes = json.data.topUpcomingAnimes ?? [];
+      }
+    } catch (e) {
+      topAiringAnimes = [];
+      topUpcomingAnimes = [];
+    }
   });
 </script>
 
 <Navbar />
 
-<div class="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white px-4 py-8 pt-16">
+<div class="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white px-4 py-8 pt-16 flex flex-col">
   {#if anime && moreInfo}
-    <!-- Anime Info Section -->
-    <section class="flex flex-col md:flex-row gap-8 mb-12">
-      <!-- Poster -->
-      <div class="flex-shrink-0">
-        <img
-          src={anime.poster}
-          alt={anime.name}
-          class="rounded-lg shadow-2xl w-64 h-auto object-cover"
-        />
-      </div>
-      <!-- Details -->
-      <div class="flex-1">
-        <h1 class="text-4xl font-extrabold text-orange-400 mb-2">{anime.name}</h1>
-        {#if moreInfo.genres}
-          <div class="flex flex-wrap gap-2 mb-4">
-            {#each moreInfo.genres as genre}
-              <span class="bg-gray-800 text-orange-300 px-3 py-1 rounded-full text-xs">{genre}</span>
-            {/each}
+    <div class="max-w-7xl mx-auto flex flex-col xl:flex-row gap-10 flex-1">
+      <!-- Main Info Card -->
+      <section class="flex-1 flex flex-col gap-8 mb-12">
+        <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-3xl shadow-2xl p-6 md:p-10">
+          <!-- Poster -->
+          <div class="flex-shrink-0">
+            <img
+              src={anime.poster}
+              alt={anime.name}
+              class="rounded-2xl shadow-2xl w-64 h-auto object-cover border-4 border-gray-800"
+            />
           </div>
-        {/if}
-        <p class="text-gray-200 mb-4">{anime.description}</p>
-        <div class="flex flex-wrap gap-4 mb-4">
-          <span class="bg-gray-800 px-3 py-1 rounded text-sm">Type: {anime.stats.type}</span>
-          <span class="bg-gray-800 px-3 py-1 rounded text-sm">Episodes: {anime.stats.episodes.sub} Sub / {anime.stats.episodes.dub} Dub</span>
-          <span class="bg-gray-800 px-3 py-1 rounded text-sm">Rating: {anime.stats.rating}</span>
-          <span class="bg-gray-800 px-3 py-1 rounded text-sm">Quality: {anime.stats.quality}</span>
-          <span class="bg-gray-800 px-3 py-1 rounded text-sm">Duration: {anime.stats.duration}</span>
-          <span class="bg-gray-800 px-3 py-1 rounded text-sm">Status: {moreInfo.status}</span>
-          <span class="bg-gray-800 px-3 py-1 rounded text-sm">Studios: {moreInfo.studios}</span>
-        </div>
-        <div class="text-gray-400 text-sm mb-2">Aired: {moreInfo.aired}</div>
-        <!-- Watch Button -->
-        {#if firstEpisodeId}
-          <a href={`/home/watch/${firstEpisodeId}`} class="inline-block mt-4 bg-orange-400 hover:bg-orange-500 text-gray-900 font-bold px-6 py-2 rounded transition">
-            Watch Now
-          </a>
-        {:else}
-          <button class="inline-block mt-4 bg-gray-700 text-gray-400 font-bold px-6 py-2 rounded cursor-not-allowed" disabled>
-            Watch Now
-          </button>
-        {/if}
-      </div>
-    </section>
-
-    <!-- Recommended Anime -->
-    {#if recommended.length}
-      <section class="mb-12">
-        <h2 class="text-2xl font-bold text-orange-400 mb-4">Recommended Anime</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {#each recommended as rec}
-            <a href="/info/{rec.id}" class="bg-gray-800 rounded-lg shadow-lg overflow-hidden block hover:scale-105 transition-transform">
-              <img src={rec.poster} alt={rec.name} class="w-full h-40 object-cover" />
-              <div class="p-3">
-                <h3 class="font-bold text-base mb-1">{rec.name}</h3>
-                <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded text-xs">{rec.type}</span>
-                <span class="ml-2 text-xs text-gray-300">{rec.episodes.sub} Sub / {rec.episodes.dub} Dub</span>
+          <!-- Details -->
+          <div class="flex-1 flex flex-col gap-4">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-orange-400 mb-1">{anime.name}</h1>
+            {#if moreInfo.genres}
+              <div class="flex flex-wrap gap-2 mb-2">
+                {#each moreInfo.genres as genre}
+                  <span class="bg-gray-800 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold">{genre}</span>
+                {/each}
               </div>
-            </a>
-          {/each}
+            {/if}
+            <p class="text-gray-200 text-base mb-2">{anime.description}</p>
+            <div class="flex flex-wrap gap-2 mb-2">
+              {#if firstEpisodeId}
+                <a
+                  href={`/home/watch/${firstEpisodeId}`}
+                  class="inline-flex items-center gap-2 mt-2 bg-orange-400 hover:bg-orange-500 text-gray-900 font-bold px-4 py-2 rounded-lg shadow transition text-sm"
+                >
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4l12 6-12 6V4z"/></svg>
+                  Watch
+                </a>
+              {:else}
+                <button
+                  class="inline-flex items-center gap-2 mt-2 bg-gray-700 text-gray-400 font-bold px-4 py-2 rounded-lg cursor-not-allowed text-sm"
+                  disabled
+                >
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4l12 6-12 6V4z"/></svg>
+                  Watch
+                </button>
+              {/if}
+            </div>
+          </div>
         </div>
-      </section>
-    {/if}
 
-    <!-- Related Anime -->
-    {#if related.length}
-      <section>
-        <h2 class="text-2xl font-bold text-orange-400 mb-4">Related Anime</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {#each related as rel}
-            <a href="/info/{rel.id}" class="bg-gray-800 rounded-lg shadow-lg overflow-hidden block hover:scale-105 transition-transform">
-              <img src={rel.poster} alt={rel.name} class="w-full h-40 object-cover" />
-              <div class="p-3">
-                <h3 class="font-bold text-base mb-1">{rel.name}</h3>
-                <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded text-xs">{rel.type}</span>
-                <span class="ml-2 text-xs text-gray-300">{rel.episodes.sub} Sub / {rel.episodes.dub} Dub</span>
-              </div>
-            </a>
-          {/each}
-        </div>
+        <!-- Recommended Anime -->
+        {#if recommended.length}
+          <section class="mb-12">
+            <h2 class="text-2xl font-bold text-orange-400 mb-4">Recommended Anime</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {#each recommended as rec}
+                <a href={`/info/${rec.id}`} class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400">
+                  <img src={rec.poster} alt={rec.name} class="w-full h-40 object-cover" />
+                  <div class="p-3">
+                    <h3 class="font-bold text-base mb-1 truncate">{rec.name}</h3>
+                    <div class="flex flex-wrap gap-1 mb-1">
+                      <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold">{rec.type}</span>
+                      <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded-full text-xs">{rec.episodes.sub} Sub / {rec.episodes.dub} Dub</span>
+                    </div>
+                  </div>
+                </a>
+              {/each}
+            </div>
+          </section>
+        {/if}
+
+        <!-- Related Anime -->
+        {#if related.length}
+          <section>
+            <h2 class="text-2xl font-bold text-orange-400 mb-4">Related Anime</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {#each related as rel}
+                <a href={`/info/${rel.id}`} class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400">
+                  <img src={rel.poster} alt={rel.name} class="w-full h-40 object-cover" />
+                  <div class="p-3">
+                    <h3 class="font-bold text-base mb-1 truncate">{rel.name}</h3>
+                    <div class="flex flex-wrap gap-1 mb-1">
+                      <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold">{rel.type}</span>
+                      <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded-full text-xs">{rel.episodes.sub} Sub / {rel.episodes.dub} Dub</span>
+                    </div>
+                  </div>
+                </a>
+              {/each}
+            </div>
+          </section>
+        {/if}
       </section>
-    {/if}
+
+      <!-- Sidebar Component using API data -->
+      <Sidebar
+        {sidebarTab}
+        setSidebarTab={(tab) => sidebarTab = tab}
+        {topAiringAnimes}
+        {topUpcomingAnimes}
+      />
+    </div>
   {:else}
-    <div class="text-center text-red-400">Anime not found or failed to load.</div>
+    <div class="text-center text-red-400 flex-1">Anime not found or failed to load.</div>
   {/if}
+  <Footer /> <!-- Add Footer here, inside the main flex container -->
 </div>
