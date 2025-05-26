@@ -5,7 +5,8 @@
   import type { PageData } from './$types.js';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
-  export let data: PageData;
+  export let data;
+  // data.servers, data.sources, data.subtitles, data.episodes, etc. are available
 
   // Type guard for error state
   const isError = (d: PageData): d is Extract<PageData, { error: string }> =>
@@ -28,7 +29,7 @@
 
   // Video and subtitle sources
   let videoSrc = '';
-  let subtitles: any[] = [];
+  let subtitles: Array<{ url: string; label: string; lang: string; default?: boolean }> = [];
   let poster = !isError(data) ? safe(data.poster, '') : '';
   let title = !isError(data) ? safe(data.anime?.info?.name, 'Episode') : 'Episode';
 
@@ -50,7 +51,7 @@
     }
   }
 
-  // On mount, set default to episode 1 if not set, else use last selected, and fetch servers
+  // On mount, set default to episode 1 if not set, else use last selected, and fetch servers/sources
   onMount(async () => {
     const animeKey = data.anime?.info?.id ? `lastEpisodeId:${data.anime.info.id}` : null;
     let saved = null;
@@ -69,86 +70,52 @@
       currentEpisodeId = episodes[0].episodeId;
       goto(`/home/watch/${currentEpisodeId}`, { replaceState: true });
     }
+    // Fetch initial data only once
+    await fetchWatchData(currentEpisodeId, currentServer, category);
     initialSelectionDone = true;
   });
 
-  // Fetch servers from /api/episode/servers for the current episode and all categories
-  async function fetchServers(episodeId: string) {
-    try {
-      const resp = await fetch(`/api/episode/servers?animeEpisodeId=${episodeId}`);
-      const json = await resp.json();
-      // Flatten all categories into one array with category info
-      if (json.success && json.data) {
-        servers = (['sub', 'dub', 'raw'] as const).flatMap((c) =>
-          (json.data[c] ?? []).map((s: { serverId: number; serverName: string }) => ({
-            ...s,
-            category: c
-          }))
-        );
-      } else {
-        servers = [];
-        currentServer = '';
-        videoSrc = '';
-        subtitles = [];
-      }
-    } catch {
-      servers = [];
-      currentServer = '';
-      videoSrc = '';
-      subtitles = [];
-    }
-  }
-
-  // Fetch sources from /api/episode/sources for the current episode, server, and category
-  async function fetchSources(episodeId: string, server: string, category: string) {
+  // Fetch both servers and sources from new /api/episode/watch endpoint
+  async function fetchWatchData(episodeId: string, server: string, category: string) {
     try {
       const params = new URLSearchParams({
         animeEpisodeId: episodeId,
         server,
         category
       });
-      const resp = await fetch(`/api/episode/sources?${params.toString()}`);
+      const resp = await fetch(`/api/episode/watch?${params.toString()}`);
       const json = await resp.json();
-      if (json.success && json.data) {
-        videoSrc = json.data.sources?.[0]?.url ?? '';
-        subtitles = json.data.subtitles ?? [];
+      console.log('API /api/episode/watch response:', json); // <-- log full API response
+      if (json.success && json.sources) {
+        // Use the custom m3u8-proxy URL for the player
+        videoSrc = json.sources.sources?.[0]?.url
+          ? `https://ani-fire-m3u8-proxy.vercel.app/m3u8-proxy?url=${encodeURIComponent(json.sources.sources[0].url)}&headers=${encodeURIComponent('{"Referer":"https://megacloud.club/"}')}`
+          : '';
+        console.log('Final videoSrc for player:', videoSrc); // <-- log the final videoSrc
+        subtitles = (json.sources.subtitles ?? []).map((sub: any) => ({
+          url: sub.url,
+          label: sub.label || sub.lang,
+          lang: sub.lang,
+          default: sub.default ?? false
+        }));
+        // Optionally update servers if you want to use json.servers
+        if (json.servers) {
+          servers = (['sub', 'dub', 'raw'] as const).flatMap((c) =>
+            (json.servers[c] ?? []).map((s: { serverId: number; serverName: string }) => ({
+              ...s,
+              category: c
+            }))
+          );
+        }
       } else {
         videoSrc = '';
         subtitles = [];
       }
     } catch (err) {
+      console.error('Failed to fetch episode watch data:', err);
       videoSrc = '';
       subtitles = [];
     }
-  }
-
-  // Reactively update servers and sources when episode or category changes (after initial selection)
-  $: if (initialSelectionDone && currentEpisodeId) {
-    (async () => {
-      await fetchServers(currentEpisodeId);
-      // After servers are loaded, auto-select the first sub server if available
-      const subServers = servers.filter(s => s.category === 'sub');
-      if (subServers.length > 0) {
-        category = 'sub';
-        currentServer = subServers[0].serverName;
-        await fetchSources(currentEpisodeId, currentServer, category);
-      } else {
-        // fallback to dub or raw if sub not available
-        const dubServers = servers.filter(s => s.category === 'dub');
-        if (dubServers.length > 0) {
-          category = 'dub';
-          currentServer = dubServers[0].serverName;
-          await fetchSources(currentEpisodeId, currentServer, category);
-        } else {
-          const rawServers = servers.filter(s => s.category === 'raw');
-          if (rawServers.length > 0) {
-            category = 'raw';
-            currentServer = rawServers[0].serverName;
-            await fetchSources(currentEpisodeId, currentServer, category);
-          }
-        }
-      }
-    })();
   }
 
   // Handle episode change
@@ -160,18 +127,21 @@
       if (animeKey) {
         localStorage.setItem(animeKey, episodeId);
       }
-      // No extra args for fetchServers
-      await fetchServers(episodeId);
+      await fetchWatchData(episodeId, currentServer, category);
       goto(`/home/watch/${episodeId}`);
     }
   }
   function changeServerManual(serverName: string) {
-    currentServer = serverName;
-    fetchSources(currentEpisodeId, currentServer, category);
+    if (currentServer !== serverName) {
+      currentServer = serverName;
+      fetchWatchData(currentEpisodeId, currentServer, category);
+    }
   }
   function changeCategoryManual(cat: 'sub' | 'dub' | 'raw') {
-    category = cat;
-    fetchServers(currentEpisodeId);
+    if (category !== cat) {
+      category = cat;
+      fetchWatchData(currentEpisodeId, currentServer, category);
+    }
   }
 </script>
 

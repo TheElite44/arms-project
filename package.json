@@ -49,6 +49,7 @@
 		"svelte"
 	],
 	"dependencies": {
+		"hls.js": "^1.6.2",
 		"plyr": "^3.7.8"
 	}
 }
