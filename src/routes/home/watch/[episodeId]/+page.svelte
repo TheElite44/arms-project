@@ -187,8 +187,8 @@
       <!-- Main Info Card -->
       <section class="flex-1 flex flex-col gap-8 mb-12">
         <!-- Player Card -->
-        <div class="flex flex-col gap-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-3xl shadow-2xl p-4 sm:p-8">
-          <div class="w-full aspect-video rounded-xl overflow-hidden shadow-lg bg-black">
+        <div class="flex flex-col gap-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-4 sm:p-8">
+          <div class="w-full aspect-video rounded-lg overflow-hidden shadow-lg bg-black">
             <Player src={videoSrc} subtitles={subtitles} poster={poster} title={title} />
           </div>
           <!-- Controls -->
@@ -320,13 +320,13 @@
 
         <!-- Anime Info Card -->
         {#if data.anime && data.anime.info && data.anime.moreInfo}
-          <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-3xl shadow-2xl p-6 md:p-10">
+          <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-6 md:p-10">
             <!-- Poster -->
             <div class="flex-shrink-0">
               <img
                 src={data.anime.info.poster}
                 alt={data.anime.info.name}
-                class="rounded-2xl shadow-2xl w-64 h-auto object-cover border-4 border-gray-800"
+                class="rounded-lg shadow-2xl w-64 h-auto object-cover border-4 border-gray-800"
               />
             </div>
             <!-- Details -->
@@ -375,8 +375,8 @@
         <h2 class="text-xl font-bold text-orange-400 mb-4">Recommended Anime</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           {#each data.recommendedAnimes as rec}
-            <a href={`/info/${rec.id}`} class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400">
-              <img src={rec.poster} alt={rec.name} class="w-full h-36 object-cover" />
+            <a href={`/info/${rec.id}`} class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400">
+              <img src={rec.poster} alt={rec.name} class="w-full h-36 object-cover rounded-lg" />
               <div class="p-3">
                 <h3 class="font-bold text-base mb-1 truncate">{rec.name}</h3>
                 <div class="flex flex-wrap gap-1 mb-1">
@@ -395,8 +395,8 @@
         <h2 class="text-xl font-bold text-orange-400 mb-4">Related Anime</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           {#each data.relatedAnimes as rel}
-            <a href={`/info/${rel.id}`} class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400">
-              <img src={rel.poster} alt={rel.name} class="w-full h-36 object-cover" />
+            <a href={`/info/${rel.id}`} class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400">
+              <img src={rel.poster} alt={rel.name} class="w-full h-36 object-cover rounded-lg" />
               <div class="p-3">
                 <h3 class="font-bold text-base mb-1 truncate">{rel.name}</h3>
                 <div class="flex flex-wrap gap-1 mb-1">

@@ -1,7 +1,7 @@
 <script lang="ts">
   import Navbar from '$lib/components/Navbar.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
-  import Footer from '$lib/components/Footer.svelte'; // <-- Add this import
+  import Footer from '$lib/components/Footer.svelte';
   import type { PageData } from './$types.js';
   export let data: PageData;
   const anime = data.anime?.info;
@@ -50,13 +50,13 @@
     <div class="max-w-7xl mx-auto flex flex-col xl:flex-row gap-10 flex-1">
       <!-- Main Info Card -->
       <section class="flex-1 flex flex-col gap-8 mb-12">
-        <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-3xl shadow-2xl p-6 md:p-10">
+        <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-6 md:p-10">
           <!-- Poster -->
           <div class="flex-shrink-0">
             <img
               src={anime.poster}
               alt={anime.name}
-              class="rounded-2xl shadow-2xl w-64 h-auto object-cover border-4 border-gray-800"
+              class="rounded-lg shadow-2xl w-64 h-auto object-cover border-4 border-gray-800"
             />
           </div>
           <!-- Details -->
@@ -98,8 +98,8 @@
             <h2 class="text-2xl font-bold text-orange-400 mb-4">Recommended Anime</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
               {#each recommended as rec}
-                <a href={`/info/${rec.id}`} class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400">
-                  <img src={rec.poster} alt={rec.name} class="w-full h-40 object-cover" />
+                <a href={`/info/${rec.id}`} class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400">
+                  <img src={rec.poster} alt={rec.name} class="w-full h-40 object-cover rounded-lg" />
                   <div class="p-3">
                     <h3 class="font-bold text-base mb-1 truncate">{rec.name}</h3>
                     <div class="flex flex-wrap gap-1 mb-1">
@@ -119,8 +119,8 @@
             <h2 class="text-2xl font-bold text-orange-400 mb-4">Related Anime</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
               {#each related as rel}
-                <a href={`/info/${rel.id}`} class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400">
-                  <img src={rel.poster} alt={rel.name} class="w-full h-40 object-cover" />
+                <a href={`/info/${rel.id}`} class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400">
+                  <img src={rel.poster} alt={rel.name} class="w-full h-40 object-cover rounded-lg" />
                   <div class="p-3">
                     <h3 class="font-bold text-base mb-1 truncate">{rel.name}</h3>
                     <div class="flex flex-wrap gap-1 mb-1">
@@ -146,5 +146,5 @@
   {:else}
     <div class="text-center text-red-400 flex-1">Anime not found or failed to load.</div>
   {/if}
-  <Footer /> <!-- Add Footer here, inside the main flex container -->
+  <Footer />
 </div>

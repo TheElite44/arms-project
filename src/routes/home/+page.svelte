@@ -94,7 +94,7 @@
         <!-- Carousel -->
         {#if data.top10Animes?.today && data.top10Animes.today.length > 0}
           <section class="mb-4 sm:mb-8">
-            <div class="relative w-full max-w-[1800px] mx-auto rounded-3xl overflow-hidden shadow-2xl min-h-[220px] sm:min-h-[420px] flex items-center bg-black">
+            <div class="relative w-full max-w-[1800px] mx-auto rounded-lg overflow-hidden shadow-2xl min-h-[220px] sm:min-h-[420px] flex items-center bg-black">
               {#each data.top10Animes.today as anime, i (anime.id)}
                 <div
                   class="carousel-slide {i === carouselIndex ? 'active' : i === (carouselIndex - 1 + data.top10Animes.today.length) % data.top10Animes.today.length ? 'prev' : i === (carouselIndex + 1) % data.top10Animes.today.length ? 'next' : ''}"
@@ -105,11 +105,11 @@
                         <img
                           src={anime.poster}
                           alt={anime.name}
-                          class="w-full h-full object-cover rounded-3xl"
+                          class="w-full h-full object-cover rounded-lg"
                           style="object-position:center;"
                           draggable="false"
                         />
-                        <div class="absolute inset-0 bg-gradient-to-tr from-black/90 via-black/60 to-transparent rounded-3xl pointer-events-none"></div>
+                        <div class="absolute inset-0 bg-gradient-to-tr from-black/90 via-black/60 to-transparent rounded-lg pointer-events-none"></div>
                       </div>
                       <div class="absolute left-3 sm:left-6 bottom-3 sm:bottom-10 z-10 max-w-[95vw] sm:max-w-[60%] flex flex-col gap-2 sm:gap-4">
                         <h2 class="text-white text-lg sm:text-3xl md:text-4xl font-bold truncate drop-shadow">{anime.name}</h2>
@@ -174,10 +174,10 @@
               </h2>
               <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-8">
                 {#each data.spotlightAnimes as anime}
-                  <a href={`/info/${anime.id}`} class="group bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col hover:scale-[1.03] hover:shadow-orange-400/40 transition-transform duration-200 border-2 border-transparent hover:border-orange-400">
+                  <a href={`/info/${anime.id}`} class="group bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl overflow-hidden flex flex-col hover:scale-[1.03] hover:shadow-orange-400/40 transition-transform duration-200 border-2 border-transparent hover:border-orange-400">
                     <div class="relative">
                       <img src={anime.poster} alt={anime.name} class="w-full h-48 sm:h-64 object-cover group-hover:brightness-90 transition" />
-                      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none"></div>
+                      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none rounded-lg"></div>
                       <span class="absolute top-3 left-3 bg-orange-400 text-gray-900 px-3 py-0.5 rounded-full text-[10px] font-bold shadow-lg">Rank #{anime.rank}</span>
                       <span class="absolute bottom-3 right-3 bg-gray-900/80 text-orange-300 px-2 py-0.5 rounded text-[10px] shadow">{anime.episodes.sub} Sub / {anime.episodes.dub} Dub</span>
                     </div>
@@ -235,9 +235,9 @@
                     <!-- Example for TRENDING, repeat for POPULAR, TOP RATED, LATEST EPISODES -->
                     {#each data.trendingAnimes as anime (anime.id)}
                       <div class="relative group">
-                        <a href={`/info/${anime.id}`} class="group bg-gray-800 rounded-2xl shadow-lg overflow-hidden block hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200 border-2 border-transparent hover:border-orange-400">
+                        <a href={`/info/${anime.id}`} class="group bg-gray-800 rounded-lg shadow-lg overflow-hidden block hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200 border-2 border-transparent hover:border-orange-400">
                           <div class="relative">
-                            <img src={anime.poster} alt={anime.name} class="w-full h-40 sm:h-52 object-cover group-hover:brightness-90 transition" />
+                            <img src={anime.poster} alt={anime.name} class="w-full h-40 sm:h-52 object-cover group-hover:brightness-90 transition rounded-lg" />
                             <span class="absolute top-2 left-2 bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold shadow">#{anime.rank}</span>
                           </div>
                           <div class="p-2 sm:p-4">
@@ -263,7 +263,7 @@
                   <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-8">
                     {#each data.mostPopularAnimes as anime}
                       <div class="relative group">
-                        <a href={`/info/${anime.id}`} class="group bg-gray-800 rounded-2xl shadow-lg overflow-hidden block hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200 border-2 border-transparent hover:border-orange-400">
+                        <a href={`/info/${anime.id}`} class="group bg-gray-800 rounded-lg shadow-lg overflow-hidden block hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200 border-2 border-transparent hover:border-orange-400">
                           <div class="relative">
                             <img src={anime.poster} alt={anime.name} class="w-full h-40 sm:h-52 object-cover group-hover:brightness-90 transition" />
                           </div>
@@ -297,7 +297,7 @@
                   <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-8">
                     {#each data.mostFavoriteAnimes as anime}
                       <div class="relative group">
-                        <a href={`/info/${anime.id}`} class="group bg-gray-800 rounded-2xl shadow-lg overflow-hidden block hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200 border-2 border-transparent hover:border-orange-400">
+                        <a href={`/info/${anime.id}`} class="group bg-gray-800 rounded-lg shadow-lg overflow-hidden block hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200 border-2 border-transparent hover:border-orange-400">
                           <div class="relative">
                             <img src={anime.poster} alt={anime.name} class="w-full h-40 sm:h-52 object-cover group-hover:brightness-90 transition" />
                           </div>
@@ -325,7 +325,7 @@
                       <div class="relative group">
                         <a
                           href={`/info/${ep.id}`}
-                          class="group bg-gray-800 rounded-2xl shadow-lg overflow-hidden block hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200 border-2 border-transparent hover:border-orange-400"
+                          class="group bg-gray-800 rounded-lg shadow-lg overflow-hidden block hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200 border-2 border-transparent hover:border-orange-400"
                         >
                           <div class="relative">
                             <img
