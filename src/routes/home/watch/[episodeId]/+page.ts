@@ -1,32 +1,17 @@
 import type { PageLoad } from './$types.js';
 
-export const load: PageLoad = async ({ params, fetch, url }) => {
+export const load: PageLoad = async ({ params, fetch }) => {
   const episodeId = params.episodeId;
 
-  // 1. Get episode servers
-  const serversResp = await fetch(`/api/episode/servers?animeEpisodeId=${episodeId}`);
-  const serversJson = await serversResp.json();
-  if (!serversJson.success) {
-    return { error: 'Episode servers not found', videoSources: [], subtitles: [], episodes: [], episodeId };
+  // 1. Fetch combined servers and sources
+  const watchResp = await fetch(`/api/episode/watch?animeEpisodeId=${episodeId}`);
+  const watchJson = await watchResp.json();
+
+  if (!watchJson.success) {
+    return { error: 'Episode data not found', videoSources: [], subtitles: [], episodes: [], episodeId, anime: null, relatedAnimes: [], recommendedAnimes: [] };
   }
 
-  // 2. Pick first available server/category (e.g., sub)
-  const subServer = serversJson.data.sub?.[0];
-  if (!subServer) {
-    return { status: 404, error: 'No sub server found' };
-  }
-
-  // 3. Get streaming sources
-  const sourcesResp = await fetch(
-    `/api/episode/sources?animeEpisodeId=${episodeId}&server=${subServer.serverName}&category=sub`
-  );
-  const sourcesJson = await sourcesResp.json();
-  if (!sourcesJson.success) {
-    return { status: 404, error: 'No streaming sources found' };
-  }
-
-  // 4. Get all episodes for the anime (need animeId)
-  // We'll try to extract animeId from the episodeId (usually before '?ep=')
+  // 2. Get all episodes for the anime (need animeId)
   const animeId = episodeId.split('?')[0];
   const episodesResp = await fetch(`/api/episodes?animeId=${animeId}`);
   const episodesJson = await episodesResp.json();
@@ -39,19 +24,20 @@ export const load: PageLoad = async ({ params, fetch, url }) => {
     }));
   }
 
-  // 5. Get poster image (optional)
-  const posterResp = await fetch(`/api/episode/poster?animeEpisodeId=${episodeId}`);
-  const posterJson = await posterResp.json();
-  let poster = '';
-  if (posterJson.success) {
-    poster = posterJson.data.poster;
-  }
+  // 3. Fetch anime info using your /api/info endpoint
+  const animeInfoResp = await fetch(`/api/info?animeId=${animeId}`);
+  const animeInfoJson = await animeInfoResp.json();
 
   return {
     episodeId,
-    videoSources: sourcesJson.data.sources,
-    subtitles: sourcesJson.data.subtitles,
+    servers: watchJson.servers,
+    sources: watchJson.sources,
+    subtitles: watchJson.sources?.subtitles ?? [],
     episodes,
-    poster,
+    poster: animeInfoJson?.data?.anime?.poster ?? '',
+    anime: animeInfoJson?.data?.anime ?? null,
+    relatedAnimes: animeInfoJson?.data?.relatedAnimes ?? [],
+    recommendedAnimes: animeInfoJson?.data?.recommendedAnimes ?? [],
+    category: 'sub'
   };
 };

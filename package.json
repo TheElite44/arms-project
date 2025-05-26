@@ -49,6 +49,6 @@
 		"svelte"
 	],
 	"dependencies": {
-		"@vidstack/player": "^0.13.3"
+		"vidstack": "^0.6.15"
 	}
 }

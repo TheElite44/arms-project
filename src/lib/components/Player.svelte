@@ -1,5 +1,7 @@
 <script lang="ts">
-  import '@vidstack/player';
+  // Register Vidstack custom elements (side effect import)
+  import 'vidstack/elements';
+
   export let src: string;
   export let poster: string = '';
   export let title: string = '';
@@ -14,7 +16,7 @@
   aspect-ratio="16/9"
   crossorigin
 >
-  <media-provider />
+  <media-provider></media-provider>
   {#each subtitles as sub}
     <track
       kind="subtitles"
@@ -24,7 +26,5 @@
       default={sub.default}
     />
   {/each}
-  <media-poster />
-  <media-buffering-indicator />
-  <media-controls />
+  <media-poster></media-poster>
 </media-player>
