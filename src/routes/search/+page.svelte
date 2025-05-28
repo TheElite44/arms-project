@@ -87,8 +87,8 @@
           <img
             src="/assets/loader.gif"
             alt="Loading..."
-            class="mb-4 max-w-[120px] max-h-[120px] sm:max-w-[160px] sm:max-h-[160px] object-contain"
-            style="aspect-ratio: 1 / 1;"
+            class="mb-4 object-contain"
+            style="max-width: 120px; max-height: 110px; aspect-ratio: 1 / 1;"
           />
           <span class="text-xl text-orange-400">Loading...</span>
         </div>

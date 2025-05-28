@@ -462,3 +462,14 @@
     playsinline
     poster={poster} <!-- Ensure poster is displayed -->
     crossorigin="anonymous"
+
+    <!-- Loading State -->
+    <div class="flex flex-col items-center justify-center py-16">
+      <img
+        src="/assets/loader.gif"
+        alt="Loading..."
+        class="mb-4 object-contain"
+        style="max-width: 120px; max-height: 110px; aspect-ratio: 1 / 1;"
+      />
+      <span class="text-xl text-orange-400">Loading...</span>
+    </div>
