@@ -136,7 +136,7 @@
                       <button
                         class="absolute right-3 sm:right-10 bottom-3 sm:bottom-10 z-10 flex items-center gap-2 sm:gap-3 bg-orange-400 text-gray-900 font-bold rounded-lg px-4 sm:px-8 py-2 sm:py-4 text-xs sm:text-lg shadow-lg hover:bg-orange-500 transition"
                         title="Watch now"
-                        on:click|preventDefault={() => goto(`/home/watch/${anime.id}`)}
+                        on:click|preventDefault={() => goto(`/watch/${anime.id}`)}
                       >
                         <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4l12 6-12 6V4z"/></svg>
                         <span class="hidden sm:inline">WATCH NOW</span>

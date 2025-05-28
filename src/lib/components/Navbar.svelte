@@ -1,20 +1,29 @@
 <script lang="ts">
   let mobileMenuOpen = false;
   let mobileSearchOpen = false;
+  let searchQuery = '';
 
   function toggleMobileMenu() {
     mobileMenuOpen = !mobileMenuOpen;
-    // Close search if menu opens
     if (mobileMenuOpen) mobileSearchOpen = false;
   }
+
   function toggleMobileSearch() {
     mobileSearchOpen = !mobileSearchOpen;
-    // Close menu if search opens
     if (mobileSearchOpen) mobileMenuOpen = false;
   }
+
   function closeAll() {
     mobileMenuOpen = false;
     mobileSearchOpen = false;
+  }
+
+  async function handleSearch(event: Event) {
+    event.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    // Redirect to the search page with the query
+    window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
   }
 </script>
 
@@ -30,12 +39,13 @@
 
     <!-- Right: Desktop Search & Hamburger/Mobile Search -->
     <div class="flex items-center gap-3">
-      <!-- Desktop Search Bar (now on the right) -->
-      <form class="hidden md:flex items-center relative w-[28rem]">
+      <!-- Desktop Search Bar -->
+      <form class="hidden md:flex items-center relative w-[28rem]" on:submit={handleSearch}>
         <input
           class="w-full h-10 rounded bg-gray-800 text-white pl-4 pr-12 focus:outline-none focus:ring-2 focus:ring-orange-400"
           placeholder="Search anime..."
           type="text"
+          bind:value={searchQuery}
         />
         <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2">
           <svg class="h-5 w-5 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -57,11 +67,12 @@
   <!-- Mobile Search Bar -->
   {#if mobileSearchOpen}
     <div class="md:hidden bg-gray-900 px-4 py-2 border-t border-gray-800 animate-fade-in-down">
-      <form class="flex items-center relative">
+      <form class="flex items-center relative" on:submit={handleSearch}>
         <input
           class="w-full h-10 rounded bg-gray-800 text-white pl-4 pr-12 focus:outline-none focus:ring-2 focus:ring-orange-400"
           placeholder="Search anime..."
           type="text"
+          bind:value={searchQuery}
         />
         <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2">
           <svg class="h-5 w-5 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -70,14 +81,6 @@
           </svg>
         </button>
       </form>
-    </div>
-  {/if}
-
-  <!-- Mobile Menu -->
-  {#if mobileMenuOpen}
-    <div class="md:hidden bg-gray-900 px-4 py-4 border-t border-gray-800 flex flex-col gap-4 animate-fade-in-down">
-      <a href="/" class="text-white font-semibold hover:text-orange-400 transition" on:click={closeAll}>Home</a>
-      <a href="/home" class="text-white font-semibold hover:text-orange-400 transition" on:click={closeAll}>Browse</a>
     </div>
   {/if}
 </nav>

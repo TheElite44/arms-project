@@ -93,7 +93,7 @@
             <div class="flex flex-wrap gap-2 mb-2">
               {#if firstEpisodeId}
                 <a
-                  href={`/home/watch/${firstEpisodeId}`}
+                  href={`/watch/${firstEpisodeId}`}
                   class="inline-flex items-center gap-2 mt-2 bg-orange-400 hover:bg-orange-500 text-gray-900 font-bold px-4 py-2 rounded-lg shadow transition text-sm"
                 >
                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4l12 6-12 6V4z"/></svg>
