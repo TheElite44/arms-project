@@ -22,8 +22,10 @@
   let category: 'sub' | 'dub' | 'raw' = 'sub';
   let videoSrc = '';
   let subtitles: Array<{ url: string; label: string; lang: string; default?: boolean }> = [];
-  let poster = !isError(data) ? safe(data.poster, '') : '';
+  let poster = !isError(data) ? safe(data.anime?.info?.poster, 'https://example.com/default-poster.jpg') : 'https://example.com/default-poster.jpg';
   let title = !isError(data) ? safe(data.anime?.info?.name, 'Episode') : 'Episode';
+  let intro: { start: number; end: number } | null = null;
+  let outro: { start: number; end: number } | null = null;
   let useArtPlayer = true;
 
   // --- Pagination ---
@@ -45,50 +47,87 @@
   async function fetchWatchData(episodeId: string, server: string, category: string) {
     try {
       const params = new URLSearchParams({
+        action: 'sources',
         animeEpisodeId: episodeId,
         server,
-        category
+        category,
       });
-      const resp = await fetch(`/api/episode/watch?${params.toString()}`);
+
+      const apiUrl = `/api/anime?${params.toString()}`;
+      const resp = await fetch(apiUrl);
       const json = await resp.json();
-      
+
       if (json.success) {
-        if (json.sources?.sources?.length > 0) {
-          videoSrc = json.sources.sources[0].url;
-          subtitles = (json.sources.subtitles ?? []).map((sub: any) => ({
-            url: sub.url,
-            label: sub.label || sub.lang,
-            lang: sub.lang,
-            default: sub.default ?? false
-          }));
-        } else {
-          videoSrc = '';
-          subtitles = [];
-        }
+        console.log('Fetched watch data:', json);
 
-        if (json.servers) {
-          servers = Object.entries(json.servers)
-            .filter(([category]) => ['sub', 'dub', 'raw'].includes(category))
-            .flatMap(([category, serverList]: [string, unknown]) =>
-              (serverList as any[]).map(server => ({
-                ...server,
-                category: category as 'sub' | 'dub' | 'raw'
-              }))
-            );
+        // Update video source and subtitles
+        videoSrc = json.data.sources?.[0]?.url || '';
+        subtitles = (json.data.subtitles ?? []).map((sub: any) => ({
+          url: sub.url,
+          label: sub.label || sub.lang,
+          lang: sub.lang,
+          default: sub.default ?? false,
+        }));
+        intro = json.data.intro || null;
+        outro = json.data.outro || null;
 
-          // Set default server if none selected
-          if (!currentServer) {
-            const defaultServer = servers.find(s => s.category === category);
-            if (defaultServer) {
-              currentServer = defaultServer.serverName;
-            }
-          }
-        }
+        console.log('Used referer:', json.data.usedReferer); // Log the referer used
+      } else {
+        console.error('Failed to fetch watch data:', json.error);
+        videoSrc = '';
+        subtitles = [];
+        intro = null;
+        outro = null;
       }
     } catch (err) {
       console.error('Error fetching watch data:', err);
       videoSrc = '';
       subtitles = [];
+      intro = null;
+      outro = null;
+    }
+  }
+
+  async function fetchServers(episodeId: string) {
+    try {
+      const params = new URLSearchParams({
+        action: 'servers',
+        animeEpisodeId: episodeId,
+      });
+
+      const apiUrl = `/api/anime?${params.toString()}`;
+      const resp = await fetch(apiUrl);
+      const json = await resp.json();
+
+      if (json.success) {
+        console.log('Fetched servers:', json);
+
+        // Process server data
+        servers = Object.entries(json.data)
+          .filter(([category]) => ['sub', 'dub', 'raw'].includes(category))
+          .flatMap(([category, serverList]: [string, unknown]) =>
+            (serverList as any[]).map((server) => ({
+              ...server,
+              category: category as 'sub' | 'dub' | 'raw',
+            }))
+          )
+          .sort((a, b) => a.serverName.localeCompare(b.serverName));
+
+        servers = servers.filter((server) => server.serverName); // Filter out unavailable servers
+
+        if (!currentServer) {
+          const defaultServer = servers.find((s) => s.category === category);
+          if (defaultServer) {
+            currentServer = defaultServer.serverName;
+          }
+        }
+
+        console.log('Used referer:', json.data.usedReferer); // Log the referer used
+      } else {
+        console.error('Failed to fetch servers:', json.error);
+      }
+    } catch (err) {
+      console.error('Error fetching servers:', err);
     }
   }
 
@@ -102,7 +141,10 @@
       currentEpisodeId = episodeId;
       const animeKey = data.anime?.info?.id ? `lastEpisodeId:${data.anime.info.id}` : null;
       if (animeKey) localStorage.setItem(animeKey, episodeId);
+
+      await fetchServers(episodeId);
       await fetchWatchData(episodeId, currentServer, category);
+
       goto(`/home/watch/${episodeId}`);
     }
   }
@@ -124,7 +166,9 @@
   // --- On Mount: Restore Last Watched ---
   onMount(async () => {
     const animeKey = data.anime?.info?.id ? `lastEpisodeId:${data.anime.info.id}` : null;
+    const animeId = data.anime?.info?.id || '';
     let saved = animeKey ? localStorage.getItem(animeKey) : null;
+
     if (saved && episodes.some((e: any) => e.episodeId === saved)) {
       currentEpisodeId = saved;
       if (currentEpisodeId !== data.episodeId) goto(`/home/watch/${currentEpisodeId}`, { replaceState: true });
@@ -132,6 +176,8 @@
       currentEpisodeId = episodes[0].episodeId;
       goto(`/home/watch/${currentEpisodeId}`, { replaceState: true });
     }
+
+    await fetchServers(currentEpisodeId);
     await fetchWatchData(currentEpisodeId, currentServer, category);
   });
 </script>
@@ -156,8 +202,9 @@
                 <Player 
                   src={videoSrc} 
                   poster={poster} 
-                  title={title} 
                   subtitles={subtitles} 
+                  intro={intro} 
+                  outro={outro} 
                   playNext={(nextEpisodeId: string) => goToEpisode(nextEpisodeId)} 
                 />
               {:else}
@@ -177,8 +224,6 @@
             {#if servers.some(s => s.category === 'sub')}
               <div class="flex gap-2 items-center mb-2">
                 <span class="font-semibold text-orange-400 text-sm flex items-center gap-1">
-                  <!-- Optional: Sub icon -->
-                  <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 8h2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2"></path><rect x="7" y="4" width="10" height="4" rx="1" /></svg>
                   Sub:
                 </span>
                 <div class="flex gap-2">
@@ -197,6 +242,7 @@
                 </div>
               </div>
             {/if}
+
             <!-- Dub Servers -->
             {#if servers.some(s => s.category === 'dub')}
               <div class="flex gap-2 items-center mb-2">
@@ -402,3 +448,7 @@
     }
   }
 </style>
+    controls
+    playsinline
+    poster={poster} <!-- Ensure poster is displayed -->
+    crossorigin="anonymous"

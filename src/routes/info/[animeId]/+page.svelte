@@ -20,12 +20,32 @@
 
   // Fetch sidebar data from /api/home
   onMount(async () => {
-    if (anime?.id) {
-      const resp = await fetch(`/api/episodes?animeId=${anime.id}`);
+    const animeKey = data.anime?.info?.id ? `lastEpisodeId:${data.anime.info.id}` : null;
+    const animeId = data.anime?.info?.id || '';
+
+    console.log('data:', data);
+    console.log('animeId:', data.anime?.info?.id);
+
+    if (!animeId) {
+      console.error('animeId is missing in data:', data);
+      return;
+    }
+
+    await fetchEpisodes(animeId);
+  });
+
+  async function fetchEpisodes(animeId: string) {
+    try {
+      const resp = await fetch(`/api/anime?action=episodes&animeId=${animeId}`);
       const json = await resp.json();
+
       if (json.success && json.data.episodes?.length > 0) {
         firstEpisodeId = json.data.episodes[0].episodeId;
+      } else {
+        console.error('Failed to fetch episodes:', json.error);
       }
+    } catch (err) {
+      console.error('Error fetching episodes:', err);
     }
 
     // Fetch sidebar anime lists from /api/home
@@ -40,7 +60,7 @@
       topAiringAnimes = [];
       topUpcomingAnimes = [];
     }
-  });
+  }
 </script>
 
 <Navbar />

@@ -2,36 +2,110 @@
   import { onMount, onDestroy, afterUpdate } from 'svelte';
   import Artplayer from 'artplayer';
   import Hls from 'hls.js';
+  import { browser } from '$app/environment';
 
   export let src: string = '';
   export let poster: string = '';
-  export let subtitles: Array<{ url: string; label: string; lang: string; default?: boolean }> = [];
+  export let subtitles: Array<{ url: string; label: string; kind: string; default?: boolean }> = [];
   export let autoNext: boolean = false;
   export let currentEpisodeIndex: number = 0;
   export let episodes: Array<{ id: string }> = [];
-  export let title: string = '';
   export let playNext: (nextEpisodeId: string) => void = () => {};
+  export let intro: { start: number; end: number } | null = null;
+  export let outro: { start: number; end: number } | null = null;
 
   let art: any = null;
   let container: HTMLDivElement | null = null;
+  let previousSrc: string | null = null;
 
-  // Always use the proxy for m3u8
-  $: proxiedSrc = src && src.startsWith('http')
-    ? `https://ani-fire-m3u8-proxy.vercel.app/m3u8-proxy?url=${encodeURIComponent(src)}&headers=${encodeURIComponent('{"Referer":"https://hianimez.to/"}')}`
-    : src;
+  async function fetchWatchData(episodeId: string, server: string, category: string) {
+    const params = new URLSearchParams({
+      action: 'sources',
+      animeEpisodeId: episodeId,
+      server,
+      category,
+    });
+
+    const apiUrl = `/api/anime?${params.toString()}`;
+    console.log('Fetching watch data from:', apiUrl);
+
+    try {
+      const resp = await fetch(apiUrl);
+      const json = await resp.json();
+
+      if (json.success && json.data) {
+        console.log('Fetched watch data successfully:', json.data);
+
+        const sources = json.data.sources || [];
+        const apiSubtitles = json.data.subtitles || [];
+
+        if (sources.length > 0) {
+          src = sources[0].url || '';
+          console.log('Setting video source to:', src);
+        } else {
+          console.error('No sources found in API response');
+          return;
+        }
+
+        subtitles = apiSubtitles.map((sub: any) => ({
+          url: sub.url,
+          label: sub.label || sub.lang || 'Unknown',
+          kind: 'subtitles',
+          default: sub.default ?? false,
+        }));
+
+        intro = json.data.intro || null;
+        outro = json.data.outro || null;
+
+        console.log('Updated subtitles:', subtitles);
+        console.log('Intro:', intro);
+        console.log('Outro:', outro);
+
+        createPlayer();
+      } else {
+        console.error('API request failed:', json.error || 'Unknown error');
+      }
+    } catch (err) {
+      console.error('Error fetching watch data:', err);
+    }
+  }
 
   function createPlayer() {
-    if (!container) return;
+    if (!container) {
+      console.error('Player container is not defined.');
+      return;
+    }
 
-    // Destroy existing player instance
+    if (!src) {
+      console.log('No source URL provided, skipping player creation.');
+      return;
+    }
+
+    // Prevent re-creating the player if the `src` hasn't changed
+    if (art && previousSrc === src) {
+      console.log('Player already initialized with the same src.');
+      return;
+    }
+
+    // Destroy existing player instance if it exists
     if (art) {
-      art.destroy();
+      console.log('Destroying existing Artplayer instance.');
+      try {
+        if (art.hls) {
+          art.hls.destroy();
+        }
+        art.destroy();
+      } catch (e) {
+        console.warn('Error destroying player:', e);
+      }
       art = null;
     }
 
+    console.log('Creating new Artplayer instance with src:', src);
+
     const options: any = {
       container,
-      url: proxiedSrc,
+      url: src,
       poster,
       volume: 0.5,
       autoplay: false,
@@ -51,8 +125,9 @@
 
     // Add subtitles if available
     if (subtitles?.length > 0) {
+      const defaultSubtitle = subtitles.find((sub) => sub.default) || subtitles[0];
       options.subtitle = {
-        url: subtitles[0].url,
+        url: defaultSubtitle.url,
         type: 'vtt',
         style: {
           color: '#fff',
@@ -60,122 +135,158 @@
         },
         encoding: 'utf-8',
       };
+      console.log('Setting default subtitle:', defaultSubtitle);
     }
 
-    art = new Artplayer(options);
+    try {
+      art = new Artplayer(options);
+      previousSrc = src;
+
+      console.log('Artplayer instance created successfully');
+    } catch (error) {
+      console.error('Failed to create Artplayer instance:', error);
+    }
   }
 
-  const playM3u8 = (video: HTMLVideoElement, url: string, art: any) => {
+  const playM3u8 = (video: HTMLVideoElement, url: string | undefined, art: any) => {
+    const safeUrl = url ?? '';
+
+    if (!safeUrl) {
+      console.error('No URL provided for M3U8 playback');
+      return;
+    }
+
+    console.log('Playing M3U8 stream:', safeUrl);
+
     if (Hls.isSupported()) {
-      if (art.hls) art.hls.destroy();
-      const hls = new Hls();
-      hls.loadSource(url);
+      if (art.hls) {
+        art.hls.destroy();
+      }
+
+      const hls = new Hls({
+        debug: false,
+        enableWorker: true,
+        lowLatencyMode: true,
+        fragLoadingTimeOut: 20000, // 20-second timeout for fragment loading
+        maxBufferLength: 30, // 30 seconds of buffer
+        startLevel: -1, // Auto quality selection
+      });
+
+      hls.loadSource(safeUrl);
       hls.attachMedia(video);
       art.hls = hls;
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        console.log('HLS manifest parsed successfully');
+      });
 
       hls.on(Hls.Events.ERROR, (event, data) => {
         console.error("HLS.js error:", data);
       });
 
+      // Auto-next episode functionality
       video.addEventListener("timeupdate", () => {
         const currentTime = Math.round(video.currentTime);
         const duration = Math.round(video.duration);
-        if (duration > 0 && currentTime >= duration) {
-          art.pause();
+        if (duration > 0 && currentTime >= duration - 5) {
           if (currentEpisodeIndex < episodes?.length - 1 && autoNext) {
-            playNext(
-              episodes[currentEpisodeIndex + 1].id.match(/ep=(\d+)/)?.[1]
-            );
+            const nextEpisode = episodes[currentEpisodeIndex + 1];
+            if (nextEpisode) {
+              playNext(nextEpisode.id.match(/ep=(\d+)/)?.[1] ?? '');
+            }
           }
         }
       });
+
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = url;
+      console.log('Using native HLS support');
+      video.src = safeUrl;
+
       video.addEventListener("timeupdate", () => {
         const currentTime = Math.round(video.currentTime);
         const duration = Math.round(video.duration);
-        if (duration > 0 && currentTime >= duration) {
-          art.pause();
+        if (duration > 0 && currentTime >= duration - 5) {
           if (currentEpisodeIndex < episodes?.length - 1 && autoNext) {
-            playNext(
-              episodes[currentEpisodeIndex + 1].id.match(/ep=(\d+)/)?.[1]
-            );
+            const nextEpisode = episodes[currentEpisodeIndex + 1];
+            if (nextEpisode) {
+              playNext(nextEpisode.id.match(/ep=(\d+)/)?.[1] ?? '');
+            }
           }
         }
       });
     } else {
-      console.log("Unsupported playback format: m3u8");
+      console.error("Unsupported playback format: m3u8");
     }
   };
 
   onMount(() => {
-    createPlayer();
+    console.log('Player mounted.');
+    if (src) {
+      createPlayer();
+    }
   });
 
-  // Re-create player when src or subtitles change
   afterUpdate(() => {
-    createPlayer();
+    console.log('Player updated.');
+    if (src && src !== previousSrc) {
+      createPlayer();
+    }
   });
 
   onDestroy(() => {
+    console.log('Destroying player component');
+
     if (art) {
-      art.destroy();
+      try {
+        if (art.hls) {
+          art.hls.destroy();
+        }
+        art.destroy();
+      } catch (e) {
+        console.warn('Error during player cleanup:', e);
+      }
       art = null;
     }
   });
 
-  let videoSrc: string = '';
-  let currentServer: string = '';
-  let servers: Array<{ serverName: string; category: 'sub' | 'dub' | 'raw' }> = [];
+  // Build chapters array
+  const chapters = [];
+  if (intro && intro.start !== 0 && intro.end !== 0) {
+    chapters.push({ start: intro.start, end: intro.end, title: 'Intro' });
+  }
+  if (outro && outro.start !== 0 && outro.end !== 0) {
+    chapters.push({ start: outro.start, end: outro.end, title: 'Outro' });
+  }
+  console.log('Chapters:', chapters);
 
-  async function fetchWatchData(episodeId: string, server: string, category: string) {
-    try {
-      const params = new URLSearchParams({
-        animeEpisodeId: episodeId,
-        server,
-        category,
-      });
-      const resp = await fetch(`/api/episode/watch?${params.toString()}`);
-      const json = await resp.json();
+  // Keyboard shortcuts
+  if (browser) {
+    document.addEventListener('keydown', (event) => {
+      if (!art) return;
 
-      if (json.success) {
-        if (json.sources?.sources?.length > 0) {
-          videoSrc = json.sources.sources[0].url;
-          subtitles = (json.sources.subtitles ?? []).map((sub: any) => ({
-            url: sub.url,
-            label: sub.label || sub.lang,
-            lang: sub.lang,
-            default: sub.default ?? false,
-          }));
-        } else {
-          videoSrc = '';
-          subtitles = [];
-        }
-
-        if (json.servers) {
-          servers = Object.entries(json.servers as Record<string, any[]>)
-            .filter(([category]) => ['sub', 'dub', 'raw'].includes(category))
-            .flatMap(([category, serverList]) =>
-              serverList.map(server => ({
-                ...server,
-                category: category as 'sub' | 'dub' | 'raw',
-              }))
-            );
-
-          // Set default server if none selected
-          if (!currentServer) {
-            const defaultServer = servers.find(s => s.category === category);
-            if (defaultServer) {
-              currentServer = defaultServer.serverName;
-            }
+      switch (event.key.toLowerCase()) {
+        case 'm':
+          if (art.muted) {
+            art.muted = false;
+          } else {
+            art.muted = true;
           }
-        }
+          console.log('Mute toggled');
+          break;
+        case 'f':
+          art.fullscreen = !art.fullscreen;
+          console.log('Fullscreen toggled');
+          break;
+        case ' ':
+          event.preventDefault();
+          if (art.playing) {
+            art.pause();
+          } else {
+            art.play();
+          }
+          break;
       }
-    } catch (err) {
-      console.error('Error fetching watch data:', err);
-      videoSrc = '';
-      subtitles = [];
-    }
+    });
   }
 </script>
 

@@ -2,42 +2,57 @@ import type { PageLoad } from './$types.js';
 
 export const load: PageLoad = async ({ params, fetch }) => {
   const episodeId = params.episodeId;
-
-  // 1. Fetch combined servers and sources
-  const watchResp = await fetch(`/api/episode/watch?animeEpisodeId=${episodeId}`);
-  const watchJson = await watchResp.json();
-
-  if (!watchJson.success) {
-    return { error: 'Episode data not found', videoSources: [], subtitles: [], episodes: [], episodeId, anime: null, relatedAnimes: [], recommendedAnimes: [] };
-  }
-
-  // 2. Get all episodes for the anime (need animeId)
   const animeId = episodeId.split('?')[0];
-  const episodesResp = await fetch(`/api/episodes?animeId=${animeId}`);
-  const episodesJson = await episodesResp.json();
-  let episodes = [];
-  if (episodesJson.success && episodesJson.data.episodes) {
-    episodes = episodesJson.data.episodes.map((ep: any) => ({
-      number: ep.number,
-      title: ep.title,
-      episodeId: ep.episodeId
-    }));
+
+  if (!animeId) {
+    console.error('Invalid animeId:', animeId);
+    return {
+      error: 'Invalid animeId',
+      videoSources: [],
+      subtitles: [],
+      episodes: [],
+      episodeId,
+      anime: null,
+      relatedAnimes: [],
+      recommendedAnimes: []
+    };
   }
 
-  // 3. Fetch anime info using your /api/info endpoint
-  const animeInfoResp = await fetch(`/api/info?animeId=${animeId}`);
-  const animeInfoJson = await animeInfoResp.json();
+  try {
+    const animeInfoResp = await fetch(`/api/anime?action=info&animeId=${animeId}`);
+    const animeInfoJson = await animeInfoResp.json();
 
-  return {
-    episodeId,
-    servers: watchJson.servers,
-    sources: watchJson.sources,
-    subtitles: watchJson.sources?.subtitles ?? [],
-    episodes,
-    poster: animeInfoJson?.data?.anime?.poster ?? '',
-    anime: animeInfoJson?.data?.anime ?? null,
-    relatedAnimes: animeInfoJson?.data?.relatedAnimes ?? [],
-    recommendedAnimes: animeInfoJson?.data?.recommendedAnimes ?? [],
-    category: 'sub'
-  };
+    if (!animeInfoJson.success) {
+      console.error('Failed to fetch anime info:', animeInfoJson.error);
+      throw new Error(animeInfoJson.error || 'Anime data not found');
+    }
+
+    const episodesResp = await fetch(`/api/anime?action=episodes&animeId=${animeId}`);
+    const episodesJson = await episodesResp.json();
+
+    if (!episodesJson.success) {
+      console.error('Failed to fetch episodes:', episodesJson.error);
+      throw new Error(episodesJson.error || 'Episodes data not found');
+    }
+
+    return {
+      episodeId,
+      anime: animeInfoJson.data.anime,
+      episodes: episodesJson.data.episodes || [],
+      relatedAnimes: animeInfoJson.data.relatedAnimes || [],
+      recommendedAnimes: animeInfoJson.data.recommendedAnimes || []
+    };
+  } catch (error) {
+    console.error('Error loading page data:', error);
+    return {
+      error: 'Failed to load page data',
+      videoSources: [],
+      subtitles: [],
+      episodes: [],
+      episodeId,
+      anime: null,
+      relatedAnimes: [],
+      recommendedAnimes: []
+    };
+  }
 };
