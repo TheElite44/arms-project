@@ -85,7 +85,15 @@
   <div class="flex-1 w-full">
     <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-2 sm:px-6">
       {#if loading}
-        <div class="text-center text-xl text-orange-400 py-16">Loading...</div>
+        <div class="flex flex-col items-center justify-center py-16">
+          <img
+            src="/assets/loader.gif"
+            alt="Loading..."
+            class="mb-4 max-w-[120px] max-h-[120px] sm:max-w-[160px] sm:max-h-[160px] object-contain"
+            style="aspect-ratio: 1 / 1;"
+          />
+          <span class="text-xl text-orange-400">Loading...</span>
+        </div>
       {:else if error}
         <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-xl my-4">
           <p class="font-bold">ERROR: {error}</p>

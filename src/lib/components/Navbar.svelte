@@ -21,9 +21,9 @@
 <nav class="fixed top-0 left-0 w-full z-50 bg-gray-900/80 backdrop-blur-md shadow">
   <div class="max-w-7xl mx-auto flex items-center justify-between px-4 py-2">
     <!-- Left: Logo & Brand -->
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-3 z-50">
       <a href="/" class="flex items-center gap-2" on:click={closeAll}>
-        <img src="/assets/logo/an!fire.png" alt="Anifire logo" class="h-9 w-9 object-contain rounded" />
+        <img src="/assets/logo.png" alt="Anifire logo" class="h-9 w-9 object-contain rounded z-50" />
         <span class="text-xl font-bold text-orange-400 tracking-wide">ARMS</span>
       </a>
     </div>

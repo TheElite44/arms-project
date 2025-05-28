@@ -1,42 +1,32 @@
 <script lang="ts">
   import Navbar from '$lib/components/Navbar.svelte';
   import Player from '$lib/components/Player.svelte';
+  import Player2 from '$lib/components/Player2.svelte';
   import Footer from '$lib/components/Footer.svelte';
   import type { PageData } from './$types.js';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
-  export let data;
-  // data.servers, data.sources, data.subtitles, data.episodes, etc. are available
 
-  // Type guard for error state
+  export let data;
+
+  // --- Type Guards & Helpers ---
   const isError = (d: PageData): d is Extract<PageData, { error: string }> =>
     typeof d === 'object' && d !== null && 'error' in d;
-
-  // Defensive fallback for all fields
   const safe = <T,>(v: T | undefined | null, fallback: T) => v ?? fallback;
 
-  // Episodes for selector
-  let episodes = !isError(data) ? safe(data.episodes, []) : [];
-
-  // Remember last selected episode using localStorage
+  // --- State ---
+  let episodes: any[] = !isError(data) ? safe(data.episodes, []) : [];
   let currentEpisodeId: string = safe(data.episodeId, '');
-
-  // Server/category selection
-  type ServerWithCategory = { serverId: number; serverName: string; category: 'sub' | 'dub' | 'raw' };
-  let servers: ServerWithCategory[] = [];
+  let servers: { serverId: number; serverName: string; category: 'sub' | 'dub' | 'raw' }[] = [];
   let currentServer = '';
   let category: 'sub' | 'dub' | 'raw' = 'sub';
-
-  // Video and subtitle sources
   let videoSrc = '';
   let subtitles: Array<{ url: string; label: string; lang: string; default?: boolean }> = [];
   let poster = !isError(data) ? safe(data.poster, '') : '';
   let title = !isError(data) ? safe(data.anime?.info?.name, 'Episode') : 'Episode';
+  let useArtPlayer = true;
 
-  // Track if initial selection is done to avoid double fetch
-  let initialSelectionDone = false;
-
-  // Pagination for episodes
+  // --- Pagination ---
   let episodesPerPage = 50;
   let currentPage = 1;
   $: totalPages = Math.ceil(episodes.length / episodesPerPage);
@@ -45,37 +35,7 @@
     currentPage * episodesPerPage
   );
 
-  function goToPage(page: number) {
-    if (page >= 1 && page <= totalPages) {
-      currentPage = page;
-    }
-  }
-
-  // On mount, set default to episode 1 if not set, else use last selected, and fetch servers/sources
-  onMount(async () => {
-    const animeKey = data.anime?.info?.id ? `lastEpisodeId:${data.anime.info.id}` : null;
-    let saved = null;
-    if (animeKey) {
-      saved = localStorage.getItem(animeKey);
-    }
-    // If saved episode exists for this anime, use it
-    if (saved && episodes.some((e: any) => e.episodeId === saved)) {
-      currentEpisodeId = saved;
-      if (currentEpisodeId !== data.episodeId) {
-        goto(`/home/watch/${currentEpisodeId}`, { replaceState: true });
-      }
-    }
-    // Otherwise, default to episode 1 if not already on it
-    else if ((!currentEpisodeId || !episodes.some((e: any) => e.episodeId === currentEpisodeId)) && episodes.length > 0) {
-      currentEpisodeId = episodes[0].episodeId;
-      goto(`/home/watch/${currentEpisodeId}`, { replaceState: true });
-    }
-    // Fetch initial data only once
-    await fetchWatchData(currentEpisodeId, currentServer, category);
-    initialSelectionDone = true;
-  });
-
-  // Fetch both servers and sources from new /api/episode/watch endpoint
+  // --- Fetch Logic ---
   async function fetchWatchData(episodeId: string, server: string, category: string) {
     try {
       const params = new URLSearchParams({
@@ -85,64 +45,89 @@
       });
       const resp = await fetch(`/api/episode/watch?${params.toString()}`);
       const json = await resp.json();
-      console.log('API /api/episode/watch response:', json); // <-- log full API response
-      if (json.success && json.sources) {
-        // Use the custom m3u8-proxy URL for the player
-        videoSrc = json.sources.sources?.[0]?.url
-          ? `https://ani-fire-m3u8-proxy.vercel.app/m3u8-proxy?url=${encodeURIComponent(json.sources.sources[0].url)}&headers=${encodeURIComponent('{"Referer":"https://megacloud.club/"}')}`
-          : '';
-        console.log('Final videoSrc for player:', videoSrc); // <-- log the final videoSrc
-        subtitles = (json.sources.subtitles ?? []).map((sub: any) => ({
-          url: sub.url,
-          label: sub.label || sub.lang,
-          lang: sub.lang,
-          default: sub.default ?? false
-        }));
-        // Optionally update servers if you want to use json.servers
-        if (json.servers) {
-          servers = (['sub', 'dub', 'raw'] as const).flatMap((c) =>
-            (json.servers[c] ?? []).map((s: { serverId: number; serverName: string }) => ({
-              ...s,
-              category: c
-            }))
-          );
+      
+      if (json.success) {
+        if (json.sources?.sources?.length > 0) {
+          videoSrc = json.sources.sources[0].url;
+          subtitles = (json.sources.subtitles ?? []).map((sub: any) => ({
+            url: sub.url,
+            label: sub.label || sub.lang,
+            lang: sub.lang,
+            default: sub.default ?? false
+          }));
+        } else {
+          videoSrc = '';
+          subtitles = [];
         }
-      } else {
-        videoSrc = '';
-        subtitles = [];
+
+        if (json.servers) {
+          servers = Object.entries(json.servers)
+            .filter(([category]) => ['sub', 'dub', 'raw'].includes(category))
+            .flatMap(([category, serverList]: [string, unknown]) =>
+              (serverList as any[]).map(server => ({
+                ...server,
+                category: category as 'sub' | 'dub' | 'raw'
+              }))
+            );
+
+          // Set default server if none selected
+          if (!currentServer) {
+            const defaultServer = servers.find(s => s.category === category);
+            if (defaultServer) {
+              currentServer = defaultServer.serverName;
+            }
+          }
+        }
       }
     } catch (err) {
-      console.error('Failed to fetch episode watch data:', err);
+      console.error('Error fetching watch data:', err);
       videoSrc = '';
       subtitles = [];
     }
   }
 
-  // Handle episode change
+  // --- Navigation & Selection ---
+  function goToPage(page: number) {
+    if (page >= 1 && page <= totalPages) currentPage = page;
+  }
+
   async function goToEpisode(episodeId: string) {
     if (episodeId && episodeId !== currentEpisodeId) {
       currentEpisodeId = episodeId;
-      // Save last watched episode for this anime
       const animeKey = data.anime?.info?.id ? `lastEpisodeId:${data.anime.info.id}` : null;
-      if (animeKey) {
-        localStorage.setItem(animeKey, episodeId);
-      }
+      if (animeKey) localStorage.setItem(animeKey, episodeId);
       await fetchWatchData(episodeId, currentServer, category);
       goto(`/home/watch/${episodeId}`);
     }
   }
+
   function changeServerManual(serverName: string) {
     if (currentServer !== serverName) {
       currentServer = serverName;
       fetchWatchData(currentEpisodeId, currentServer, category);
     }
   }
+
   function changeCategoryManual(cat: 'sub' | 'dub' | 'raw') {
     if (category !== cat) {
       category = cat;
       fetchWatchData(currentEpisodeId, currentServer, category);
     }
   }
+
+  // --- On Mount: Restore Last Watched ---
+  onMount(async () => {
+    const animeKey = data.anime?.info?.id ? `lastEpisodeId:${data.anime.info.id}` : null;
+    let saved = animeKey ? localStorage.getItem(animeKey) : null;
+    if (saved && episodes.some((e: any) => e.episodeId === saved)) {
+      currentEpisodeId = saved;
+      if (currentEpisodeId !== data.episodeId) goto(`/home/watch/${currentEpisodeId}`, { replaceState: true });
+    } else if ((!currentEpisodeId || !episodes.some((e: any) => e.episodeId === currentEpisodeId)) && episodes.length > 0) {
+      currentEpisodeId = episodes[0].episodeId;
+      goto(`/home/watch/${currentEpisodeId}`, { replaceState: true });
+    }
+    await fetchWatchData(currentEpisodeId, currentServer, category);
+  });
 </script>
 
 <Navbar />
@@ -158,10 +143,29 @@
       <section class="flex-1 flex flex-col gap-8 mb-12">
         <!-- Player Card -->
         <div class="flex flex-col gap-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-4 sm:p-8">
+          <!-- Player container -->
           <div class="w-full aspect-video rounded-lg overflow-hidden shadow-lg bg-black">
-            <Player src={videoSrc} subtitles={subtitles} poster={poster} title={title} />
+            {#key videoSrc}
+              {#if useArtPlayer}
+                <Player 
+                  src={videoSrc} 
+                  poster={poster} 
+                  title={title} 
+                  subtitles={subtitles} 
+                  playNext={(nextEpisodeId: string) => goToEpisode(nextEpisodeId)} 
+                />
+              {:else}
+                <Player2 
+                  src={videoSrc} 
+                  subtitles={subtitles} 
+                  poster={poster} 
+                  playNext={(nextEpisodeId: string) => goToEpisode(nextEpisodeId)} 
+                />
+              {/if}
+            {/key}
           </div>
-          <!-- Controls -->
+
+          <!-- Server Selector -->
           <div class="flex flex-col md:flex-row md:items-center gap-4">
             <!-- Sub Servers -->
             {#if servers.some(s => s.category === 'sub')}
@@ -187,7 +191,6 @@
                 </div>
               </div>
             {/if}
-
             <!-- Dub Servers -->
             {#if servers.some(s => s.category === 'dub')}
               <div class="flex gap-2 items-center mb-2">
@@ -212,29 +215,43 @@
                 </div>
               </div>
             {/if}
-
-            <!-- Raw Servers (optional) -->
-            {#if servers.some(s => s.category === 'raw')}
-              <div class="flex gap-2 items-center mb-2">
-                <span class="font-semibold text-orange-400 text-sm">Raw:</span>
-                <div class="flex gap-2">
-                  {#each servers.filter(s => s.category === 'raw') as server}
-                    <button
-                      on:click={() => { category = 'raw'; changeServerManual(server.serverName); }}
-                      class="rounded-md bg-white/10 px-4 py-1.5 text-xs font-medium uppercase transition
-                        {currentServer === server.serverName && category === 'raw'
-                          ? 'bg-orange-400 text-black'
-                          : 'text-white hover:bg-orange-400 hover:text-black'}"
-                      disabled={currentServer === server.serverName && category === 'raw'}
-                    >
-                      {server.serverName}
-                    </button>
-                  {/each}
-                </div>
-              </div>
-            {/if}
           </div>
-          <!-- Redesigned Episode Selector with Pagination -->
+
+          <!-- Player Selector -->
+          <div class="flex items-center gap-4 mb-4">
+            <span class="font-semibold text-orange-400 text-sm flex items-center gap-1">
+              <!-- Optional: Player icon -->
+              <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M5 3v18l15-9L5 3z"></path>
+              </svg>
+              Player:
+            </span>
+            <button
+              class="flex items-center gap-1 px-3 py-1 rounded font-bold text-xs transition
+                {useArtPlayer ? 'bg-orange-400 text-black' : 'bg-gray-700 text-white'}"
+              on:click={() => useArtPlayer = true}
+              disabled={useArtPlayer}
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M5 3v18l15-9L5 3z"></path>
+              </svg>
+              Artplayer
+            </button>
+            <button
+              class="flex items-center gap-1 px-3 py-1 rounded font-bold text-xs transition
+                {!useArtPlayer ? 'bg-orange-400 text-black' : 'bg-gray-700 text-white'}"
+              on:click={() => useArtPlayer = false}
+              disabled={!useArtPlayer}
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M8 15h8M8 12h8M8 9h8"></path>
+              </svg>
+              Plyr
+            </button>
+          </div>
+
+          <!-- Episode Selector -->
           {#if episodes.length > 1}
             <div class="mb-2 flex flex-col gap-2">
               <div class="flex flex-wrap gap-2 items-center">
@@ -254,36 +271,6 @@
                   {/each}
                 </div>
               </div>
-              <!-- Pagination Controls -->
-              {#if totalPages > 1}
-                <div class="flex gap-2 items-center mt-2">
-                  <button
-                    class="px-2 py-1 rounded bg-gray-700 text-xs text-white disabled:opacity-50"
-                    on:click={() => goToPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    Prev
-                  </button>
-                  {#each Array(totalPages) as _, i}
-                    <button
-                      class="px-2 py-1 rounded text-xs font-bold
-                        {currentPage === i + 1
-                          ? 'bg-orange-400 text-gray-900'
-                          : 'bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900'}"
-                      on:click={() => goToPage(i + 1)}
-                    >
-                      {i * episodesPerPage + 1}-{Math.min((i + 1) * episodesPerPage, episodes.length)}
-                    </button>
-                  {/each}
-                  <button
-                    class="px-2 py-1 rounded bg-gray-700 text-xs text-white disabled:opacity-50"
-                    on:click={() => goToPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                  </button>
-                </div>
-              {/if}
             </div>
           {/if}
         </div>
@@ -292,7 +279,7 @@
         {#if data.anime && data.anime.info && data.anime.moreInfo}
           <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-6 md:p-10">
             <!-- Poster -->
-            <div class="flex-shrink-0">
+            <div class="flex-shrink-0 mx-auto md:mx-0">
               <img
                 src={data.anime.info.poster}
                 alt={data.anime.info.name}
@@ -389,3 +376,12 @@
 @import '@vidstack/player/styles/default/theme.css';
 @import '@vidstack/player/styles/default/layouts/video.css';
 -->
+
+<style>
+  @media (max-width: 768px) {
+    .flex-shrink-0 {
+      margin-left: auto;
+      margin-right: auto;
+    }
+  }
+</style>

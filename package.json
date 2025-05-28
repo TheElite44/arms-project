@@ -49,6 +49,9 @@
 		"svelte"
 	],
 	"dependencies": {
+		"artplayer": "^5.2.3",
+		"artplayer-plugin-chapter": "^1.0.1",
+		"artplayer-plugin-hls-control": "^1.0.1",
 		"hls.js": "^1.6.2",
 		"plyr": "^3.7.8"
 	}

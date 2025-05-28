@@ -52,7 +52,7 @@
       <section class="flex-1 flex flex-col gap-8 mb-12">
         <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-6 md:p-10">
           <!-- Poster -->
-          <div class="flex-shrink-0">
+          <div class="flex-shrink-0 mx-auto md:mx-0">
             <img
               src={anime.poster}
               alt={anime.name}
@@ -148,3 +148,12 @@
   {/if}
   <Footer />
 </div>
+
+<style>
+  @media (max-width: 768px) {
+    .flex-shrink-0 {
+      margin-left: auto;
+      margin-right: auto;
+    }
+  }
+</style>
