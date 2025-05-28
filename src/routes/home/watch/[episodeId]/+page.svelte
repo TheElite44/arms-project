@@ -35,6 +35,12 @@
     currentPage * episodesPerPage
   );
 
+  $: episodeRanges = Array.from({ length: totalPages }, (_, i) => {
+    const start = i * episodesPerPage + 1;
+    const end = Math.min((i + 1) * episodesPerPage, episodes.length);
+    return `${start}-${end}`;
+  });
+
   // --- Fetch Logic ---
   async function fetchWatchData(episodeId: string, server: string, category: string) {
     try {
@@ -254,22 +260,33 @@
           <!-- Episode Selector -->
           {#if episodes.length > 1}
             <div class="mb-2 flex flex-col gap-2">
-              <div class="flex flex-wrap gap-2 items-center">
-                <span class="font-semibold text-orange-400 text-sm">Episodes:</span>
-                <div class="flex flex-wrap gap-2">
-                  {#each pagedEpisodes as ep}
-                    <button
-                      class="px-3 py-1 rounded-lg text-xs font-bold transition
-                        {ep.episodeId === currentEpisodeId
-                          ? 'bg-orange-400 text-gray-900 shadow'
-                          : 'bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900'}"
-                      on:click={() => goToEpisode(ep.episodeId)}
-                      disabled={ep.episodeId === currentEpisodeId}
-                    >
-                      {ep.number}
-                    </button>
+              <!-- Pagination Dropdown -->
+              <div class="flex items-center gap-2">
+                <span class="font-semibold text-orange-400 text-xs">Pages:</span>
+                <select
+                  class="px-2 py-1 rounded bg-gray-800 text-white text-xs focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  on:change={(e) => goToPage(parseInt(e.target.value))}
+                >
+                  {#each episodeRanges as range, i}
+                    <option value={i + 1} selected={currentPage === i + 1}>{range}</option>
                   {/each}
-                </div>
+                </select>
+              </div>
+
+              <!-- Episodes for Current Page -->
+              <div class="grid grid-cols-5 sm:grid-cols-10 gap-1">
+                {#each pagedEpisodes as ep}
+                  <button
+                    class="flex items-center justify-center h-10 w-full rounded bg-gray-800 text-white font-bold text-xs transition
+                      {ep.episodeId === currentEpisodeId
+                        ? 'bg-orange-400 text-gray-900 shadow'
+                        : 'hover:bg-orange-400 hover:text-gray-900'}"
+                    on:click={() => goToEpisode(ep.episodeId)}
+                    disabled={ep.episodeId === currentEpisodeId}
+                  >
+                    {ep.number}
+                  </button>
+                {/each}
               </div>
             </div>
           {/if}
