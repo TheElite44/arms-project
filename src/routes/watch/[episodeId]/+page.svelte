@@ -181,6 +181,15 @@
     await fetchServers(currentEpisodeId);
     await fetchWatchData(currentEpisodeId, currentServer, category);
   });
+
+  // Define the handlePageChange function
+  function handlePageChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    const selectedPage = parseInt(target.value, 10);
+    if (!isNaN(selectedPage)) {
+      goToPage(selectedPage); // Call the goToPage function to navigate to the selected page
+    }
+  }
 </script>
 
 <Navbar />
