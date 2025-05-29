@@ -22,7 +22,7 @@
     <div>
       {#if sidebarTab === 'airing'}
         <div class="flex flex-col gap-1.5 sm:gap-2">
-          {#each topAiringAnimes as anime}
+          {#each topAiringAnimes.slice(0, 20) as anime} <!-- Limit to 20 items -->
             <a href={`/info/${anime.id}`} class="flex items-center gap-2 bg-gray-800 rounded-lg p-1.5 sm:p-2 hover:bg-orange-400 hover:text-gray-900 transition">
               <img src={anime.poster} alt={anime.name} class="w-9 h-12 sm:w-12 sm:h-16 object-cover rounded-md" />
               <div class="flex-1 min-w-0">
@@ -39,7 +39,7 @@
         </div>
       {:else if sidebarTab === 'upcoming'}
         <div class="flex flex-col gap-1.5 sm:gap-2">
-          {#each topUpcomingAnimes as anime}
+          {#each topUpcomingAnimes.slice(0, 20) as anime} <!-- Limit to 20 items -->
             <a href={`/info/${anime.id}`} class="flex items-center gap-2 bg-gray-800 rounded-lg p-1.5 sm:p-2 hover:bg-orange-400 hover:text-gray-900 transition">
               <img src={anime.poster} alt={anime.name} class="w-9 h-12 sm:w-12 sm:h-16 object-cover rounded-md" />
               <div class="flex-1 min-w-0">

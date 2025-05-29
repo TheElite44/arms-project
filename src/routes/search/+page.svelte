@@ -144,6 +144,34 @@
 </div>
 
 <style>
+  /* General Background Gradient */
+
+  /* Orange Accent Color */
+  .text-orange-400 {
+    color: #fbbf24; /* orange-400 */
+  }
+
+  .hover\:bg-orange-400:hover {
+    background-color: #fbbf24; /* orange-400 */
+  }
+
+
+  /* Gray Colors */
+  .bg-gray-800 {
+    background-color: #1f2937; /* gray-800 */
+  }
+
+
+  .text-gray-300 {
+    color: #d1d5db; /* gray-300 */
+  }
+
+  .text-gray-400 {
+    color: #9ca3af; /* gray-400 */
+  }
+
+
+  /* Hover Effects */
   .anime-card {
     background: linear-gradient(to bottom right, #1f2937, #111827); /* gray-800 to gray-900 gradient */
     border-radius: 0.5rem;
@@ -151,28 +179,33 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s, color 0.3s;
     border: 2px solid transparent;
-    display: block; /* Ensure the card behaves like a link */
   }
+
   .anime-card:hover {
     transform: scale(1.03);
     box-shadow: 0 6px 8px rgba(251, 191, 36, 0.4); /* orange-400 glow */
     border-color: #fbbf24; /* orange-400 */
   }
+
   .anime-card img {
     transition: brightness 0.3s, transform 0.3s;
   }
+
   .anime-card:hover img {
     filter: brightness(90%);
     transform: scale(1.05); /* Slight zoom effect */
   }
+
   .anime-card .p-4 {
     transition: color 0.3s;
     color: #ffffff; /* Default text color */
   }
+
   .anime-card:hover .p-4 {
     color: #fbbf24; /* orange-400 text color on hover */
   }
 
+  /* Button Styles */
   button {
     background-color: #1f2937; /* gray-800 */
     color: #fbbf24; /* orange-400 */
@@ -181,6 +214,7 @@
     border: 2px solid transparent;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
+
   button:hover {
     background-color: #fbbf24; /* orange-400 */
     color: #1f2937; /* gray-900 */
@@ -188,12 +222,4 @@
     border-color: #fbbf24; /* orange-400 */
   }
 
-  .error-message {
-    background: #fee2e2; /* red-100 */
-    border-left: 4px solid #f87171; /* red-500 */
-    color: #b91c1c; /* red-700 */
-    padding: 1rem;
-    border-radius: 0.5rem;
-    margin: 1rem 0;
-  }
 </style>

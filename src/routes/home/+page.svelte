@@ -2,13 +2,15 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation'; // SvelteKit navigation
   import Navbar from '$lib/components/Navbar.svelte';
-  import AnimeInfoPopover from '$lib/components/AnimeInfoPopover.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte'; // <-- import Sidebar component
   import Footer from '$lib/components/Footer.svelte';
+  import AnimeSchedule from '$lib/components/AnimeSchedule.svelte'; // <-- Import AnimeSchedule component
 
+  
   let loading = true;
   let error: string | null = null;
   let data: any = null;
+  let top10AnimeDetails: Record<string, any> = {}; // Store detailed info for Top 10 Trending Today
 
   // Carousel state
   let carouselIndex = 0;
@@ -17,8 +19,17 @@
   let activeTab: 'trending' | 'popular' | 'topRated' | 'latest' = 'trending';
   let sidebarTab: 'airing' | 'upcoming' = 'airing';
 
-  // Info popover state
-  let infoBoxId: string | null = null;
+  async function fetchAnimeDetails(animeId: string) {
+    try {
+      const resp = await fetch(`/api/info?animeId=${animeId}`);
+      const json = await resp.json();
+      if (json.success && json.data?.anime?.info) {
+        top10AnimeDetails[animeId] = json.data.anime.info;
+      }
+    } catch (e) {
+      console.error(`Failed to fetch details for animeId: ${animeId}`, e);
+    }
+  }
 
   onMount(() => {
     let cancelled = false;
@@ -29,6 +40,15 @@
         if (!cancelled) {
           if (json.success) {
             data = json.data;
+
+            // Fetch detailed info for Top 10 Trending Today
+            if (data.top10Animes?.today?.length > 0) {
+              await Promise.all(
+                data.top10Animes.today.map((anime: any) =>
+                  fetchAnimeDetails(anime.id)
+                )
+              );
+            }
           } else {
             error = json.error || 'Failed to load data';
           }
@@ -39,11 +59,12 @@
         if (!cancelled) loading = false;
       }
 
+      // Updated interval duration to 10 seconds
       carouselInterval = setInterval(() => {
-        if (data?.top10Animes?.today?.length > 0) {
-          carouselIndex = (carouselIndex + 1) % data.top10Animes.today.length;
+        if (data?.spotlightAnimes?.length > 0) {
+          carouselIndex = (carouselIndex + 1) % data.spotlightAnimes.length;
         }
-      }, 5000);
+      }, 10000); // 10 seconds
     })();
 
     return () => {
@@ -53,29 +74,17 @@
   });
 
   function prevSlide() {
-    if (data?.top10Animes?.today?.length > 0) {
-      carouselIndex = (carouselIndex - 1 + data.top10Animes.today.length) % data.top10Animes.today.length;
+    if (data?.spotlightAnimes?.length > 0) {
+      carouselIndex = (carouselIndex - 1 + data.spotlightAnimes.length) % data.spotlightAnimes.length;
     }
   }
   function nextSlide() {
-    if (data?.top10Animes?.today?.length > 0) {
-      carouselIndex = (carouselIndex + 1) % data.top10Animes.today.length;
+    if (data?.spotlightAnimes?.length > 0) {
+      carouselIndex = (carouselIndex + 1) % data.spotlightAnimes.length;
     }
   }
   function setTab(tab: typeof activeTab) {
     activeTab = tab;
-  }
-  function showInfo(id: string) {
-    infoBoxId = id;
-  }
-  function hideInfo(id: string) {
-    if (infoBoxId === id) infoBoxId = null;
-  }
-
-  // Helper for fetching info
-  async function fetchAnimeInfo(animeId: string) {
-    const resp = await fetch(`/api/info?animeId=${animeId}`);
-    return await resp.json();
   }
 </script>
 
@@ -100,12 +109,12 @@
         </div>
       {:else}
         <!-- Carousel -->
-        {#if data.top10Animes?.today && data.top10Animes.today.length > 0}
+        {#if data.spotlightAnimes?.length > 0}
           <section class="mb-4 sm:mb-8">
             <div class="relative w-full max-w-[1800px] mx-auto rounded-lg overflow-hidden shadow-2xl min-h-[220px] sm:min-h-[420px] flex items-center bg-black">
-              {#each data.top10Animes.today as anime, i (anime.id)}
+              {#each data.spotlightAnimes as anime, i (anime.id)}
                 <div
-                  class="carousel-slide {i === carouselIndex ? 'active' : i === (carouselIndex - 1 + data.top10Animes.today.length) % data.top10Animes.today.length ? 'prev' : i === (carouselIndex + 1) % data.top10Animes.today.length ? 'next' : ''}"
+                  class="carousel-slide {i === carouselIndex ? 'active' : i === (carouselIndex - 1 + data.spotlightAnimes.length) % data.spotlightAnimes.length ? 'prev' : i === (carouselIndex + 1) % data.spotlightAnimes.length ? 'next' : ''}"
                 >
                   {#if i === carouselIndex}
                     <a href={`/info/${anime.id}`} class="block group relative w-full h-[220px] sm:h-[420px]">
@@ -162,7 +171,7 @@
               </button>
               <!-- Dots -->
               <div class="absolute bottom-2 sm:bottom-8 left-1/2 -translate-x-1/2 flex z-10">
-                {#each data.top10Animes.today as _, i}
+                {#each data.spotlightAnimes as _, i}
                   <span class="carousel-dot {i === carouselIndex ? 'active' : ''}"></span>
                 {/each}
               </div>
@@ -175,13 +184,16 @@
           <!-- Main content -->
           <div class="flex-1 flex flex-col gap-6 sm:gap-10">
             <!-- Spotlight Anime -->
+            <!-- Spotlight Section renamed to Top 10 Trending Today -->
             <section class="max-w-[1800px] mx-auto px-2">
               <h2 class="text-xl sm:text-2xl font-bold text-orange-400 mb-4 sm:mb-6 flex items-center gap-3">
-                <svg class="w-6 h-6 sm:w-7 sm:h-7 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20m10-10H2" /></svg>
-                Spotlight Anime
+                <svg class="w-6 h-6 sm:w-7 sm:h-7 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M12 2v20m10-10H2" />
+                </svg>
+                Top 10 Trending Today
               </h2>
               <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-8">
-                {#each data.spotlightAnimes as anime}
+                {#each data.top10Animes.today as anime}
                   <a href={`/info/${anime.id}`} class="group bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl overflow-hidden flex flex-col hover:scale-[1.03] hover:shadow-orange-400/40 transition-transform duration-200 border-2 border-transparent hover:border-orange-400">
                     <div class="relative">
                       <img src={anime.poster} alt={anime.name} class="w-full h-48 sm:h-64 object-cover group-hover:brightness-90 transition" />
@@ -197,16 +209,18 @@
                       >
                         {anime.name}
                       </h3>
-                      <p class="text-gray-300 text-xs mb-2 line-clamp-3">{anime.description}</p>
+                      <p class="text-gray-300 text-xs mb-2 line-clamp-3">
+                        {top10AnimeDetails[anime.id]?.description ?? 'Loading description...'}
+                      </p>
                       <div class="flex flex-wrap gap-1 mt-auto">
-                        {#each anime.genres?.slice(0, 3) as genre}
+                        {#each top10AnimeDetails[anime.id]?.genres?.slice(0, 3) as genre}
                           <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded-full text-[10px]">{genre}</span>
                         {/each}
                       </div>
                     </div>
                     <div class="flex justify-between items-center px-4 pb-4 pt-1">
-                      <span class="text-[10px] text-gray-400">{anime.year}</span>
-                      <span class="text-[10px] bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full font-bold">{anime.type}</span>
+                      <span class="text-[10px] text-gray-400">{top10AnimeDetails[anime.id]?.stats?.duration}</span>
+                      <span class="text-[10px] bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full font-bold">{top10AnimeDetails[anime.id]?.stats?.type}</span>
                     </div>
                   </a>
                 {/each}
@@ -280,16 +294,8 @@
                               class="font-bold truncate text-xs sm:text-base mb-1 group-hover:text-orange-400 transition relative"
                               style="max-width:100%"
                               title={anime.name}
-                              on:mouseenter={() => showInfo(anime.id)}
-                              on:focus={() => showInfo(anime.id)}
-                              on:mouseleave={() => hideInfo(anime.id)}
-                              on:blur={() => hideInfo(anime.id)}
-                              tabindex="0"
                             >
                               {anime.name}
-                              {#if infoBoxId === anime.id}
-                                <AnimeInfoPopover animeId={anime.id} on:close={() => hideInfo(anime.id)} />
-                              {/if}
                             </h3>
                             <div class="flex flex-wrap gap-1">
                               {#each anime.genres?.slice(0, 2) as genre}
@@ -379,6 +385,12 @@
       {/if}
     </div>
   </div>
+  <!-- Add AnimeSchedule Component at the Bottom -->
+  <section class="wrapper-container my-8 px-4">
+    <div class="schedule-wrapper bg-gray-800 rounded-lg shadow-lg p-4">
+      <AnimeSchedule />
+    </div>
+  </section>
   <Footer />
 </div>
 

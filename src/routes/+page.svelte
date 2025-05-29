@@ -1,15 +1,7 @@
 <script lang="ts">
   import Navbar from '$lib/components/Navbar.svelte';
-  import AnimeInfoPopover from '$lib/components/AnimeInfoPopover.svelte';
   import Footer from '$lib/components/Footer.svelte';
 
-  // Example anime data, replace with your real data or load from API
-  export let animes: Array<{
-    id: string;
-    title: string;
-    image: string;
-    description: string;
-  }> = [];
 
   let infoBoxId: string | null = null;
   function showInfo(id: string) { infoBoxId = id; }
@@ -140,9 +132,4 @@
 </div>
 
 <style>
-  @media (max-width: 640px) {
-    .xs\:grid-cols-2 {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
 </style>

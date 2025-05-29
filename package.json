@@ -1,6 +1,9 @@
 {
 	"name": "arms-streaming",
-	"version": "0.0.1",
+	"version": "0.0.2-alpha.1",
+	"description": "A Svelte component for streaming media with support for HLS and DASH.",
+	"author": "Arms Team",
+	"license": "MIT",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",
