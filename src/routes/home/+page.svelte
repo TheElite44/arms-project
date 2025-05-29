@@ -90,7 +90,7 @@
 
 <Navbar />
 
-<div class="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
+<div class="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white pt-16">
   {#if loading}
     <!-- Show loading screen -->
     <div class="flex items-center justify-center flex-1">

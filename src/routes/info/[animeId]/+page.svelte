@@ -4,6 +4,7 @@
   import Footer from '$lib/components/Footer.svelte';
   import type { PageData } from './$types.js';
   export let data: PageData;
+
   const anime = data.anime?.info;
   const moreInfo = data.anime?.moreInfo;
   const recommended = data.recommendedAnimes ?? [];
@@ -13,12 +14,10 @@
 
   import { onMount } from 'svelte';
 
-  // Sidebar state for tab switching
   let sidebarTab: 'airing' | 'upcoming' = 'airing';
   let topAiringAnimes: any[] = [];
   let topUpcomingAnimes: any[] = [];
 
-  // Fetch sidebar data from /api/home
   onMount(async () => {
     const animeKey = data.anime?.info?.id ? `lastEpisodeId:${data.anime.info.id}` : null;
     const animeId = data.anime?.info?.id || '';
@@ -48,7 +47,6 @@
       console.error('Error fetching episodes:', err);
     }
 
-    // Fetch sidebar anime lists from /api/home
     try {
       const resp = await fetch('/api/home');
       const json = await resp.json();
@@ -167,17 +165,6 @@
     <div class="text-center text-red-400 flex-1">Anime not found or failed to load.</div>
   {/if}
   <Footer />
-</div>
-
-<!-- Loading Spinner -->
-<div class="flex flex-col items-center justify-center py-16">
-  <img
-    src="/assets/loader.gif"
-    alt="Loading..."
-    class="mb-4 object-contain"
-    style="max-width: 120px; max-height: 110px; aspect-ratio: 1 / 1;"
-  />
-  <span class="text-xl text-orange-400">Loading...</span>
 </div>
 
 <style>

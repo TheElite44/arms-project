@@ -22,7 +22,7 @@
     if (query) {
       await fetchSearchResults();
     } else {
-      loading = false;
+      loading = false; // Update loading state if no query is provided
     }
 
     await fetchSidebarData();
@@ -30,7 +30,7 @@
 
   async function fetchSearchResults() {
     try {
-      loading = true;
+      loading = true; // Set loading to true before fetching
       const params = new URLSearchParams({ q: query, page: page.toString() });
       const resp = await fetch(`/api/search?${params.toString()}`);
       const json = await resp.json();
@@ -44,7 +44,7 @@
     } catch (e) {
       error = 'Failed to fetch search results';
     } finally {
-      loading = false;
+      loading = false; // Set loading to false after fetching
     }
   }
 
@@ -90,7 +90,7 @@
             class="mb-4 object-contain"
             style="max-width: 120px; max-height: 110px; aspect-ratio: 1 / 1;"
           />
-          <span class="text-xl text-orange-400">Loading...</span>
+          
         </div>
       {:else if error}
         <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-xl my-4">
