@@ -52,10 +52,15 @@
 		"svelte"
 	],
 	"dependencies": {
+		"@fortawesome/fontawesome-svg-core": "^6.7.2",
+		"@fortawesome/free-solid-svg-icons": "^6.7.2",
+		"@vidstack/player": "^0.13.3",
 		"artplayer": "^5.2.3",
 		"artplayer-plugin-chapter": "^1.0.1",
 		"artplayer-plugin-hls-control": "^1.0.1",
 		"hls.js": "^1.6.2",
-		"plyr": "^3.7.8"
+		"plyr": "^3.7.8",
+		"svelte-fontawesome": "^0.0.3",
+		"svelte-icons": "^2.1.0"
 	}
 }
