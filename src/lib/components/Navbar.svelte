@@ -1,7 +1,10 @@
 <script lang="ts">
+  import NavBarSidebar from '$lib/components/NavBar-Sidebar.svelte';
+
   let mobileMenuOpen = false;
   let mobileSearchOpen = false;
   let searchQuery = '';
+  let isOpen = false; // Sidebar open state
 
   function toggleMobileMenu() {
     mobileMenuOpen = !mobileMenuOpen;
@@ -18,6 +21,10 @@
     mobileSearchOpen = false;
   }
 
+  function toggleSidebar() {
+    isOpen = !isOpen;
+  }
+
   async function handleSearch(event: Event) {
     event.preventDefault();
     if (!searchQuery.trim()) return;
@@ -29,15 +36,24 @@
 
 <nav class="fixed top-0 left-0 w-full z-50 bg-gray-900/80 backdrop-blur-md shadow">
   <div class="max-w-7xl mx-auto flex items-center justify-between px-4 py-2">
-    <!-- Left: Logo & Brand -->
+    <!-- Left: Logo & Hamburger -->
     <div class="flex items-center gap-3 z-50">
+      <!-- Hamburger Icon -->
+      <button class="p-2" on:click={toggleSidebar} aria-label="Toggle sidebar">
+        <svg class="h-6 w-6 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <line x1="4" y1="6" x2="20" y2="6" />
+          <line x1="4" y1="12" x2="20" y2="12" />
+          <line x1="4" y1="18" x2="20" y2="18" />
+        </svg>
+      </button>
+      <!-- Logo -->
       <a href="/" class="flex items-center gap-2" on:click={closeAll}>
         <img src="/assets/logo.png" alt="Anifire logo" class="h-9 w-9 object-contain rounded z-50" />
         <span class="text-xl font-bold text-orange-400 tracking-wide">ARMS</span>
       </a>
     </div>
 
-    <!-- Right: Desktop Search & Hamburger/Mobile Search -->
+    <!-- Right: Desktop Search & Mobile Search -->
     <div class="flex items-center gap-3">
       <!-- Desktop Search Bar -->
       <form class="hidden md:flex items-center relative w-[28rem]" on:submit={handleSearch}>
@@ -47,7 +63,7 @@
           type="text"
           bind:value={searchQuery}
         />
-        <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2">
+        <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2" aria-label="Search">
           <svg class="h-5 w-5 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -74,7 +90,7 @@
           type="text"
           bind:value={searchQuery}
         />
-        <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2">
+        <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2" aria-label="Search">
           <svg class="h-5 w-5 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -84,6 +100,9 @@
     </div>
   {/if}
 </nav>
+
+<!-- Sidebar -->
+<NavBarSidebar {isOpen} onClose={() => (isOpen = false)} />
 
 <style>
   @media (max-width: 768px) {
