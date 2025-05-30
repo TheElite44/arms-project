@@ -10,6 +10,14 @@
   let errorGenres: string | null = null; // Error state for genres
   let showAllGenres = false; // Toggle to show all genres
 
+  // Function to sanitize genre names
+  function sanitizeGenreName(genre: string): string {
+    return genre
+      .toLowerCase() // Convert to lowercase
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/[^a-z0-9-]/g, ''); // Remove invalid characters
+  }
+
   async function fetchGenres() {
     try {
       const response = await fetch('/api/genre/action?page=1'); // Example genre API call
@@ -58,7 +66,7 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 80%; /* Adjust width for mobile screens */
+    width: 80%; /* Default width for desktop */
     max-width: 300px; /* Limit max width */
     height: 100%;
     background: rgba(32, 31, 49, 0.9); /* Original color */
@@ -151,6 +159,31 @@
   .show-more-button:hover {
     color: #ffffff; /* Hover color */
     transform: scale(1.05);
+  }
+
+  /* Mobile-specific styles */
+  @media (max-width: 768px) {
+    .sidebar {
+      width: 60%; /* Reduce width for mobile */
+      max-width: none; /* Remove max width */
+    }
+
+    .menu-item {
+      font-size: 0.875rem; /* Smaller font size for mobile */
+      padding: 0.75rem; /* Adjust padding for mobile */
+    }
+
+    .genre-section {
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Smaller items for mobile */
+    }
+
+    .genre-link {
+      font-size: 0.75rem; /* Smaller font size for mobile */
+    }
+
+    .show-more-button {
+      font-size: 0.75rem; /* Smaller font size for mobile */
+    }
   }
 
   @keyframes fade-in {
@@ -252,8 +285,12 @@
     {:else}
       <div class="genre-section">
         {#each (showAllGenres ? genres : genres.slice(0, 10)) as genre}
-          <button class="genre-link" on:click={() => navigateTo(`/genre/${genre}`)} aria-label={`Go to ${genre}`}>
-            {genre.replace('-', ' ')}
+          <button
+            class="genre-link"
+            on:click={() => navigateTo(`/genre/${sanitizeGenreName(genre)}`)}
+            aria-label={`Go to ${sanitizeGenreName(genre)}`}
+          >
+            {sanitizeGenreName(genre).replace('-', ' ')}
           </button>
         {/each}
       </div>
