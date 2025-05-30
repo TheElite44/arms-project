@@ -37,6 +37,7 @@
 </script>
 
 <style>
+  /* Sidebar Overlay */
   .sidebar-overlay {
     position: fixed;
     top: 0;
@@ -52,19 +53,21 @@
     animation: fade-in 0.3s forwards;
   }
 
+  /* Sidebar */
   .sidebar {
     position: fixed;
     top: 0;
     left: 0;
-    width: 260px;
+    width: 80%; /* Adjust width for mobile screens */
+    max-width: 300px; /* Limit max width */
     height: 100%;
-    background: rgba(32, 31, 49, 0.8); /* Original color */
+    background: rgba(32, 31, 49, 0.9); /* Original color */
     backdrop-filter: blur(10px) brightness(0.8); /* Frosted glass effect */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     z-index: 1100;
     transform: translateX(-100%); /* Initially hidden */
     transition: transform 0.3s ease-in-out; /* Smooth sliding animation */
-    overflow-y: scroll; /* Enable scrolling */
+    overflow-y: auto; /* Enable scrolling */
     scrollbar-width: none; /* Hide scrollbar in Firefox */
   }
 
@@ -80,6 +83,7 @@
     display: none; /* Hide scrollbar in WebKit browsers */
   }
 
+  /* Menu Items */
   .menu-item {
     width: 100%; /* Make the menu item span the full width of the sidebar */
     padding: 1rem;
@@ -99,6 +103,7 @@
     transform: scale(1.05);
   }
 
+  /* Loading and Error Messages */
   .loading-message,
   .error-message {
     padding: 1rem;
@@ -107,9 +112,10 @@
     animation: fade-in 0.3s ease-in-out forwards;
   }
 
+  /* Genre Section */
   .genre-section {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); /* Two items per row */
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Responsive grid */
     gap: 0.5rem; /* Space between items */
     margin-top: 1rem;
   }
@@ -129,6 +135,7 @@
     color: #ffffff; /* Hover color */
   }
 
+  /* Show More Button */
   .show-more-button {
     display: flex;
     align-items: center;
