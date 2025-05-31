@@ -3,45 +3,51 @@
   import Sidebar from '$lib/components/Sidebar.svelte';
   import Footer from '$lib/components/Footer.svelte';
   import type { PageData } from './$types.js';
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+  
   export let data: PageData;
 
-  const anime = data.anime?.info;
-  const moreInfo = data.anime?.moreInfo;
-  const recommended = data.recommendedAnimes ?? [];
-  const related = data.relatedAnimes ?? [];
+  $: anime = data.anime?.info;
+  $: moreInfo = data.anime?.moreInfo;
+  $: recommended = data.recommendedAnimes ?? [];
+  $: related = data.relatedAnimes ?? [];
 
   let firstEpisodeId: string | null = null;
-
-  import { onMount } from 'svelte';
-
   let sidebarTab: 'airing' | 'upcoming' = 'airing';
   let topAiringAnimes: any[] = [];
   let topUpcomingAnimes: any[] = [];
+  let isLoading = false;
 
-  onMount(async () => {
-    const animeKey = data.anime?.info?.id ? `lastEpisodeId:${data.anime.info.id}` : null;
-    const animeId = data.anime?.info?.id || '';
-
-    console.log('data:', data);
-    console.log('animeId:', data.anime?.info?.id);
-
-    if (!animeId) {
-      console.error('animeId is missing in data:', data);
-      return;
+  async function handleAnimeClick(animeId: string) {
+    isLoading = true;
+    try {
+      await goto(`/info/${animeId}`);
+      await initializeData();
+    } finally {
+      isLoading = false;
     }
+  }
 
+  async function initializeData() {
+    const animeId = data.anime?.info?.id || '';
+    if (!animeId) return;
     await fetchEpisodes(animeId);
-  });
+  }
+
+  $: if (data.anime?.info?.id) {
+    initializeData();
+  }
 
   async function fetchEpisodes(animeId: string) {
+    firstEpisodeId = null; // Reset before fetching
+    
     try {
       const resp = await fetch(`/api/anime?action=episodes&animeId=${animeId}`);
       const json = await resp.json();
 
       if (json.success && json.data.episodes?.length > 0) {
         firstEpisodeId = json.data.episodes[0].episodeId;
-      } else {
-        console.error('Failed to fetch episodes:', json.error);
       }
     } catch (err) {
       console.error('Error fetching episodes:', err);
@@ -64,7 +70,15 @@
 <Navbar />
 
 <div class="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white px-4 py-8 pt-16 flex flex-col">
-  {#if anime && moreInfo}
+  {#if isLoading}
+    <div class="flex-1 flex items-center justify-center">
+      <img
+        src="/assets/loader.gif"
+        alt="Loading..."
+        class="w-24 h-24 object-contain"
+      />
+    </div>
+  {:else if anime && moreInfo}
     <div class="max-w-7xl mx-auto flex flex-col xl:flex-row gap-10 flex-1">
       <!-- Main Info Card -->
       <section class="flex-1 flex flex-col gap-8 mb-12">
@@ -116,7 +130,11 @@
             <h2 class="text-2xl font-bold text-orange-400 mb-4">Recommended Anime</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
               {#each recommended as rec}
-                <a href={`/info/${rec.id}`} class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400">
+                <a 
+                  href={`/info/${rec.id}`} 
+                  on:click|preventDefault={() => handleAnimeClick(rec.id)}
+                  class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400"
+                >
                   <img src={rec.poster} alt={rec.name} class="w-full h-40 object-cover rounded-lg" />
                   <div class="p-3">
                     <h3 class="font-bold text-base mb-1 truncate">{rec.name}</h3>
@@ -137,7 +155,11 @@
             <h2 class="text-2xl font-bold text-orange-400 mb-4">Related Anime</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
               {#each related as rel}
-                <a href={`/info/${rel.id}`} class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400">
+                <a 
+                  href={`/info/${rel.id}`}
+                  on:click|preventDefault={() => handleAnimeClick(rel.id)}
+                  class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400"
+                >
                   <img src={rel.poster} alt={rel.name} class="w-full h-40 object-cover rounded-lg" />
                   <div class="p-3">
                     <h3 class="font-bold text-base mb-1 truncate">{rel.name}</h3>
