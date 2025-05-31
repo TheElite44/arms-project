@@ -164,7 +164,7 @@
   /* Mobile-specific styles */
   @media (max-width: 768px) {
     .sidebar {
-      width: 60%; /* Reduce width for mobile */
+      width: 70%; /* Reduce width for mobile */
       max-width: none; /* Remove max width */
     }
 
