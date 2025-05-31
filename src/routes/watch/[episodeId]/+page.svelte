@@ -179,7 +179,18 @@
     }
 
     await fetchServers(currentEpisodeId);
-    await fetchWatchData(currentEpisodeId, currentServer, category);
+
+    // Wait for currentServer to be set before fetching watch data
+    if (currentServer) {
+      await fetchWatchData(currentEpisodeId, currentServer, category);
+    } else {
+      // fallback: pick the first available server
+      const defaultServer = servers.find((s) => s.category === category);
+      if (defaultServer) {
+        currentServer = defaultServer.serverName;
+        await fetchWatchData(currentEpisodeId, currentServer, category);
+      }
+    }
   });
 
   // Define the handlePageChange function
