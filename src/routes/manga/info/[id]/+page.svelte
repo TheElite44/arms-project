@@ -97,7 +97,7 @@
                             {/if}
                           </div>
                           <a
-                            href={`/manga/read/${manga.id}/${chapter.id}`}
+                            href={`/manga/read/${manga.id}/${chapter.id.split('/')[0]}/${chapter.id.split('/')[1]}`}
                             class="bg-orange-400 hover:bg-orange-500 text-gray-900 font-bold px-4 py-1 rounded-lg shadow transition text-sm"
                           >
                             Read
@@ -106,6 +106,8 @@
                       {/each}
                     </ul>
                   </section>
+                {:else}
+                  <div class="text-gray-400">No chapters found.</div>
                 {/if}
 
                 <!-- Recommendations -->

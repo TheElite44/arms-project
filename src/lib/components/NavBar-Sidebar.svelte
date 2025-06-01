@@ -273,11 +273,6 @@
         Specials
       </button>
     </li>
-    <li>
-      <button class="menu-item" on:click={() => navigateTo('/manga/home')} aria-label="Go to Specials">
-        Manga
-      </button>
-    </li>
   </ul>
 
   <!-- Genre Section -->
