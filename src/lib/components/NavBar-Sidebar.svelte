@@ -164,7 +164,7 @@
   /* Mobile-specific styles */
   @media (max-width: 768px) {
     .sidebar {
-      width: 70%; /* Reduce width for mobile */
+      width: 60%; /* Reduce width for mobile */
       max-width: none; /* Remove max width */
     }
 
@@ -271,6 +271,11 @@
     <li>
       <button class="menu-item" on:click={() => navigateTo('/category/special')} aria-label="Go to Specials">
         Specials
+      </button>
+    </li>
+    <li>
+      <button class="menu-item" on:click={() => navigateTo('/manga/home')} aria-label="Go to Specials">
+        Manga
       </button>
     </li>
   </ul>

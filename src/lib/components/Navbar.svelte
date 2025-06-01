@@ -4,7 +4,7 @@
   let mobileMenuOpen = false;
   let mobileSearchOpen = false;
   let searchQuery = '';
-  let isOpen = false; // Sidebar open state
+  let isOpen = false;
 
   function toggleMobileMenu() {
     mobileMenuOpen = !mobileMenuOpen;
@@ -28,8 +28,7 @@
   async function handleSearch(event: Event) {
     event.preventDefault();
     if (!searchQuery.trim()) return;
-
-    // Redirect to the search page with the query
+    // Unified search: always go to /search?q=...
     window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
   }
 </script>
@@ -59,7 +58,7 @@
       <form class="hidden md:flex items-center relative w-[28rem]" on:submit={handleSearch}>
         <input
           class="w-full h-10 rounded bg-gray-800 text-white pl-4 pr-12 focus:outline-none focus:ring-2 focus:ring-orange-400"
-          placeholder="Search anime..."
+          placeholder="Search anime or manga..."
           type="text"
           bind:value={searchQuery}
         />
@@ -86,7 +85,7 @@
       <form class="flex items-center relative" on:submit={handleSearch}>
         <input
           class="w-full h-10 rounded bg-gray-800 text-white pl-4 pr-12 focus:outline-none focus:ring-2 focus:ring-orange-400"
-          placeholder="Search anime..."
+          placeholder="Search anime or manga..."
           type="text"
           bind:value={searchQuery}
         />
