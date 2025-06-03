@@ -166,6 +166,32 @@
       pageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
+
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  function handleTouchStart(event: TouchEvent) {
+    if (event.touches.length === 1) {
+      touchStartX = event.touches[0].clientX;
+    }
+  }
+
+  function handleTouchEnd(event: TouchEvent) {
+    if (event.changedTouches.length === 1) {
+      touchEndX = event.changedTouches[0].clientX;
+      const deltaX = touchEndX - touchStartX;
+      // Swipe threshold (in px)
+      if (Math.abs(deltaX) > 60) {
+        if (deltaX < 0) {
+          // Swipe left: next page
+          if (currentPage < pages.length - 1) currentPage++;
+        } else {
+          // Swipe right: previous page
+          if (currentPage > 0) currentPage--;
+        }
+      }
+    }
+  }
 </script>
 
 <div class="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-white flex flex-col relative">
@@ -227,7 +253,7 @@
           ← Prev
         </button>
         <select
-          class="bg-gray-800 text-orange-400 border border-gray-700 rounded-lg px-2 py-2 text-sm no-scrollbar max-w-[200px] w-auto truncate"
+          class="bg-gray-800 text-orange-400 border border-gray-700 rounded-lg px-2 py-2 text-sm no-scrollbar w-[240px] max-w-full truncate touch-manipulation"
           bind:value={chapterId}
           on:change={(e) => {
             const target = e.target as HTMLSelectElement | null;
@@ -236,6 +262,8 @@
               goToChapterByShortId(target.value);
             }
           }}
+          on:touchstart|stopPropagation
+          on:touchend|stopPropagation
         >
           {#each chapterList as chapter}
             <option value={chapter.shortId}>
@@ -382,7 +410,11 @@
   {/if}
 
   <!-- Reader Area -->
-  <main class="flex-1 px-2 py-3 md:px-6 md:py-8">
+  <main
+    class="flex-1 px-2 py-3 md:px-6 md:py-8"
+    on:touchstart={handleTouchStart}
+    on:touchend={handleTouchEnd}
+  >
     {#if loading}
       <div class="flex items-center justify-center flex-1 py-20">
         <div class="flex flex-col items-center gap-4">
@@ -587,5 +619,11 @@
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
+  }
+  select.touch-manipulation {
+    /* Makes dropdown easier to use on touch devices */
+    font-size: 1.05rem;
+    min-height: 2.5rem;
+    /* Optional: increase tap target */
   }
 </style>
