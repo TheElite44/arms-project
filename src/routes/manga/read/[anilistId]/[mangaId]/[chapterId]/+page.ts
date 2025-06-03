@@ -11,12 +11,12 @@ export const load: PageLoad = async ({ params, fetch }) => {
   }
 
   try {
-    // Info API uses provider mangaId (not AniList ID)
-    const infoUrl = `/api/manga?type=info&id=${encodeURIComponent(mangaId)}`;
+    // Info API now uses AniList ID for fetching chapters
+    const infoUrl = `/api/manga?type=info&id=${encodeURIComponent(anilistId)}`;
     const infoRes = await fetch(infoUrl);
     const infoData = await infoRes.json();
 
-    // Read API uses provider mangaId/chapterId
+    // Read API still uses provider mangaId/chapterId
     const readUrl = `/api/manga?type=read&chapterId=${encodeURIComponent(`${mangaId}/${chapterId}`)}`;
     const readRes = await fetch(readUrl);
     const readData = await readRes.json();
@@ -34,21 +34,25 @@ export const load: PageLoad = async ({ params, fetch }) => {
       throw error(500, `Chapter read error: ${readData.error || 'Unknown error'}`);
     }
 
-    // --- FILTER CHAPTERS BY ANILIST ID ---
-    // Only include chapters whose id starts with the anilistId or mangaId prefix
-    // (for your API, it's usually like "ruri_dragon/c001" for mangaId "ruri_dragon")
+    // --- FILTER CHAPTERS BY ANILIST ID OR MANGA ID ---
     let allChapters = infoData?.data?.chapters ?? [];
     if (!Array.isArray(allChapters)) allChapters = [];
 
-    // Filter chapters to only those matching the mangaId prefix
-    const chapterList = allChapters.filter(
-      (ch: any) =>
-        typeof ch.id === 'string' &&
-        (ch.id.startsWith(mangaId + '/') || ch.id.startsWith(anilistId + '/'))
-    );
+    // Always use string for id and ensure id is in the format "mangaId/chapterId"
+    const chapterList = allChapters
+      .filter(
+        (ch: any) =>
+          typeof ch.id === 'string' &&
+          (ch.id.startsWith(mangaId + '/') || ch.id.startsWith(anilistId + '/'))
+      )
+      .map((ch: any) => ({
+        ...ch,
+        id: String(ch.id),
+        shortId: String(ch.id).split('/')[1] // Add shortId for easier navigation
+      }));
 
-    // Find current chapter index and meta
-    const currentIndex = chapterList.findIndex((c: any) => c?.id === chapterId);
+    // Find current chapter index by matching the chapterId part after the slash
+    const currentIndex = chapterList.findIndex((c: any) => c.shortId === chapterId);
     const chapterMeta = chapterList[currentIndex] ?? {};
 
     // Handle different possible response formats for pages
@@ -93,6 +97,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
       extractChapterNumber(chapterId) ||
       'Unknown';
 
+    // Fix: prev/next chapter and selector use the correct id
     const prevChapter = currentIndex > 0 ? chapterList[currentIndex - 1] : null;
     const nextChapter = currentIndex >= 0 && currentIndex < chapterList.length - 1 ? chapterList[currentIndex + 1] : null;
 
@@ -100,6 +105,8 @@ export const load: PageLoad = async ({ params, fetch }) => {
       pages,
       chapterList: chapterList.map((chapter: any) => ({
         id: chapter.id,
+        // Always show the chapter id part after the slash for navigation
+        shortId: chapter.id.split('/')[1],
         title: chapter.title || chapter.name || '',
         chapterNumber: chapter.chapterNumber || chapter.chapter || chapter.number || '',
         releasedDate: chapter.releasedDate || chapter.date || null
@@ -116,6 +123,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
       prevChapter: prevChapter
         ? {
             id: prevChapter.id,
+            shortId: prevChapter.id.split('/')[1],
             title: prevChapter.title || prevChapter.name || '',
             chapterNumber: prevChapter.chapterNumber || prevChapter.chapter || prevChapter.number || ''
           }
@@ -123,6 +131,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
       nextChapter: nextChapter
         ? {
             id: nextChapter.id,
+            shortId: nextChapter.id.split('/')[1],
             title: nextChapter.title || nextChapter.name || '',
             chapterNumber: nextChapter.chapterNumber || nextChapter.chapter || nextChapter.number || ''
           }

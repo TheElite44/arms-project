@@ -13,6 +13,19 @@
   $: chapters = data.chapters ?? [];
   let loading = false;
 
+  // Pagination for chapters
+  const CHAPTERS_PER_PAGE = 20;
+  let chapterPage = 0;
+  $: totalChapterPages = Math.ceil(chapters.length / CHAPTERS_PER_PAGE);
+  $: pagedChapters = chapters.slice(
+    chapterPage * CHAPTERS_PER_PAGE,
+    (chapterPage + 1) * CHAPTERS_PER_PAGE
+  );
+
+  function setChapterPage(page: number) {
+    chapterPage = page;
+  }
+
   async function handleMangaClick(id: string) {
     loading = true;
     try {
@@ -86,9 +99,26 @@
                 <!-- Chapters -->
                 {#if chapters.length}
                   <section class="mb-12">
-                    <h2 class="text-2xl font-bold text-orange-400 mb-4">Chapters</h2>
+                    <div class="flex items-center gap-4 mb-4">
+                      <h2 class="text-2xl font-bold text-orange-400">Chapters</h2>
+                      {#if totalChapterPages > 1}
+                        <label class="text-sm text-gray-300" for="chapterPageSelect">Page</label>
+                        <select
+                          id="chapterPageSelect"
+                          class="bg-gray-800 text-orange-300 border border-gray-700 rounded-lg px-3 py-1.5 text-sm min-w-[7rem] max-w-[9rem]"
+                          bind:value={chapterPage}
+                          on:change={(e) => setChapterPage(+e.target.value)}
+                        >
+                          {#each Array(totalChapterPages) as _, i}
+                            <option value={i}>
+                              {i * CHAPTERS_PER_PAGE + 1}-{Math.min((i + 1) * CHAPTERS_PER_PAGE, chapters.length)}
+                            </option>
+                          {/each}
+                        </select>
+                      {/if}
+                    </div>
                     <ul class="divide-y divide-gray-800 rounded-lg overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-                      {#each chapters as chapter}
+                      {#each pagedChapters as chapter}
                         <li class="flex items-center justify-between px-4 py-3 hover:bg-gray-800 transition">
                           <div>
                             <span class="font-semibold text-orange-300">{chapter.title}</span>
@@ -164,15 +194,27 @@
                 {#if characters.length}
                   <section>
                     <h2 class="text-2xl font-bold text-orange-400 mb-4">Characters</h2>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                       {#each characters as char}
-                        <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden block border-2 border-transparent hover:border-orange-400">
-                          <img src={char.image} alt={char.name?.full || char.name?.native} class="w-full h-40 object-cover rounded-lg" />
-                          <div class="p-3">
-                            <h3 class="font-bold text-base mb-1 truncate">{char.name?.full || char.name?.native}</h3>
-                            <div class="flex flex-wrap gap-1 mb-1">
-                              <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold">{char.role}</span>
+                        <div class="flex gap-4 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-xl shadow-lg p-4 border border-gray-800 hover:border-orange-400 transition">
+                          <img
+                            src={char.image}
+                            alt={char.name?.full || char.name?.native}
+                            class="w-20 h-28 rounded-lg object-cover border-2 border-gray-700 shadow"
+                          />
+                          <div class="flex-1 min-w-0 flex flex-col justify-center">
+                            <div class="flex items-center gap-2 mb-1">
+                              <span class="font-bold text-base text-orange-300 truncate">{char.name?.full || char.name?.native}</span>
+                              {#if char.role}
+                                <span class="ml-2 bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold">{char.role}</span>
+                              {/if}
                             </div>
+                            {#if char.name?.native && char.name?.native !== char.name?.full}
+                              <div class="text-xs text-gray-400 truncate">{char.name.native}</div>
+                            {/if}
+                            {#if char.description}
+                              <div class="text-xs text-gray-300 mt-1 line-clamp-2">{char.description}</div>
+                            {/if}
                           </div>
                         </div>
                       {/each}
