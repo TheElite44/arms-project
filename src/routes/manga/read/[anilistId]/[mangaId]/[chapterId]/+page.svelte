@@ -246,37 +246,24 @@
       <!-- Navigation Bar -->
       <div class="flex items-center gap-2 px-2 pb-2 pt-1">
         <button
-          class="flex-1 bg-gray-800/80 hover:bg-gray-700/80 text-orange-400 py-2 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+          class="bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-400 hover:to-orange-300 text-white px-3 py-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg text-sm flex-1 min-w-0 flex items-center justify-center gap-1"
           on:click={goToPrevChapter}
           disabled={!prevChapter}
         >
-          ← Prev
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          <span class="hidden xs:inline">Prev</span>
         </button>
-        <select
-          class="bg-gray-800 text-orange-400 border border-gray-700 rounded-lg px-2 py-2 text-sm no-scrollbar w-[240px] max-w-full truncate touch-manipulation"
-          bind:value={chapterId}
-          on:change={(e) => {
-            const target = e.target as HTMLSelectElement | null;
-            if (target) {
-              chapterId = target.value;
-              goToChapterByShortId(target.value);
-            }
-          }}
-          on:touchstart|stopPropagation
-          on:touchend|stopPropagation
-        >
-          {#each chapterList as chapter}
-            <option value={chapter.shortId}>
-              {chapter.title.length > 40 ? `${chapter.title.slice(0, 40)}…` : chapter.title}
-            </option>
-          {/each}
-        </select>
         <button
-          class="flex-1 bg-gray-800/80 hover:bg-gray-700/80 text-orange-400 py-2 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+          class="bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-400 hover:to-orange-300 text-white px-3 py-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg text-sm flex-1 min-w-0 flex items-center justify-center gap-1"
           on:click={goToNextChapter}
           disabled={!nextChapter}
         >
-          Next →
+          <span class="hidden xs:inline">Next</span>
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
         </button>
       </div>
     </header>
@@ -295,49 +282,38 @@
         </button>
 
         <div class="flex-1 flex items-center gap-4">
-          <div class="flex items-center gap-3">
-            <button
-              class="bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-400 hover:to-orange-300 text-white px-3 py-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg text-sm"
-              on:click={goToPrevChapter}
-              disabled={!prevChapter}
-            >
-              ← Previous
-            </button>
+          <!-- Prev Button Left -->
+          <button
+            class="bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-400 hover:to-orange-300 text-white px-6 py-2 h-10 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg text-base flex items-center gap-2 justify-center min-w-[160px]"
+            on:click={goToPrevChapter}
+            disabled={!prevChapter}
+          >
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            Previous
+          </button>
 
-            <select
-              class="bg-gray-800 text-orange-400 border border-gray-700 rounded-xl px-3 py-2 min-w-[160px] transition-all duration-200 focus:ring-2 focus:ring-orange-400/50 text-sm"
-              bind:value={chapterId}
-              on:change={(e) => {
-                const target = e.target as HTMLSelectElement | null;
-                if (target) {
-                  chapterId = target.value;
-                  goToChapterByShortId(target.value);
-                }
-              }}
-            >
-              {#each chapterList as chapter}
-                <option value={chapter.shortId}>
-                  {chapter.title}{chapter.releasedDate ? ` (${chapter.releasedDate})` : ''}
-                </option>
-              {/each}
-            </select>
-
-            <button
-              class="bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-400 hover:to-orange-300 text-white px-3 py-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg text-sm"
-              on:click={goToNextChapter}
-              disabled={!nextChapter}
-            >
-              Next →
-            </button>
-          </div>
-
+          <!-- Title and Progress Center -->
           <div class="flex-1 text-center">
             <h1 class="text-lg font-bold text-orange-400 mb-1">{title}</h1>
             <p class="text-xs text-gray-400">Chapter {chapterNumber} • Page {currentPage + 1} of {pages.length}</p>
           </div>
 
+          <!-- Next Button Right -->
           <button
-            class="bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-orange-400 px-3 py-2 rounded-xl transition-all duration-200 shadow-lg"
+            class="bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-400 hover:to-orange-300 text-white px-6 py-2 h-10 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg text-base flex items-center gap-2 justify-center min-w-[160px]"
+            on:click={goToNextChapter}
+            disabled={!nextChapter}
+          >
+            Next
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+
+          <button
+            class="ml-4 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-orange-400 px-3 py-2 rounded-xl transition-all duration-200 shadow-lg"
             on:click={() => showSidebar = !showSidebar}
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

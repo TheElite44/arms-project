@@ -107,7 +107,10 @@
                           id="chapterPageSelect"
                           class="bg-gray-800 text-orange-300 border border-gray-700 rounded-lg px-3 py-1.5 text-sm min-w-[7rem] max-w-[9rem]"
                           bind:value={chapterPage}
-                          on:change={(e) => setChapterPage(+e.target.value)}
+                          on:change={(e) => {
+                            const target = e.target as HTMLSelectElement | null;
+                            if (target) setChapterPage(+target.value);
+                          }}
                         >
                           {#each Array(totalChapterPages) as _, i}
                             <option value={i}>
