@@ -496,7 +496,7 @@
           <div class="flex flex-col md:flex-row justify-center gap-4">
             {#if prevChapter}
               <button
-                class="bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-white px-6 py-3 rounded-xl transition-all duration-200 shadow-lg flex items-center gap-2 justify-center"
+                class="bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-white px-6 py-2 h-10 rounded-xl transition-all duration-200 shadow-lg flex items-center gap-2 justify-center"
                 on:click={() => goToChapterByShortId(prevChapter.shortId)}
               >
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -508,7 +508,7 @@
             
             {#if nextChapter}
               <button
-                class="bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-400 hover:to-orange-300 text-white px-6 py-3 rounded-xl transition-all duration-200 shadow-lg flex items-center gap-2 justify-center"
+                class="bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-400 hover:to-orange-300 text-white px-6 py-2 h-10 rounded-xl transition-all duration-200 shadow-lg flex items-center gap-2 justify-center"
                 on:click={() => goToChapterByShortId(nextChapter.shortId)}
               >
                 Next Chapter
