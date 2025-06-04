@@ -55,7 +55,7 @@
     width: 100vw;
     height: 100vh;
     backdrop-filter: blur(10px);
-    background: rgba(32, 31, 49, 0.8);
+    background: rgba(42, 0, 8, 0.85); /* Dark red overlay */
     z-index: 1000;
     opacity: 0;
     animation: fade-in 0.3s forwards;
@@ -66,48 +66,51 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 80%; /* Default width for desktop */
-    max-width: 300px; /* Limit max width */
+    width: 80%;
+    max-width: 300px;
     height: 100%;
-    background: rgba(32, 31, 49, 0.9); /* Original color */
-    backdrop-filter: blur(10px) brightness(0.8); /* Frosted glass effect */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #1a0106 80%, #ff003c 100%);
+    backdrop-filter: blur(10px) brightness(0.7);
+    box-shadow: 0 4px 16px 0 rgba(255, 0, 60, 0.15);
     z-index: 1100;
-    transform: translateX(-100%); /* Initially hidden */
-    transition: transform 0.3s ease-in-out; /* Smooth sliding animation */
-    overflow-y: auto; /* Enable scrolling */
-    scrollbar-width: none; /* Hide scrollbar in Firefox */
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    overflow-y: auto;
+    scrollbar-width: none;
+    border-right: 2px solid #ff003c;
   }
 
   .sidebar.visible {
-    transform: translateX(0); /* Slide in */
+    transform: translateX(0);
   }
 
   .sidebar.hidden {
-    transform: translateX(-100%); /* Slide out */
+    transform: translateX(-100%);
   }
 
   .sidebar::-webkit-scrollbar {
-    display: none; /* Hide scrollbar in WebKit browsers */
+    display: none;
   }
 
   /* Menu Items */
   .menu-item {
-    width: 100%; /* Make the menu item span the full width of the sidebar */
+    width: 100%;
     padding: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Extend the line across the sidebar */
+    border-bottom: 1px solid rgba(255, 0, 60, 0.15);
     font-weight: 600;
-    color: #fbbf24; /* orange-400 */
+    color: #ff4d79; /* Vibrant pink */
     cursor: pointer;
-    transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
+    transition: color 0.2s, transform 0.2s;
     animation: slide-in 0.3s ease-in-out forwards;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    background: transparent;
   }
 
   .menu-item:hover {
-    color: #ffffff; /* white */
+    color: #fff;
+    background: rgba(255, 0, 60, 0.08);
     transform: scale(1.05);
   }
 
@@ -116,15 +119,15 @@
   .error-message {
     padding: 1rem;
     font-size: 0.875rem;
-    color: #fbbf24; /* orange-400 */
+    color: #ff4d79;
     animation: fade-in 0.3s ease-in-out forwards;
   }
 
   /* Genre Section */
   .genre-section {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Responsive grid */
-    gap: 0.5rem; /* Space between items */
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.5rem;
     margin-top: 1rem;
   }
 
@@ -133,14 +136,18 @@
     font-weight: 600;
     text-transform: capitalize;
     cursor: pointer;
-    transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
-    color: #fbbf24; /* Default color */
-    text-align: left; /* Align text to the left */
+    transition: color 0.2s, transform 0.2s;
+    color: #ffb3c6;
+    text-align: left;
+    background: transparent;
+    border-radius: 0.375rem;
+    padding: 0.25rem 0.5rem;
   }
 
   .genre-link:hover {
     transform: scale(1.05);
-    color: #ffffff; /* Hover color */
+    color: #fff;
+    background: #ff003c;
   }
 
   /* Show More Button */
@@ -150,49 +157,46 @@
     gap: 0.5rem;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #fbbf24; /* Default color */
+    color: #ff4d79;
     cursor: pointer;
     margin-top: 1rem;
-    transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
+    transition: color 0.2s, transform 0.2s;
+    background: transparent;
   }
 
   .show-more-button:hover {
-    color: #ffffff; /* Hover color */
+    color: #fff;
     transform: scale(1.05);
   }
 
   /* Mobile-specific styles */
   @media (max-width: 768px) {
     .sidebar {
-      width: 60%; /* Reduce width for mobile */
-      max-width: none; /* Remove max width */
+      width: 60%;
+      max-width: none;
     }
 
     .menu-item {
-      font-size: 0.875rem; /* Smaller font size for mobile */
-      padding: 0.75rem; /* Adjust padding for mobile */
+      font-size: 0.875rem;
+      padding: 0.75rem;
     }
 
     .genre-section {
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Smaller items for mobile */
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     }
 
     .genre-link {
-      font-size: 0.75rem; /* Smaller font size for mobile */
+      font-size: 0.75rem;
     }
 
     .show-more-button {
-      font-size: 0.75rem; /* Smaller font size for mobile */
+      font-size: 0.75rem;
     }
   }
 
   @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   @keyframes slide-in {
@@ -271,11 +275,6 @@
     <li>
       <button class="menu-item" on:click={() => navigateTo('/category/special')} aria-label="Go to Specials">
         Specials
-      </button>
-    </li>
-    <li>
-      <button class="menu-item" on:click={() => navigateTo('/hanime')} aria-label="Go to Specials">
-        Hanime
       </button>
     </li>
   </ul>
