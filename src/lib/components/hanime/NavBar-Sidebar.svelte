@@ -69,7 +69,7 @@
     width: 80%;
     max-width: 300px;
     height: 100%;
-    background: linear-gradient(135deg, #1a0106 80%, #ff003c 100%);
+    background: #1a0106; /* Solid color, no gradient */
     backdrop-filter: blur(10px) brightness(0.7);
     box-shadow: 0 4px 16px 0 rgba(255, 0, 60, 0.15);
     z-index: 1100;
@@ -77,7 +77,7 @@
     transition: transform 0.3s ease-in-out;
     overflow-y: auto;
     scrollbar-width: none;
-    border-right: 2px solid #ff003c;
+    border-right: 2px solid #7a2233;
   }
 
   .sidebar.visible {

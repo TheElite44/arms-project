@@ -32,7 +32,7 @@
   }
 </script>
 
-<nav class="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-[#2a0008] via-[#ff003c] to-[#3a0d16] backdrop-blur-md shadow-lg border-b-2 border-[#ff003c]">
+<nav class="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-[#2a0008] via-[#7a2233] to-[#3a0d16] backdrop-blur-md shadow-lg border-b-2 border-[#7a2233]">
   <div class="max-w-7xl mx-auto flex items-center justify-between px-4 py-2">
     <!-- Left: Logo & Hamburger -->
     <div class="flex items-center gap-3 z-50">
