@@ -11,8 +11,7 @@
     Player:
   </span>
   <button
-    class="flex items-center gap-1 px-3 py-1 rounded font-bold text-xs transition
-      {useArtPlayer ? 'bg-orange-400 text-black' : 'bg-gray-700 text-white'}"
+    class={`flex items-center gap-1 px-3 py-1 rounded font-bold text-xs transition ${useArtPlayer ? 'bg-orange-400 text-black' : 'bg-gray-700 text-white'}`}
     on:click={() => setUseArtPlayer(true)}
     disabled={useArtPlayer}
   >

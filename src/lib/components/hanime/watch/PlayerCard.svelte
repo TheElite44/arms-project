@@ -5,7 +5,7 @@
   export let subtitles: Array<{ url: string; label: string; lang: string; kind: string; default?: boolean }> = [];
   export let intro: { start: number; end: number } | null = null;
   export let outro: { start: number; end: number } | null = null;
-  export let useArtPlayer: boolean = true;
+  export const useArtPlayer: boolean = true;
   export let goToEpisode: (id: string) => void;
 </script>
 
