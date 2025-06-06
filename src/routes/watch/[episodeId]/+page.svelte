@@ -1,9 +1,8 @@
 <script lang="ts">
   import Navbar from '$lib/components/Navbar.svelte';
+  import Player from '$lib/components/Player.svelte';
+  import Player2 from '$lib/components/Player2.svelte';
   import Footer from '$lib/components/Footer.svelte';
-  import PlayerCard from '$lib/components/watch/PlayerCard.svelte';
-  import ServerSelector from '$lib/components/watch/ServerSelector.svelte';
-  import PlayerSelector from '$lib/components/watch/PlayerSelector.svelte';
   import type { PageData } from './$types.js';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
@@ -37,6 +36,7 @@
     (currentPage - 1) * episodesPerPage,
     currentPage * episodesPerPage
   );
+
   $: episodeRanges = Array.from({ length: totalPages }, (_, i) => {
     const start = i * episodesPerPage + 1;
     const end = Math.min((i + 1) * episodesPerPage, episodes.length);
@@ -52,28 +52,36 @@
         server,
         category,
       });
+
       const apiUrl = `/api/anime?${params.toString()}`;
       const resp = await fetch(apiUrl);
       const json = await resp.json();
 
       if (json.success) {
+        console.log('Fetched watch data:', json);
+
+        // Update video source and subtitles
         videoSrc = json.data.sources?.[0]?.url || '';
         subtitles = (json.data.subtitles ?? []).map((sub: any) => ({
           url: sub.url,
           label: sub.label || sub.lang,
           lang: sub.lang,
-          kind: 'subtitles',
+          kind: 'subtitles', // Add kind property
           default: sub.default ?? false,
         }));
         intro = json.data.intro || null;
         outro = json.data.outro || null;
+
+        console.log('Used referer:', json.data.usedReferer); // Log the referer used
       } else {
+        console.error('Failed to fetch watch data:', json.error);
         videoSrc = '';
         subtitles = [];
         intro = null;
         outro = null;
       }
     } catch (err) {
+      console.error('Error fetching watch data:', err);
       videoSrc = '';
       subtitles = [];
       intro = null;
@@ -87,11 +95,15 @@
         action: 'servers',
         animeEpisodeId: episodeId,
       });
+
       const apiUrl = `/api/anime?${params.toString()}`;
       const resp = await fetch(apiUrl);
       const json = await resp.json();
 
       if (json.success) {
+        console.log('Fetched servers:', json);
+
+        // Process server data
         servers = Object.entries(json.data)
           .filter(([category]) => ['sub', 'dub', 'raw'].includes(category))
           .flatMap(([category, serverList]: [string, unknown]) =>
@@ -101,7 +113,8 @@
             }))
           )
           .sort((a, b) => a.serverName.localeCompare(b.serverName));
-        servers = servers.filter((server) => server.serverName);
+
+        servers = servers.filter((server) => server.serverName); // Filter out unavailable servers
 
         if (!currentServer) {
           const defaultServer = servers.find((s) => s.category === category);
@@ -109,9 +122,13 @@
             currentServer = defaultServer.serverName;
           }
         }
+
+        console.log('Used referer:', json.data.usedReferer); // Log the referer used
+      } else {
+        console.error('Failed to fetch servers:', json.error);
       }
     } catch (err) {
-      // handle error
+      console.error('Error fetching servers:', err);
     }
   }
 
@@ -127,15 +144,6 @@
       if (animeKey) localStorage.setItem(animeKey, episodeId);
 
       await fetchServers(episodeId);
-
-      // Ensure currentServer is set
-      if (!currentServer) {
-        const defaultServer = servers.find((s) => s.category === category);
-        if (defaultServer) {
-          currentServer = defaultServer.serverName;
-        }
-      }
-
       await fetchWatchData(episodeId, currentServer, category);
 
       goto(`/watch/${episodeId}`);
@@ -156,11 +164,10 @@
     }
   }
 
-  function setUseArtPlayer(v: boolean) { useArtPlayer = v; }
-
   // --- On Mount: Restore Last Watched ---
   onMount(async () => {
     const animeKey = data.anime?.info?.id ? `lastEpisodeId:${data.anime.info.id}` : null;
+    const animeId = data.anime?.info?.id || '';
     let saved = animeKey ? localStorage.getItem(animeKey) : null;
 
     if (saved && episodes.some((e: any) => e.episodeId === saved)) {
@@ -173,9 +180,11 @@
 
     await fetchServers(currentEpisodeId);
 
+    // Wait for currentServer to be set before fetching watch data
     if (currentServer) {
       await fetchWatchData(currentEpisodeId, currentServer, category);
     } else {
+      // fallback: pick the first available server
       const defaultServer = servers.find((s) => s.category === category);
       if (defaultServer) {
         currentServer = defaultServer.serverName;
@@ -184,11 +193,12 @@
     }
   });
 
+  // Define the handlePageChange function
   function handlePageChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     const selectedPage = parseInt(target.value, 10);
     if (!isNaN(selectedPage)) {
-      goToPage(selectedPage);
+      goToPage(selectedPage); // Call the goToPage function to navigate to the selected page
     }
   }
 </script>
@@ -202,37 +212,122 @@
     </div>
   {:else}
     <div class="max-w-7xl mx-auto flex flex-col gap-10">
+      <!-- Main Info Card -->
       <section class="flex-1 flex flex-col gap-8 mb-12">
         <!-- Player Card -->
         <div class="flex flex-col gap-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-4 sm:p-8">
-          {#if videoSrc && poster}
-            <PlayerCard
-              {videoSrc}
-              {poster}
-              {subtitles}
-              {intro}
-              {outro}
-              {useArtPlayer}
-              goToEpisode={goToEpisode}
-            />
-          {/if}
+          <!-- Player container -->
+          <div class="w-full aspect-video rounded-lg overflow-hidden shadow-lg bg-black">
+            {#key videoSrc}
+              {#if useArtPlayer}
+                <Player 
+                  src={videoSrc} 
+                  poster={poster} 
+                  subtitles={subtitles} 
+                  intro={intro} 
+                  outro={outro} 
+                  playNext={(nextEpisodeId: string) => goToEpisode(nextEpisodeId)} 
+                />
+              {:else}
+                <Player2 
+                  src={videoSrc} 
+                  subtitles={subtitles} 
+                  poster={poster} 
+                  playNext={(nextEpisodeId: string) => goToEpisode(nextEpisodeId)} 
+                />
+              {/if}
+            {/key}
+          </div>
 
-          {#if servers && servers.length > 0}
-            <ServerSelector
-              {servers}
-              {currentServer}
-              {category}
-              changeServerManual={changeServerManual}
-            />
-          {/if}
+          <!-- Server Selector -->
+          <div class="flex flex-col md:flex-row md:items-center gap-4">
+            <!-- Sub Servers -->
+            {#if servers.some(s => s.category === 'sub')}
+              <div class="flex gap-2 items-center mb-2">
+                <span class="font-semibold text-orange-400 text-sm flex items-center gap-1">
+                  Sub:
+                </span>
+                <div class="flex gap-2">
+                  {#each servers.filter(s => s.category === 'sub') as server}
+                    <button
+                      on:click={() => { category = 'sub'; changeServerManual(server.serverName); }}
+                      class="rounded-md bg-white/10 px-4 py-1.5 text-xs font-medium uppercase transition
+                        {currentServer === server.serverName && category === 'sub'
+                          ? 'bg-orange-400 text-black'
+                          : 'text-white hover:bg-orange-400 hover:text-black'}"
+                      disabled={currentServer === server.serverName && category === 'sub'}
+                    >
+                      {server.serverName}
+                    </button>
+                  {/each}
+                </div>
+              </div>
+            {/if}
 
-          <PlayerSelector
-            {useArtPlayer}
-            setUseArtPlayer={setUseArtPlayer}
-          />
+            <!-- Dub Servers -->
+            {#if servers.some(s => s.category === 'dub')}
+              <div class="flex gap-2 items-center mb-2">
+                <span class="font-semibold text-orange-400 text-sm flex items-center gap-1">
+                  <!-- Optional: Dub icon -->
+                  <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 15h8M8 12h8M8 9h8"/></svg>
+                  Dub:
+                </span>
+                <div class="flex gap-2">
+                  {#each servers.filter(s => s.category === 'dub') as server}
+                    <button
+                      on:click={() => { category = 'dub'; changeServerManual(server.serverName); }}
+                      class="rounded-md bg-white/10 px-4 py-1.5 text-xs font-medium uppercase transition
+                        {currentServer === server.serverName && category === 'dub'
+                          ? 'bg-orange-400 text-black'
+                          : 'text-white hover:bg-orange-400 hover:text-black'}"
+                      disabled={currentServer === server.serverName && category === 'dub'}
+                    >
+                      {server.serverName}
+                    </button>
+                  {/each}
+                </div>
+              </div>
+            {/if}
+          </div>
 
+          <!-- Player Selector -->
+          <div class="flex items-center gap-4 mb-4">
+            <span class="font-semibold text-orange-400 text-sm flex items-center gap-1">
+              <!-- Optional: Player icon -->
+              <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M5 3v18l15-9L5 3z"></path>
+              </svg>
+              Player:
+            </span>
+            <button
+              class="flex items-center gap-1 px-3 py-1 rounded font-bold text-xs transition
+                {useArtPlayer ? 'bg-orange-400 text-black' : 'bg-gray-700 text-white'}"
+              on:click={() => useArtPlayer = true}
+              disabled={useArtPlayer}
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M5 3v18l15-9L5 3z"></path>
+              </svg>
+              Artplayer
+            </button>
+            <button
+              class="flex items-center gap-1 px-3 py-1 rounded font-bold text-xs transition
+                {!useArtPlayer ? 'bg-orange-400 text-black' : 'bg-gray-700 text-white'}"
+              on:click={() => useArtPlayer = false}
+              disabled={!useArtPlayer}
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M8 15h8M8 12h8M8 9h8"></path>
+              </svg>
+              Plyr
+            </button>
+          </div>
+
+          <!-- Episode Selector -->
           {#if episodes.length > 1}
             <div class="mb-2 flex flex-col gap-2">
+              <!-- Pagination Dropdown -->
               <div class="flex items-center gap-2">
                 <span class="font-semibold text-orange-400 text-xs">Pages:</span>
                 <select
@@ -244,6 +339,8 @@
                   {/each}
                 </select>
               </div>
+
+              <!-- Episodes for Current Page -->
               <div class="grid grid-cols-5 sm:grid-cols-10 gap-1">
                 {#each pagedEpisodes as ep}
                   <button
@@ -265,6 +362,7 @@
         <!-- Anime Info Card -->
         {#if data.anime && data.anime.info && data.anime.moreInfo}
           <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-6 md:p-10">
+            <!-- Poster -->
             <div class="flex-shrink-0 mx-auto md:mx-0">
               <img
                 src={data.anime.info.poster}
@@ -272,6 +370,7 @@
                 class="rounded-lg shadow-2xl w-64 h-auto object-cover border-4 border-gray-800"
               />
             </div>
+            <!-- Details -->
             <div class="flex-1 flex flex-col gap-4">
               <h1 class="text-3xl sm:text-4xl font-extrabold text-orange-400 mb-1">{data.anime.info.name}</h1>
               {#if data.anime.moreInfo.genres}
@@ -354,6 +453,13 @@
   {/if}
   <Footer />
 </div>
+
+<!-- Remove Vidstack CSS imports from here! -->
+<!-- Instead, add them to your src/app.css or src/global.css: -->
+<!--
+@import '@vidstack/player/styles/default/theme.css';
+@import '@vidstack/player/styles/default/layouts/video.css';
+-->
 
 <style>
   @media (max-width: 768px) {
