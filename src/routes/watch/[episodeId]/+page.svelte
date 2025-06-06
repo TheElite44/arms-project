@@ -30,9 +30,9 @@
   let useArtPlayer = true;
 
   // --- Pagination ---
-  const episodesPerPage = 50;
+  let episodesPerPage = 50;
   let currentPage = 1;
-  $: totalPages = Math.max(1, Math.ceil(episodes.length / episodesPerPage));
+  $: totalPages = Math.ceil(episodes.length / episodesPerPage);
   $: pagedEpisodes = episodes.slice(
     (currentPage - 1) * episodesPerPage,
     currentPage * episodesPerPage
@@ -68,18 +68,17 @@
         intro = json.data.intro || null;
         outro = json.data.outro || null;
       } else {
-        resetVideoState();
+        videoSrc = '';
+        subtitles = [];
+        intro = null;
+        outro = null;
       }
-    } catch {
-      resetVideoState();
+    } catch (err) {
+      videoSrc = '';
+      subtitles = [];
+      intro = null;
+      outro = null;
     }
-  }
-
-  function resetVideoState() {
-    videoSrc = '';
-    subtitles = [];
-    intro = null;
-    outro = null;
   }
 
   async function fetchServers(episodeId: string) {
@@ -94,22 +93,24 @@
 
       if (json.success) {
         servers = Object.entries(json.data)
-          .filter(([cat]) => ['sub', 'dub', 'raw'].includes(cat))
-          .flatMap(([cat, serverList]: [string, unknown]) =>
+          .filter(([category]) => ['sub', 'dub', 'raw'].includes(category))
+          .flatMap(([category, serverList]: [string, unknown]) =>
             (serverList as any[]).map((server) => ({
               ...server,
-              category: cat as 'sub' | 'dub' | 'raw',
+              category: category as 'sub' | 'dub' | 'raw',
             }))
           )
-          .filter((server) => server.serverName)
           .sort((a, b) => a.serverName.localeCompare(b.serverName));
+        servers = servers.filter((server) => server.serverName);
 
         if (!currentServer) {
           const defaultServer = servers.find((s) => s.category === category);
-          if (defaultServer) currentServer = defaultServer.serverName;
+          if (defaultServer) {
+            currentServer = defaultServer.serverName;
+          }
         }
       }
-    } catch {
+    } catch (err) {
       // handle error
     }
   }
@@ -146,9 +147,7 @@
     }
   }
 
-  function setUseArtPlayer(v: boolean) {
-    useArtPlayer = v;
-  }
+  function setUseArtPlayer(v: boolean) { useArtPlayer = v; }
 
   // --- On Mount: Restore Last Watched ---
   onMount(async () => {
@@ -196,66 +195,59 @@
     <div class="max-w-7xl mx-auto flex flex-col gap-10">
       <section class="flex-1 flex flex-col gap-8 mb-12">
         <!-- Player Card -->
-        {#if videoSrc && poster}
-          <div class="flex flex-col gap-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-4 sm:p-8">
-            <PlayerCard
-              {videoSrc}
-              {poster}
-              {subtitles}
-              {intro}
-              {outro}
-              {useArtPlayer}
-              goToEpisode={goToEpisode}
-            />
-          </div>
-        {/if}
+        <div class="flex flex-col gap-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-4 sm:p-8">
+          <PlayerCard
+            {videoSrc}
+            {poster}
+            {subtitles}
+            {intro}
+            {outro}
+            {useArtPlayer}
+            goToEpisode={goToEpisode}
+          />
 
-        <!-- Server Selector -->
-        {#if servers && servers.length > 0}
           <ServerSelector
             {servers}
             {currentServer}
             {category}
             changeServerManual={changeServerManual}
           />
-        {/if}
 
-        <!-- Player Selector -->
-        <PlayerSelector
-          {useArtPlayer}
-          setUseArtPlayer={setUseArtPlayer}
-        />
+          <PlayerSelector
+            {useArtPlayer}
+            setUseArtPlayer={setUseArtPlayer}
+          />
 
-        <!-- Pagination & Episodes -->
-        {#if episodes.length > 1}
-          <div class="mb-2 flex flex-col gap-2">
-            <div class="flex items-center gap-2">
-              <span class="font-semibold text-orange-400 text-xs">Pages:</span>
-              <select
-                class="px-2 py-1 rounded bg-gray-800 text-white text-xs focus:outline-none focus:ring-2 focus:ring-orange-400"
-                on:change={handlePageChange}
-              >
-                {#each episodeRanges as range, i}
-                  <option value={i + 1} selected={currentPage === i + 1}>{range}</option>
-                {/each}
-              </select>
-            </div>
-            <div class="grid grid-cols-5 sm:grid-cols-10 gap-1">
-              {#each pagedEpisodes as ep}
-                <button
-                  class="flex items-center justify-center h-10 w-full rounded bg-gray-800 text-white font-bold text-xs transition
-                    {ep.episodeId === currentEpisodeId
-                      ? 'bg-orange-400 text-gray-900 shadow'
-                      : 'hover:bg-orange-400 hover:text-gray-900'}"
-                  on:click={() => goToEpisode(ep.episodeId)}
-                  disabled={ep.episodeId === currentEpisodeId}
+          {#if episodes.length > 1}
+            <div class="mb-2 flex flex-col gap-2">
+              <div class="flex items-center gap-2">
+                <span class="font-semibold text-orange-400 text-xs">Pages:</span>
+                <select
+                  class="px-2 py-1 rounded bg-gray-800 text-white text-xs focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  on:change={handlePageChange}
                 >
-                  {ep.number}
-                </button>
-              {/each}
+                  {#each episodeRanges as range, i}
+                    <option value={i + 1} selected={currentPage === i + 1}>{range}</option>
+                  {/each}
+                </select>
+              </div>
+              <div class="grid grid-cols-5 sm:grid-cols-10 gap-1">
+                {#each pagedEpisodes as ep}
+                  <button
+                    class="flex items-center justify-center h-10 w-full rounded bg-gray-800 text-white font-bold text-xs transition
+                      {ep.episodeId === currentEpisodeId
+                        ? 'bg-orange-400 text-gray-900 shadow'
+                        : 'hover:bg-orange-400 hover:text-gray-900'}"
+                    on:click={() => goToEpisode(ep.episodeId)}
+                    disabled={ep.episodeId === currentEpisodeId}
+                  >
+                    {ep.number}
+                  </button>
+                {/each}
+              </div>
             </div>
-          </div>
-        {/if}
+          {/if}
+        </div>
 
         <!-- Anime Info Card -->
         {#if data.anime && data.anime.info && data.anime.moreInfo}
@@ -312,18 +304,16 @@
         <h2 class="text-xl font-bold text-orange-400 mb-4">Recommended Anime</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           {#each data.recommendedAnimes as rec}
-            {#if rec.poster && rec.name}
-              <a href={`/info/${rec.id}`} class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400">
-                <img src={rec.poster} alt={rec.name} class="w-full h-36 object-cover rounded-lg" />
-                <div class="p-3">
-                  <h3 class="font-bold text-base mb-1 truncate">{rec.name}</h3>
-                  <div class="flex flex-wrap gap-1 mb-1">
-                    <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold">{rec.type}</span>
-                    <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded-full text-xs">{rec.episodes.sub} Sub / {rec.episodes.dub} Dub</span>
-                  </div>
+            <a href={`/info/${rec.id}`} class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400">
+              <img src={rec.poster} alt={rec.name} class="w-full h-36 object-cover rounded-lg" />
+              <div class="p-3">
+                <h3 class="font-bold text-base mb-1 truncate">{rec.name}</h3>
+                <div class="flex flex-wrap gap-1 mb-1">
+                  <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold">{rec.type}</span>
+                  <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded-full text-xs">{rec.episodes.sub} Sub / {rec.episodes.dub} Dub</span>
                 </div>
-              </a>
-            {/if}
+              </div>
+            </a>
           {/each}
         </div>
       </section>
@@ -334,18 +324,16 @@
         <h2 class="text-xl font-bold text-orange-400 mb-4">Related Anime</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           {#each data.relatedAnimes as rel}
-            {#if rel.poster && rel.name}
-              <a href={`/info/${rel.id}`} class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400">
-                <img src={rel.poster} alt={rel.name} class="w-full h-36 object-cover rounded-lg" />
-                <div class="p-3">
-                  <h3 class="font-bold text-base mb-1 truncate">{rel.name}</h3>
-                  <div class="flex flex-wrap gap-1 mb-1">
-                    <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold">{rel.type}</span>
-                    <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded-full text-xs">{rel.episodes.sub} Sub / {rel.episodes.dub} Dub</span>
-                  </div>
+            <a href={`/info/${rel.id}`} class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400">
+              <img src={rel.poster} alt={rel.name} class="w-full h-36 object-cover rounded-lg" />
+              <div class="p-3">
+                <h3 class="font-bold text-base mb-1 truncate">{rel.name}</h3>
+                <div class="flex flex-wrap gap-1 mb-1">
+                  <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold">{rel.type}</span>
+                  <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded-full text-xs">{rel.episodes.sub} Sub / {rel.episodes.dub} Dub</span>
                 </div>
-              </a>
-            {/if}
+              </div>
+            </a>
           {/each}
         </div>
       </section>

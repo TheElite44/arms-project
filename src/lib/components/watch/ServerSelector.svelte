@@ -22,10 +22,10 @@
           {#each servers.filter(s => s.category === cat) as server}
             <button
               on:click={() => { category = cat; changeServerManual(server.serverName); }}
-              class="rounded-md bg-white/10 px-4 py-1.5 text-xs font-medium uppercase transition
-                {currentServer === server.serverName && category === cat
+              class={`rounded-md bg-white/10 px-4 py-1.5 text-xs font-medium uppercase transition
+                ${currentServer === server.serverName && category === cat
                   ? 'bg-orange-400 text-black'
-                  : 'text-white hover:bg-orange-400 hover:text-black'}"
+                  : 'text-white hover:bg-orange-400 hover:text-black'}`}
               disabled={currentServer === server.serverName && category === cat}
             >
               {server.serverName}
