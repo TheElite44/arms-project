@@ -1,29 +1,35 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { goto } from '$app/navigation'; // Import goto for navigation
+  import { goto } from '$app/navigation';
 
-  export let isOpen = false; // Sidebar open state
-  export let onClose: () => void; // Function to close the sidebar
+  export let isOpen = false;
+  export let onClose: () => void;
 
-  let genres: string[] = []; // Genres fetched from the API
-  let loadingGenres = true; // Loading state for genres
-  let errorGenres: string | null = null; // Error state for genres
-  let showAllGenres = false; // Toggle to show all genres
+  let genres: string[] = [];
+  let loadingGenres = true;
+  let errorGenres: string | null = null;
+  let showAllGenres = false;
 
-  // Function to sanitize genre names
   function sanitizeGenreName(genre: string): string {
     return genre
-      .toLowerCase() // Convert to lowercase
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .replace(/[^a-z0-9-]/g, ''); // Remove invalid characters
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
   }
 
   async function fetchGenres() {
     try {
-      const response = await fetch('/api/genre/action?page=1'); // Example genre API call
+      // Use the hanime genre API, only hentaitv provider
+      const response = await fetch('/api/hanime/genre/');
       const json = await response.json();
-      if (json.success) {
-        genres = json.data.genres || [];
+      if (Array.isArray(json)) {
+        // Find hentaitv/hentai.tv provider
+        const hentaitv = json.find((g) =>
+          g.provider === 'hentai.tv' || g.provider === 'hentaitv'
+        );
+        genres = hentaitv?.genres || [];
+      } else if (json.data && Array.isArray(json.data.genres)) {
+        genres = json.data.genres;
       } else {
         errorGenres = json.error || 'Failed to fetch genres';
       }
@@ -35,8 +41,8 @@
   }
 
   function navigateTo(path: string) {
-    goto(path); // Use goto for navigation
-    onClose(); // Close the sidebar after navigation
+    goto(path);
+    onClose();
   }
 
   onMount(() => {
@@ -172,7 +178,7 @@
   /* Mobile-specific styles */
   @media (max-width: 768px) {
     .sidebar {
-      width: 60%;
+      width: 65%;
       max-width: none;
     }
 
@@ -233,48 +239,13 @@
   <!-- Menu Items -->
   <ul class="text-white">
     <li>
-      <button class="menu-item" on:click={() => navigateTo('/home')} aria-label="Go to Home">
+      <button class="menu-item" on:click={() => navigateTo('/hanime')} aria-label="Go to Hanime Home">
         Home
       </button>
     </li>
     <li>
-      <button class="menu-item" on:click={() => navigateTo('/category/subbed-anime')} aria-label="Go to Subbed Anime">
-        Subbed Anime
-      </button>
-    </li>
-    <li>
-      <button class="menu-item" on:click={() => navigateTo('/category/dubbed-anime')} aria-label="Go to Dubbed Anime">
-        Dubbed Anime
-      </button>
-    </li>
-    <li>
-      <button class="menu-item" on:click={() => navigateTo('/category/most-popular')} aria-label="Go to Most Popular">
-        Most Popular
-      </button>
-    </li>
-    <li>
-      <button class="menu-item" on:click={() => navigateTo('/category/movie')} aria-label="Go to Movies">
-        Movies
-      </button>
-    </li>
-    <li>
-      <button class="menu-item" on:click={() => navigateTo('/category/tv')} aria-label="Go to TV Series">
-        TV Series
-      </button>
-    </li>
-    <li>
-      <button class="menu-item" on:click={() => navigateTo('/category/ova')} aria-label="Go to OVAs">
-        OVAs
-      </button>
-    </li>
-    <li>
-      <button class="menu-item" on:click={() => navigateTo('/category/ona')} aria-label="Go to ONAs">
-        ONAs
-      </button>
-    </li>
-    <li>
-      <button class="menu-item" on:click={() => navigateTo('/category/special')} aria-label="Go to Specials">
-        Specials
+      <button class="menu-item" on:click={() => navigateTo('/home')} aria-label="Go to Home">
+        Exit Hanime
       </button>
     </li>
   </ul>
@@ -288,10 +259,10 @@
       <p class="error-message">{errorGenres}</p>
     {:else}
       <div class="genre-section">
-        {#each (showAllGenres ? genres : genres.slice(0, 10)) as genre}
+        {#each (showAllGenres ? genres : genres.slice(0, 26)) as genre}
           <button
             class="genre-link"
-            on:click={() => navigateTo(`/genre/${sanitizeGenreName(genre)}`)}
+            on:click={() => navigateTo(`/hanime/genre/${sanitizeGenreName(genre)}`)}
             aria-label={`Go to ${sanitizeGenreName(genre)}`}
           >
             {sanitizeGenreName(genre).replace('-', ' ')}

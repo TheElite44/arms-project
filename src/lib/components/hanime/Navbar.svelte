@@ -28,7 +28,8 @@
   async function handleSearch(event: Event) {
     event.preventDefault();
     if (!searchQuery.trim()) return;
-    window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
+    // Use the hanime search API route and correct query param
+    window.location.href = `/hanime/search?query=${encodeURIComponent(searchQuery)}&page=1`;
   }
 </script>
 
@@ -45,7 +46,7 @@
         </svg>
       </button>
       <!-- Logo -->
-      <a href="/" class="flex items-center gap-2" on:click={closeAll}>
+      <a href="/hanime" class="flex items-center gap-2" on:click={closeAll}>
         <img src="/assets/logo.png" alt="Anifire logo" class="h-9 w-9 object-contain rounded z-50" />
         <span class="text-xl font-black text-[#ff003c] tracking-wide drop-shadow">ARMS</span>
         <span class="ml-1 text-xs bg-[#ff003c] text-black px-2 py-0.5 rounded font-bold shadow">18+</span>

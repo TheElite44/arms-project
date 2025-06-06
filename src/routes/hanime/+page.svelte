@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import Navbar from '$lib/components/hanime/Navbar.svelte';
   import Footer from '$lib/components/hanime/Footer.svelte';
+  import AdultWarning from '$lib/components/hanime/AdultWarning.svelte';
 
   let trending: any[] = [];
   let recent: any[] = [];
@@ -9,7 +10,26 @@
   let error: string | null = null;
   let showWarning = true;
 
+  // Helper to get cookie value
+  function getCookie(name: string) {
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? decodeURIComponent(match[2]) : null;
+  }
+
+  // Helper to set cookie
+  function setCookie(name: string, value: string, days = 365) {
+    const expires = new Date(Date.now() + days * 864e5).toUTCString();
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+  }
+
   onMount(async () => {
+    // Check cookie or localStorage for 18+ confirmation
+    if (
+      (typeof document !== 'undefined' && getCookie('arms18plus') === 'yes') ||
+      (typeof localStorage !== 'undefined' && localStorage.getItem('arms18plus') === 'yes')
+    ) {
+      showWarning = false;
+    }
     try {
       const [trendingRes, recentRes] = await Promise.all([
         fetch('/api/hanime/trending'),
@@ -33,6 +53,15 @@
 
   function closeWarning() {
     showWarning = false;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('arms18plus', 'yes');
+    }
+    if (typeof document !== 'undefined') {
+      setCookie('arms18plus', 'yes', 365);
+    }
+  }
+  function rejectWarning() {
+    window.location.href = '/';
   }
 </script>
 
@@ -212,36 +241,7 @@
 </div>
 
 {#if showWarning}
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2">
-    <div class="bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106] border border-[#ff003c]/40 rounded-2xl shadow-2xl p-4 max-w-xs w-full text-center animate-fade-in">
-      <div class="flex flex-col items-center mb-2">
-        <div class="bg-[#ff003c]/10 p-1.5 rounded-full border border-[#ff003c]/30 mb-2">
-          <svg class="w-7 h-7 text-[#ff003c]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
-          </svg>
-        </div>
-        <h2 class="text-base font-bold text-[#ff003c] mb-1 tracking-tight">18+ Content</h2>
-      </div>
-      <p class="text-[#ffb3c6] text-xs leading-snug mb-4">
-        This section contains explicit material.<br>
-        By continuing, you confirm you are <span class="text-[#ff003c] font-bold">18+</span> and legally permitted to view such content.
-      </p>
-      <div class="flex flex-col gap-2">
-        <button
-          class="w-full bg-[#ff003c] hover:bg-[#c2002e] text-white font-semibold px-4 py-2 rounded-lg shadow transition-all duration-200"
-          on:click={closeWarning}
-        >
-          Yes, I am 18+
-        </button>
-        <button
-          class="w-full bg-transparent hover:bg-[#ff003c]/10 text-[#ff003c] font-semibold px-4 py-2 rounded-lg border border-[#ff003c]/40 shadow transition-all duration-200"
-          on:click={() => window.location.href = '/'}
-        >
-          No, take me back
-        </button>
-      </div>
-    </div>
-  </div>
+  <AdultWarning onConfirm={closeWarning} onReject={rejectWarning} />
 {/if}
 
 <style>

@@ -9,6 +9,5 @@ declare global {
 		// interface Platform {}
 	}
 }
-declare module '@vidstack/player';
 
 export {};

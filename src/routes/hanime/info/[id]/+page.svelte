@@ -1,6 +1,7 @@
 <script lang="ts">
   import Navbar from '$lib/components/hanime/Navbar.svelte';
   import Footer from '$lib/components/hanime/Footer.svelte';
+  import AdultWarning from '$lib/components/hanime/AdultWarning.svelte';
   import { goto } from '$app/navigation';
 
   export let data: any;
@@ -9,6 +10,38 @@
   $: related = info?.related ?? [];
 
   let loading = false;
+  let showWarning = true;
+
+  // Cookie helpers
+  function getCookie(name: string) {
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? decodeURIComponent(match[2]) : null;
+  }
+  function setCookie(name: string, value: string, days = 365) {
+    const expires = new Date(Date.now() + days * 864e5).toUTCString();
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+  }
+
+  // Check for 18+ on mount
+  if (
+    typeof document !== 'undefined' && getCookie('arms18plus') === 'yes' ||
+    typeof localStorage !== 'undefined' && localStorage.getItem('arms18plus') === 'yes'
+  ) {
+    showWarning = false;
+  }
+
+  function closeWarning() {
+    showWarning = false;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('arms18plus', 'yes');
+    }
+    if (typeof document !== 'undefined') {
+      setCookie('arms18plus', 'yes', 365);
+    }
+  }
+  function rejectWarning() {
+    window.location.href = '/';
+  }
 
   async function handleRelatedClick(id: string) {
     loading = true;
@@ -21,6 +54,10 @@
 </script>
 
 <Navbar />
+
+{#if showWarning}
+  <AdultWarning onConfirm={closeWarning} onReject={rejectWarning} />
+{/if}
 
 <div class="flex flex-col min-h-screen bg-gradient-to-b from-[#2a0008] via-[#3a0d16] to-[#1a0106] text-white pt-16">
   {#if loading}
