@@ -30,7 +30,7 @@
   let useArtPlayer = true;
 
   // --- Pagination ---
-  let episodesPerPage = 50;
+  const episodesPerPage = 50;
   let currentPage = 1;
   $: totalPages = Math.ceil(episodes.length / episodesPerPage);
   $: pagedEpisodes = episodes.slice(
@@ -68,17 +68,18 @@
         intro = json.data.intro || null;
         outro = json.data.outro || null;
       } else {
-        videoSrc = '';
-        subtitles = [];
-        intro = null;
-        outro = null;
+        resetVideoState();
       }
-    } catch (err) {
-      videoSrc = '';
-      subtitles = [];
-      intro = null;
-      outro = null;
+    } catch {
+      resetVideoState();
     }
+  }
+
+  function resetVideoState() {
+    videoSrc = '';
+    subtitles = [];
+    intro = null;
+    outro = null;
   }
 
   async function fetchServers(episodeId: string) {
@@ -93,24 +94,22 @@
 
       if (json.success) {
         servers = Object.entries(json.data)
-          .filter(([category]) => ['sub', 'dub', 'raw'].includes(category))
-          .flatMap(([category, serverList]: [string, unknown]) =>
+          .filter(([cat]) => ['sub', 'dub', 'raw'].includes(cat))
+          .flatMap(([cat, serverList]: [string, unknown]) =>
             (serverList as any[]).map((server) => ({
               ...server,
-              category: category as 'sub' | 'dub' | 'raw',
+              category: cat as 'sub' | 'dub' | 'raw',
             }))
           )
+          .filter((server) => server.serverName)
           .sort((a, b) => a.serverName.localeCompare(b.serverName));
-        servers = servers.filter((server) => server.serverName);
 
         if (!currentServer) {
           const defaultServer = servers.find((s) => s.category === category);
-          if (defaultServer) {
-            currentServer = defaultServer.serverName;
-          }
+          if (defaultServer) currentServer = defaultServer.serverName;
         }
       }
-    } catch (err) {
+    } catch {
       // handle error
     }
   }
@@ -147,7 +146,9 @@
     }
   }
 
-  function setUseArtPlayer(v: boolean) { useArtPlayer = v; }
+  function setUseArtPlayer(v: boolean) {
+    useArtPlayer = v;
+  }
 
   // --- On Mount: Restore Last Watched ---
   onMount(async () => {
