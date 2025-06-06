@@ -127,6 +127,15 @@
       if (animeKey) localStorage.setItem(animeKey, episodeId);
 
       await fetchServers(episodeId);
+
+      // Ensure currentServer is set
+      if (!currentServer) {
+        const defaultServer = servers.find((s) => s.category === category);
+        if (defaultServer) {
+          currentServer = defaultServer.serverName;
+        }
+      }
+
       await fetchWatchData(episodeId, currentServer, category);
 
       goto(`/watch/${episodeId}`);
