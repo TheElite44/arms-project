@@ -196,22 +196,26 @@
       <section class="flex-1 flex flex-col gap-8 mb-12">
         <!-- Player Card -->
         <div class="flex flex-col gap-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-4 sm:p-8">
-          <PlayerCard
-            {videoSrc}
-            {poster}
-            {subtitles}
-            {intro}
-            {outro}
-            {useArtPlayer}
-            goToEpisode={goToEpisode}
-          />
+          {#if videoSrc && poster}
+            <PlayerCard
+              {videoSrc}
+              {poster}
+              {subtitles}
+              {intro}
+              {outro}
+              {useArtPlayer}
+              goToEpisode={goToEpisode}
+            />
+          {/if}
 
-          <ServerSelector
-            {servers}
-            {currentServer}
-            {category}
-            changeServerManual={changeServerManual}
-          />
+          {#if servers && servers.length > 0}
+            <ServerSelector
+              {servers}
+              {currentServer}
+              {category}
+              changeServerManual={changeServerManual}
+            />
+          {/if}
 
           <PlayerSelector
             {useArtPlayer}
