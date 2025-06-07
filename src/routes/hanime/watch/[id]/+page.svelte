@@ -82,6 +82,32 @@
         <section class="flex-1 flex flex-col gap-8 mb-12">
           <div class="flex flex-col gap-6 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl border border-[#ff003c]/20 p-4 sm:p-8">
             <PlayerCard videoSrc={videoSrc} poster={poster} goToEpisode={goToEpisode} />
+
+            {#if subSource || rawSource}
+              <div class="mt-4 flex items-center gap-3 justify-start">
+                <span class="font-semibold text-[#ff003c] text-sm">Source:</span>
+                {#if subSource}
+                  <button
+                    class="px-3 py-1 rounded text-sm font-semibold transition-colors
+                           {videoSrc === subSource.src ? 'bg-[#ff003c] text-black' : 'bg-[#2a0008] text-[#ffb3c6] hover:bg-[#ff003c]/80 hover:text-black'}"
+                    on:click={() => videoSrc = subSource.src}
+                    disabled={videoSrc === subSource.src}
+                  >
+                    Sub
+                  </button>
+                {/if}
+                {#if rawSource}
+                  <button
+                    class="px-3 py-1 rounded text-sm font-semibold transition-colors
+                           {videoSrc === rawSource.src ? 'bg-[#ff003c] text-black' : 'bg-[#2a0008] text-[#ffb3c6] hover:bg-[#ff003c]/80 hover:text-black'}"
+                    on:click={() => videoSrc = rawSource.src}
+                    disabled={videoSrc === rawSource.src}
+                  >
+                    Raw
+                  </button>
+                {/if}
+              </div>
+            {/if}
           </div>
         </section>
 
