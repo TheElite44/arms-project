@@ -96,9 +96,10 @@ export const GET: RequestHandler = async ({ url }) => {
           server,
           category
         })}`;
-        
+        console.log('Fetching sources from:', sourcesUrl);
         const { response: sourcesRes, referer } = await fetchWithRetry(sourcesUrl);
         const json = await sourcesRes.json();
+        console.log('Upstream sources response:', JSON.stringify(json));
         
         if (!json.success || !json.data?.sources) {
           return createErrorResponse(json.message || 'Invalid sources response', 400);

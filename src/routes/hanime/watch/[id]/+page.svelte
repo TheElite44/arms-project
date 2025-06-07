@@ -20,8 +20,10 @@
   $: altTitle = info?.altTitle ?? '';
 
   $: sources = watch?.sources ?? [];
-  $: videoSrc = sources.find((s: any) => s.format === 'mp4')?.src || sources[0]?.src || '';
-  $: videoFormat = sources.find((s: any) => s.format === 'mp4') ? 'mp4' : sources[0]?.format || '';
+  $: subSource = sources.find((s: any) => s.format === 'mp4' && s.src.endsWith('-sub.mp4'));
+  $: rawSource = sources.find((s: any) => s.format === 'mp4' && s.src.endsWith('.mp4') && !s.src.endsWith('-sub.mp4'));
+  $: videoSrc = subSource?.src || rawSource?.src || sources[0]?.src || '';
+  $: videoFormat = subSource ? 'mp4' : (rawSource ? 'mp4' : (sources[0]?.format || ''));
 
   let showWarning = true;
 

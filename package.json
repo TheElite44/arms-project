@@ -59,6 +59,7 @@
 		"artplayer-plugin-chapter": "^1.0.1",
 		"artplayer-plugin-hls-control": "^1.0.1",
 		"hls.js": "^1.6.2",
+		"m3u8-parser": "^7.2.0",
 		"plyr": "^3.7.8",
 		"svelte-fontawesome": "^0.0.3",
 		"svelte-icons": "^2.1.0"

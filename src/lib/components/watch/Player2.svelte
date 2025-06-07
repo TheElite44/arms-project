@@ -80,6 +80,14 @@
     }
   }
 
+  function proxiedM3u8(url: string) {
+    if (!url) return url;
+    if (url.endsWith('.m3u8')) {
+      return `/api/proxy/m3u8?url=${encodeURIComponent(url)}`;
+    }
+    return url;
+  }
+
   function setupSource() {
     if (!videoEl) {
       console.error('Video element is not defined.');
@@ -91,7 +99,10 @@
       return;
     }
 
-    console.log('Setting up video source:', src);
+    // Always proxy m3u8
+    const finalSrc = proxiedM3u8(src);
+
+    console.log('Setting up video source:', finalSrc);
 
     // Clean up existing HLS instance
     if (hls) {
@@ -100,19 +111,19 @@
       hls = null;
     }
 
-    if (src.endsWith('.m3u8') && Hls.isSupported()) {
+    if (finalSrc.endsWith('.m3u8') && Hls.isSupported()) {
       console.log('Using HLS.js for .m3u8 source.');
 
       hls = new Hls({
         debug: false,
         enableWorker: true,
         lowLatencyMode: true,
-        fragLoadingTimeOut: 20000, // 20-second timeout for fragment loading
-        maxBufferLength: 30, // 30 seconds of buffer
-        startLevel: -1, // Auto quality selection
+        fragLoadingTimeOut: 20000,
+        maxBufferLength: 30,
+        startLevel: -1,
       });
 
-      hls.loadSource(src);
+      hls.loadSource(finalSrc);
       hls.attachMedia(videoEl);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -122,16 +133,14 @@
       hls.on(Hls.Events.ERROR, (event, data) => {
         console.error('HLS.js error:', data);
       });
-    } else if (src) {
+    } else if (finalSrc) {
       console.log('Setting video source directly.');
-      videoEl.src = src;
+      videoEl.src = finalSrc;
 
-      // Add error listener for direct source
       videoEl.addEventListener('error', (e) => {
         console.error('Video element error:', e);
       });
 
-      // Add successful load listener
       videoEl.addEventListener('canplay', () => {
         console.log('Video can play');
       });
@@ -141,14 +150,17 @@
   function updatePlyrSource() {
     if (!player || !videoEl || !src) return;
 
+    // Always proxy m3u8
+    const finalSrc = proxiedM3u8(src);
+
     try {
       player.source = {
         type: 'video',
         title,
         sources: [
           {
-            src,
-            type: src.endsWith('.m3u8') ? 'application/x-mpegURL' : 'video/mp4',
+            src: finalSrc,
+            type: finalSrc.endsWith('.m3u8') ? 'application/x-mpegURL' : 'video/mp4',
           },
         ],
         poster,
@@ -156,7 +168,7 @@
           kind: 'subtitles' as const,
           label: sub.label || sub.lang,
           srclang: sub.lang,
-          src: sub.url,
+          src: sub.url, // Optionally: proxiedM3u8(sub.url)
           default: sub.default ?? false,
         })),
       };

@@ -20,15 +20,22 @@ export const load: PageLoad = async ({ params, fetch }) => {
 
   try {
     const animeInfoResp = await fetch(`/api/anime?action=info&animeId=${animeId}`);
+    console.log('animeInfoResp status:', animeInfoResp.status);
     const animeInfoJson = await animeInfoResp.json();
+    console.log('animeInfoJson:', animeInfoJson);
 
     if (!animeInfoJson.success) {
       console.error('Failed to fetch anime info:', animeInfoJson.error);
       throw new Error(animeInfoJson.error || 'Anime data not found');
     }
 
+    // Extract subtitles from animeInfoJson or another API if available
+    const subtitles = animeInfoJson.data?.subtitles || [];
+
     const episodesResp = await fetch(`/api/anime?action=episodes&animeId=${animeId}`);
+    console.log('episodesResp status:', episodesResp.status);
     const episodesJson = await episodesResp.json();
+    console.log('episodesJson:', episodesJson);
 
     if (!episodesJson.success) {
       console.error('Failed to fetch episodes:', episodesJson.error);
@@ -40,7 +47,9 @@ export const load: PageLoad = async ({ params, fetch }) => {
       anime: animeInfoJson.data.anime,
       episodes: episodesJson.data.episodes || [],
       relatedAnimes: animeInfoJson.data.relatedAnimes || [],
-      recommendedAnimes: animeInfoJson.data.recommendedAnimes || []
+      recommendedAnimes: animeInfoJson.data.recommendedAnimes || [],
+      videoSources: [], // fill this if you have sources
+      subtitles // <-- pass subtitles to the page
     };
   } catch (error) {
     console.error('Error loading page data:', error);

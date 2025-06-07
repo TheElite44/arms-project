@@ -43,6 +43,16 @@
     return `${start}-${end}`;
   });
 
+  // --- Proxy Helper ---
+  function proxiedM3u8(url: string) {
+    if (!url) return url;
+    if (url.endsWith('.m3u8')) {
+      // Optionally encode headers if needed
+      return `/api/proxy/m3u8?url=${encodeURIComponent(url)}`;
+    }
+    return url;
+  }
+
   // --- Fetch Logic ---
   async function fetchWatchData(episodeId: string, server: string, category: string) {
     try {
@@ -57,9 +67,10 @@
       const json = await resp.json();
 
       if (json.success) {
-        videoSrc = json.data.sources?.[0]?.url || '';
+        // Use proxy for m3u8 sources
+        videoSrc = proxiedM3u8(json.data.sources?.[0]?.url || '');
         subtitles = (json.data.subtitles ?? []).map((sub: any) => ({
-          url: sub.url,
+          url: sub.url, // Optionally: proxiedM3u8(sub.url)
           label: sub.label || sub.lang,
           lang: sub.lang,
           kind: 'subtitles',
