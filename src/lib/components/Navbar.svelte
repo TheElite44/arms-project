@@ -48,7 +48,7 @@
       <!-- Logo -->
       <a href="/" class="flex items-center gap-2" on:click={closeAll}>
         <img src="/assets/logo.png" alt="Anifire logo" class="h-9 w-9 object-contain rounded z-50" />
-        <span class="text-xl font-bold text-orange-400 tracking-wide">ARMS</span>
+        <span class="text-xl font-black text-orange-400 tracking-wide">ARMS</span>
       </a>
     </div>
 

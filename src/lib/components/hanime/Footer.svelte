@@ -6,7 +6,7 @@
   <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
     <!-- Left: Title & Description -->
     <div class="flex flex-col items-start text-left gap-1 w-full md:w-auto">
-      <span class="text-[#ff003c] font-extrabold text-base md:text-lg tracking-wide">ARMS Adult</span>
+      <span class="text-[#ff003c] font-extrabold text-base md:text-lg tracking-wide">ARMS Hanime</span>
       <p class="text-[#ffb3c6] text-[10px] md:text-xs max-w-xs mt-1">
         This website does not retain any files on its server. Rather, it solely provides links to media content hosted by third-party services.
       </p>
