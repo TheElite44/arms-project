@@ -28,6 +28,7 @@
   let intro: { start: number; end: number } | null = null;
   let outro: { start: number; end: number } | null = null;
   let useArtPlayer = true;
+  let loading = true;
 
   // --- Pagination ---
   let episodesPerPage = 50;
@@ -55,6 +56,7 @@
 
   // --- Fetch Logic ---
   async function fetchWatchData(episodeId: string, server: string, category: string) {
+    loading = true;
     try {
       const params = new URLSearchParams({
         action: 'sources',
@@ -89,6 +91,8 @@
       subtitles = [];
       intro = null;
       outro = null;
+    } finally {
+      loading = false;
     }
   }
 
@@ -162,6 +166,7 @@
 
   // --- On Mount: Restore Last Watched ---
   onMount(async () => {
+    loading = true;
     const animeKey = data.anime?.info?.id ? `lastEpisodeId:${data.anime.info.id}` : null;
     let saved = animeKey ? localStorage.getItem(animeKey) : null;
 
@@ -184,6 +189,7 @@
         await fetchWatchData(currentEpisodeId, currentServer, category);
       }
     }
+    loading = false;
   });
 
   function handlePageChange(event: Event) {
@@ -198,7 +204,11 @@
 <Navbar/>
 
 <div class="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white px-4 py-8 pt-16 flex flex-col">
-  {#if isError(data)}
+  {#if loading}
+    <div class="flex-1 flex items-center justify-center">
+      <img src="/assets/loader.gif" alt="Loading..." style="max-width: 120px; max-height: 110px;" />
+    </div>
+  {:else if isError(data)}
     <div class="max-w-2xl mx-auto text-center text-red-400 text-xl font-bold py-20">
       {safe(data.error, 'An unknown error occurred.')}
     </div>
