@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation'; // Import goto for navigation
 
   export let isOpen = false; // Sidebar open state
@@ -38,6 +38,22 @@
     goto(path); // Use goto for navigation
     onClose(); // Close the sidebar after navigation
   }
+
+  $: {
+    if (typeof window !== 'undefined') {
+      if (isOpen) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+  }
+
+  onDestroy(() => {
+    if (typeof window !== 'undefined') {
+      document.body.style.overflow = '';
+    }
+  });
 
   onMount(() => {
     fetchGenres();
@@ -136,6 +152,7 @@
     transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
     color: #fbbf24; /* Default color */
     text-align: left; /* Align text to the left */
+    animation: genre-slide-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
   }
 
   .genre-link:hover {
@@ -174,7 +191,7 @@
     }
 
     .genre-section {
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Smaller items for mobile */
+      grid-template-columns: repeat(2, 1fr); /* Always two columns */
     }
 
     .genre-link {
@@ -205,6 +222,20 @@
       opacity: 1;
     }
   }
+
+  /* Add sliding animation for genre links */
+  @keyframes genre-slide-in {
+    from {
+      transform: translateX(-24px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  /* Removed empty .genre-section .genre-link ruleset */
 </style>
 
 {#if isOpen}
@@ -289,9 +320,10 @@
       <p class="error-message">{errorGenres}</p>
     {:else}
       <div class="genre-section">
-        {#each (showAllGenres ? genres : genres.slice(0, 10)) as genre}
+        {#each (showAllGenres ? genres : genres.slice(0, 10)) as genre, i (genre)}
           <button
             class="genre-link"
+            style="animation-delay: {i * 40}ms"
             on:click={() => navigateTo(`/genre/${sanitizeGenreName(genre)}`)}
             aria-label={`Go to ${sanitizeGenreName(genre)}`}
           >

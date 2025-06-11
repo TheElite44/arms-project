@@ -92,11 +92,13 @@
   <div class="flex-1 w-full">
     <div class="max-w-7xl mx-auto flex flex-col gap-8 px-4 sm:px-6 lg:px-8">
       {#if loading}
-        <div class="flex items-center justify-center flex-1 pt-20">
-          <div class="text-center">
-            <div class="loader-adult mb-4"></div>
-            <p class="text-[#ffb3c6] text-lg font-medium">Loading content...</p>
-          </div>
+        <div class="flex items-center justify-center min-h-[60vh] w-full">
+          <img
+            src="/assets/loader.gif"
+            alt="Loading..."
+            class="object-contain"
+            style="max-width: 120px; max-height: 110px; aspect-ratio: 1 / 1;"
+          />
         </div>
       {:else if error}
         <div class="bg-[#ff003c]/10 border border-[#ff003c]/30 text-[#ff003c] p-6 rounded-xl mb-8 backdrop-blur-sm">

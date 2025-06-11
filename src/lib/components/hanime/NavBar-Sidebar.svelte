@@ -80,7 +80,7 @@
     box-shadow: 0 4px 16px 0 rgba(255, 0, 60, 0.15);
     z-index: 1100;
     transform: translateX(-100%);
-    transition: transform 0.3s ease-in-out;
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
     overflow-y: auto;
     scrollbar-width: none;
     border-right: 2px solid #7a2233;
@@ -88,10 +88,12 @@
 
   .sidebar.visible {
     transform: translateX(0);
+    animation: sidebar-slide-in 0.35s cubic-bezier(0.4,0,0.2,1);
   }
 
   .sidebar.hidden {
     transform: translateX(-100%);
+    animation: sidebar-slide-out 0.3s cubic-bezier(0.4,0,0.2,1);
   }
 
   .sidebar::-webkit-scrollbar {
@@ -107,7 +109,7 @@
     color: #ff4d79; /* Vibrant pink */
     cursor: pointer;
     transition: color 0.2s, transform 0.2s;
-    animation: slide-in 0.3s ease-in-out forwards;
+    animation: menu-slide-in 0.35s cubic-bezier(0.4,0,0.2,1) both;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -148,6 +150,8 @@
     background: transparent;
     border-radius: 0.375rem;
     padding: 0.25rem 0.5rem;
+    animation: genre-slide-in 0.45s cubic-bezier(0.4,0,0.2,1) both;
+    opacity: 0;
   }
 
   .genre-link:hover {
@@ -188,7 +192,7 @@
     }
 
     .genre-section {
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
     }
 
     .genre-link {
@@ -205,15 +209,21 @@
     to { opacity: 1; }
   }
 
-  @keyframes slide-in {
-    from {
-      transform: translateX(-20px);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
+  @keyframes sidebar-slide-in {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+  }
+  @keyframes sidebar-slide-out {
+    from { transform: translateX(0); }
+    to { transform: translateX(-100%); }
+  }
+  @keyframes menu-slide-in {
+    from { opacity: 0; transform: translateX(-24px);}
+    to { opacity: 1; transform: translateX(0);}
+  }
+  @keyframes genre-slide-in {
+    from { opacity: 0; transform: translateX(-24px);}
+    to { opacity: 1; transform: translateX(0);}
   }
 </style>
 
@@ -259,9 +269,10 @@
       <p class="error-message">{errorGenres}</p>
     {:else}
       <div class="genre-section">
-        {#each (showAllGenres ? genres : genres.slice(0, 26)) as genre}
+        {#each (showAllGenres ? genres : genres.slice(0, 26)) as genre, i}
           <button
             class="genre-link"
+            style="animation-delay: {i * 40}ms"
             on:click={() => navigateTo(`/hanime/genre/${sanitizeGenreName(genre)}`)}
             aria-label={`Go to ${sanitizeGenreName(genre)}`}
           >

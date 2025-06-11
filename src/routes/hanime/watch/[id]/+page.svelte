@@ -22,8 +22,10 @@
   $: sources = watch?.sources ?? [];
   $: subSource = sources.find((s: any) => s.format === 'mp4' && s.src.endsWith('-sub.mp4'));
   $: rawSource = sources.find((s: any) => s.format === 'mp4' && s.src.endsWith('.mp4') && !s.src.endsWith('-sub.mp4'));
+  $: srtSource = sources.find((s: any) => s.format === 'srt');
   $: videoSrc = subSource?.src || rawSource?.src || sources[0]?.src || '';
   $: videoFormat = subSource ? 'mp4' : (rawSource ? 'mp4' : (sources[0]?.format || ''));
+  $: srtUrl = srtSource?.src || null;
 
   let showWarning = true;
 
@@ -81,7 +83,7 @@
         <section class="flex-1 flex flex-col gap-8 mb-12">
           <!-- Player Card -->
           <div class="flex flex-col gap-6 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl border border-[#ff003c]/20 p-4 sm:p-8">
-            <PlayerCard videoSrc={videoSrc} poster={poster} goToEpisode={goToEpisode} />
+            <PlayerCard videoSrc={videoSrc} poster={poster} {srtUrl} />
 
             {#if subSource || rawSource}
               <div class="mt-4 flex items-center gap-3 justify-start">

@@ -95,7 +95,7 @@
   <!-- Redesigned How It Works Section -->
   <section class="max-w-6xl mx-auto px-4 py-10">
     <h2 class="text-2xl sm:text-3xl font-bold text-orange-400 mb-8 text-center">How It Works</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-8">
       <div class="flex flex-col items-center text-center gap-4 bg-gray-800 rounded-xl p-6 shadow">
         <span class="inline-flex items-center justify-center rounded-full bg-orange-400/20 p-4">
           <svg class="w-10 h-10 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -117,12 +117,21 @@
       <div class="flex flex-col items-center text-center gap-4 bg-gray-800 rounded-xl p-6 shadow">
         <span class="inline-flex items-center justify-center rounded-full bg-orange-400/20 p-4">
           <svg class="w-10 h-10 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M2 6a2 2 0 012-2h7a2 2 0 012 2v14a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm18-2h-7a2 2 0 00-2 2v14a2 2 0 002 2h7a2 2 0 002-2V6a2 2 0 00-2-2z"/>
+          </svg>
+        </span>
+        <span class="font-bold text-lg sm:text-xl text-orange-400">Read Manga</span>
+        <span class="text-gray-300 text-sm sm:text-base">Enjoy your favorite manga chapters online, no registration needed.</span>
+      </div>
+      <div class="flex flex-col items-center text-center gap-4 bg-gray-800 rounded-xl p-6 shadow">
+        <span class="inline-flex items-center justify-center rounded-full bg-orange-400/20 p-4">
+          <svg class="w-10 h-10 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10" />
             <path d="M8 12l2 2 4-4" />
           </svg>
         </span>
         <span class="font-bold text-lg sm:text-xl text-orange-400">Enjoy</span>
-        <span class="text-gray-300 text-sm sm:text-base">No ads, no hassle. Just pure anime entertainment.</span>
+        <span class="text-gray-300 text-sm sm:text-base">No ads, no hassle. Just pure anime and manga entertainment.</span>
       </div>
     </div>
   </section>

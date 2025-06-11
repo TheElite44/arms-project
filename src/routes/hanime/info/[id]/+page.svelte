@@ -61,8 +61,13 @@
 
 <div class="flex flex-col min-h-screen bg-gradient-to-b from-[#2a0008] via-[#3a0d16] to-[#1a0106] text-white pt-16">
   {#if loading}
-    <div class="flex items-center justify-center flex-1">
-      <span class="loader-adult"></span>
+    <div class="flex items-center justify-center min-h-[60vh] w-full">
+      <img
+        src="/assets/loader.gif"
+        alt="Loading..."
+        class="object-contain"
+        style="max-width: 120px; max-height: 110px; aspect-ratio: 1 / 1;"
+      />
     </div>
   {:else}
     <div class="flex-1 w-full">

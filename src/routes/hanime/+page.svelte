@@ -69,11 +69,13 @@
 
 <div class="flex flex-col min-h-screen bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106] text-white">
   {#if loading}
-    <div class="flex items-center justify-center flex-1 pt-20">
-      <div class="text-center">
-        <div class="loader-adult mb-4"></div>
-        <p class="text-[#ffb3c6] text-lg font-medium">Loading content...</p>
-      </div>
+    <div class="flex items-center justify-center flex-1">
+      <img
+        src="/assets/loader.gif"
+        alt="Loading..."
+        class="object-contain"
+        style="max-width: 120px; max-height: 110px; aspect-ratio: 1 / 1;"
+      />
     </div>
   {:else}
     <div class="flex-1 w-full pt-16">

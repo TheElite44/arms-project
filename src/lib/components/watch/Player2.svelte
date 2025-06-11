@@ -7,7 +7,7 @@
   export let src: string = '';
   export let poster: string = '';
   export let title: string = '';
-  export let subtitles: Array<{ url: string; label: string; lang: string; default?: boolean }> = [];
+  export let subtitles: Array<{ url: string; label: string; lang: string; kind?: string; default?: boolean }> = [];
   export let playNext: (nextEpisodeId: string) => void = () => {};
 
   let videoEl: HTMLVideoElement | null = null;
@@ -55,11 +55,12 @@
 
         if (sources.length > 0) {
           src = sources[0].url;
-          subtitles = apiSubtitles.map((sub: any) => ({
-            url: sub.url,
-            label: sub.label || sub.lang,
-            lang: sub.lang,
-            default: sub.default ?? false,
+          subtitles = (json.data.tracks ?? []).map((track: any) => ({
+            url: track.file,
+            label: track.label,
+            lang: track.label?.split(' ')[0]?.toLowerCase() || 'en',
+            kind: track.kind || 'subtitles',
+            default: track.default ?? false,
           }));
 
           console.log('Successfully fetched sources:', src);
@@ -88,62 +89,35 @@
     return url;
   }
 
+  // Reactive statement to handle source changes
+  $: if (src) {
+    const isM3u8 = proxiedM3u8(src).endsWith('.m3u8');
+    setupSource();
+    if (!isM3u8) {
+      updatePlyrSource();
+    }
+  }
+
   function setupSource() {
-    if (!videoEl) {
-      console.error('Video element is not defined.');
-      return;
-    }
-
-    if (!src) {
-      console.log('No source URL provided.');
-      return;
-    }
-
-    // Always proxy m3u8
+    if (!videoEl) return;
     const finalSrc = proxiedM3u8(src);
 
-    console.log('Setting up video source:', finalSrc);
-
-    // Clean up existing HLS instance
     if (hls) {
-      console.log('Destroying existing HLS instance.');
       hls.destroy();
       hls = null;
     }
 
     if (finalSrc.endsWith('.m3u8') && Hls.isSupported()) {
-      console.log('Using HLS.js for .m3u8 source.');
-
-      hls = new Hls({
-        debug: false,
-        enableWorker: true,
-        lowLatencyMode: true,
-        fragLoadingTimeOut: 20000,
-        maxBufferLength: 30,
-        startLevel: -1,
-      });
-
+      console.log('[HLS] Loading m3u8 link:', finalSrc); // <-- LOG HERE
+      hls = new Hls();
       hls.loadSource(finalSrc);
       hls.attachMedia(videoEl);
-
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        console.log('HLS manifest parsed successfully');
-      });
-
       hls.on(Hls.Events.ERROR, (event, data) => {
         console.error('HLS.js error:', data);
       });
-    } else if (finalSrc) {
-      console.log('Setting video source directly.');
+    } else {
+      console.log('[Video] Loading non-m3u8 link:', finalSrc); // <-- LOG for non-m3u8
       videoEl.src = finalSrc;
-
-      videoEl.addEventListener('error', (e) => {
-        console.error('Video element error:', e);
-      });
-
-      videoEl.addEventListener('canplay', () => {
-        console.log('Video can play');
-      });
     }
   }
 
@@ -179,12 +153,6 @@
     }
   }
 
-  // Reactive statement to handle source changes
-  $: if (src) {
-    setupSource();
-    updatePlyrSource();
-  }
-
   onMount(() => {
     if (videoEl) {
       try {
@@ -204,8 +172,11 @@
         });
 
         if (src) {
+          const isM3u8 = proxiedM3u8(src).endsWith('.m3u8');
           setupSource();
-          updatePlyrSource();
+          if (!isM3u8) {
+            updatePlyrSource();
+          }
         }
 
         console.log('Plyr player initialized');
@@ -252,7 +223,7 @@
   >
     {#each subtitles as sub}
       <track
-        kind="subtitles"
+        kind={sub.kind || 'subtitles'}
         label={sub.label || sub.lang}
         srclang={sub.lang}
         src={sub.url}

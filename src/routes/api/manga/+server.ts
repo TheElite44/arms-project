@@ -1,6 +1,6 @@
 import type { RequestHandler } from '@sveltejs/kit';
 
-const API_URL = import.meta.env.VITE_CONSUMET_API || 'https://test-consumet-api.vercel.app';
+const API_URL = import.meta.env.VITE_CONSUMET_API;
 
 export const GET: RequestHandler = async ({ url }) => {
   const type = url.searchParams.get('type'); // 'search', 'info', or 'read'

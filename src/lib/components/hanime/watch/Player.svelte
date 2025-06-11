@@ -1,18 +1,33 @@
 <script lang="ts">
   import { onMount, onDestroy, afterUpdate } from 'svelte';
   import Artplayer from 'artplayer';
-  import Hls from 'hls.js';
   import { browser } from '$app/environment';
 
   export let src: string = '';
   export let poster: string = '';
   export let subtitles: Array<{ url: string; label: string; kind: string; default?: boolean }> = [];
-  export let autoNext: boolean = false;
-  export let currentEpisodeIndex: number = 0;
-  export let episodes: Array<{ id: string }> = [];
-  export let playNext: (nextEpisodeId: string) => void = () => {};
-  export let intro: { start: number; end: number } | null = null;
-  export let outro: { start: number; end: number } | null = null;
+
+  // Subtitle style settings (Netflix-like)
+  export let subtitleSettings = {
+    color: '#fff',
+    fontSize: { desktop: '26px', mobile: '14px' }, // Responsive default
+    fontFamily: '"Arial Narrow", "Roboto Condensed", Arial, sans-serif',
+    fontWeight: 400, // Regular or 300 for thinner
+    // Thinner black outline using smaller shadow offsets
+    textShadow: `
+      -1px -1px 0 #000,
+      1px -1px 0 #000,
+      -1px 1px 0 #000,
+      1px 1px 0 #000,
+      0 1px 2px rgba(0,0,0,0.7)
+    `,
+    marginBottom: { desktop: '24px', mobile: '60px' }, // <-- set mobile lower
+    padding: '0.2em 0.6em',
+    borderRadius: '0.5em',
+    display: 'inline',
+    boxShadow: 'none',
+    letterSpacing: '0.02em'
+  };
 
   let art: any = null;
   let container: HTMLDivElement | null = null;
@@ -21,77 +36,8 @@
   let error: string | null = null;
 
   async function fetchWatchData(episodeId: string, server: string = 'hd-1', category: string = 'sub') {
-    console.log('🔄 Fetching watch data for episode:', episodeId);
-    isLoading = true;
-    error = null;
-
-    const params = new URLSearchParams({
-      action: 'sources',
-      animeEpisodeId: episodeId,
-      server,
-      category,
-    });
-
-    const apiUrl = `/api/anime?${params.toString()}`;
-    console.log('📡 API URL:', apiUrl);
-
-    try {
-      const resp = await fetch(apiUrl);
-      console.log('📥 Response status:', resp.status);
-      
-      if (!resp.ok) {
-        throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
-      }
-
-      const json = await resp.json();
-      console.log('📄 API Response:', json);
-
-      if (json.success && json.data) {
-        const sources = json.data.sources || [];
-        const apiSubtitles = json.data.subtitles || [];
-
-        console.log('📺 Found sources:', sources.length);
-        console.log('📝 Found subtitles:', apiSubtitles.length);
-
-        if (sources.length > 0) {
-          const selectedSource = sources[0];
-          src = selectedSource.url || '';
-          
-          console.log('✅ Selected source URL:', src);
-          console.log('🎬 Source quality:', selectedSource.quality || 'unknown');
-
-          // Validate URL
-          if (!src || !isValidUrl(src)) {
-            throw new Error('Invalid or empty source URL');
-          }
-
-          subtitles = apiSubtitles.map((sub: any) => ({
-            url: sub.url,
-            label: sub.label || sub.lang || 'Unknown',
-            kind: 'subtitles',
-            default: sub.default ?? false,
-          }));
-
-          intro = json.data.intro || null;
-          outro = json.data.outro || null;
-
-          console.log('🎯 Updated subtitles:', subtitles);
-          console.log('🎵 Intro/Outro info:', { intro, outro });
-
-          // Create player after successful data fetch
-          await createPlayer();
-        } else {
-          throw new Error('No video sources found in API response');
-        }
-      } else {
-        throw new Error(json.error || json.message || 'API request failed');
-      }
-    } catch (err: any) {
-      console.error('❌ Error fetching watch data:', err);
-      error = err.message || 'Failed to load video data';
-    } finally {
-      isLoading = false;
-    }
+    // This function is now a no-op since episode/server/category logic is removed
+    return;
   }
 
   function isValidUrl(url: string): boolean {
@@ -104,37 +50,19 @@
   }
 
   async function createPlayer() {
-    if (!container) {
-      console.error('❌ Player container is not defined.');
-      return;
-    }
+    if (!container || !src) return;
 
-    if (!src) {
-      console.log('⚠️ No source URL provided, skipping player creation.');
-      return;
-    }
+    if (art && previousSrc === src) return;
 
-    // Prevent re-creating the player if the src hasn't changed
-    if (art && previousSrc === src) {
-      console.log('✅ Player already initialized with the same src.');
-      return;
-    }
-
-    // Destroy existing player instance
+    // Destroy existing player
     if (art) {
-      console.log('🗑️ Destroying existing Artplayer instance.');
       try {
-        if (art.hls) {
-          art.hls.destroy();
-        }
         art.destroy();
       } catch (e) {
-        console.warn('⚠️ Error destroying player:', e);
+        console.warn('Error destroying player:', e);
       }
       art = null;
     }
-
-    console.log('🎬 Creating new Artplayer instance with src:', src);
 
     const options: any = {
       container,
@@ -151,216 +79,185 @@
       lock: true,
       playbackRate: true,
       aspectRatio: true,
-      customType: {
-        m3u8: playM3u8,
-      },
+      // Add subtitle settings panel
+      settings: [
+        {
+          html: 'Subtitle Style',
+          tooltip: 'Customize subtitle appearance',
+          selector: [
+            {
+              html: 'Font Size',
+              tooltip: 'Change subtitle font size',
+              selector: [
+                { html: 'Small (18px / 14px mobile)', value: { desktop: '18px', mobile: '14px' } },
+                { html: 'Medium (26px / 18px mobile)', value: { desktop: '26px', mobile: '18px' } }, // Default
+                { html: 'Large (36px / 28px mobile)', value: { desktop: '36px', mobile: '28px' } }
+              ],
+              onSelect: function (item: any) {
+                subtitleSettings.fontSize = item.value;
+                updateSubtitleStyle();
+                return item.html;
+              },
+            },
+            {
+              html: 'Font Color',
+              tooltip: 'Change subtitle color',
+              selector: [
+                { html: 'White', value: '#ffffff' },
+                { html: 'Yellow', value: '#ffff00' },
+                { html: 'Green', value: '#00ff00' },
+                { html: 'Cyan', value: '#00ffff' },
+                { html: 'Red', value: '#ff0000' },
+              ],
+              onSelect: function (item: any) {
+                subtitleSettings.color = item.value;
+                updateSubtitleStyle();
+                return item.html;
+              },
+            },
+            {
+              html: 'Outline',
+              tooltip: 'Change subtitle outline thickness',
+              selector: [
+                { html: 'None', value: 'none' },
+                { html: 'Thin', value: `
+                  -1px -1px 0 #000,
+                  1px -1px 0 #000,
+                  -1px 1px 0 #000,
+                  1px 1px 0 #000
+                ` },
+                { html: 'Medium', value: `
+                  -2px -2px 0 #000,
+                  2px -2px 0 #000,
+                  -2px 2px 0 #000,
+                  2px 2px 0 #000
+                ` },
+                { html: 'Thick', value: `
+                  -3px -3px 0 #000,
+                  3px -3px 0 #000,
+                  -3px 3px 0 #000,
+                  3px 3px 0 #000
+                ` }
+              ],
+              onSelect: function (item: any) {
+                if (item.value === 'none') {
+                  subtitleSettings.textShadow = 'none';
+                } else {
+                  subtitleSettings.textShadow = item.value;
+                }
+                updateSubtitleStyle();
+                return item.html;
+              },
+            },
+            // Removed Background selector
+          ],
+        },
+      ],
     };
 
     // Add subtitles if available
     if (subtitles?.length > 0) {
       const defaultSubtitle = subtitles.find((sub) => sub.default) || subtitles[0];
+      const subType = defaultSubtitle.url.endsWith('.srt') ? 'srt' : 'vtt';
+
       options.subtitle = {
         url: defaultSubtitle.url,
-        type: 'vtt',
+        type: subType,
         style: {
-          color: '#fff',
-          fontSize: '20px',
+          color: subtitleSettings.color,
+          fontSize: getResponsiveFontSize(subtitleSettings.fontSize),
+          fontFamily: subtitleSettings.fontFamily,
+          // backgroundColor: subtitleSettings.backgroundColor, // Removed background
+          textShadow: subtitleSettings.textShadow,
+          marginBottom: getResponsiveMarginBottom(subtitleSettings.marginBottom),
+          padding: subtitleSettings.padding,
+          borderRadius: subtitleSettings.borderRadius,
+          display: subtitleSettings.display,
+          boxShadow: subtitleSettings.boxShadow,
+          fontWeight: subtitleSettings.fontWeight,
+          letterSpacing: subtitleSettings.letterSpacing,
+          textAlign: 'center',
+          lineHeight: '1.35',
+          whiteSpace: 'pre-line',
+          wordBreak: 'break-word',
         },
         encoding: 'utf-8',
       };
-      console.log('📝 Setting default subtitle:', defaultSubtitle);
     }
 
     try {
       art = new Artplayer(options);
       previousSrc = src;
 
-      // Add event listeners for debugging
       art.on('ready', () => {
-        console.log('✅ Artplayer ready');
-      });
-
-      art.on('video:loadstart', () => {
-        console.log('🔄 Video loading started');
-      });
-
-      art.on('video:canplay', () => {
-        console.log('✅ Video can play');
+        console.log('Player ready');
       });
 
       art.on('video:error', (error: any) => {
-        console.error('❌ Video error:', error);
+        console.error('Video error:', error);
       });
 
-      art.on('video:loadeddata', () => {
-        console.log('📊 Video data loaded');
-      });
-
-      console.log('✅ Artplayer instance created successfully');
     } catch (error) {
-      console.error('❌ Failed to create Artplayer instance:', error);
+      console.error('Failed to create player:', error);
       throw error;
     }
   }
 
-  const playM3u8 = (video: HTMLVideoElement, url: string | undefined, art: any) => {
-    const safeUrl = url ?? '';
-
-    if (!safeUrl) {
-      console.error('❌ No URL provided for M3U8 playback');
-      return;
-    }
-
-    console.log('🎵 Playing M3U8 stream:', safeUrl);
-
-    if (Hls.isSupported()) {
-      console.log('✅ HLS.js is supported');
-      
-      if (art.hls) {
-        console.log('🗑️ Destroying existing HLS instance');
-        art.hls.destroy();
-      }
-
-      const hls = new Hls({
-        debug: false, // Set to true for more verbose logging
-        enableWorker: true,
-        lowLatencyMode: true,
-        fragLoadingTimeOut: 20000,
-        maxBufferLength: 30,
-        startLevel: -1,
-        capLevelToPlayerSize: true,
-        // Add CORS settings
-        xhrSetup: function (xhr: XMLHttpRequest, url: string) {
-          console.log('🌐 XHR setup for URL:', url);
-          // Add any custom headers if needed
-        },
-      });
-
-      hls.loadSource(safeUrl);
-      hls.attachMedia(video);
-      art.hls = hls;
-
-      hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
-        console.log('✅ HLS manifest parsed successfully');
-        console.log('📊 Available levels:', data.levels?.length || 0);
-      });
-
-      hls.on(Hls.Events.LEVEL_LOADED, (event, data) => {
-        console.log('📊 HLS level loaded:', data.level);
-      });
-
-      hls.on(Hls.Events.FRAG_LOADED, (event, data) => {
-        console.log('🧩 Fragment loaded:', data.frag.url);
-      });
-
-      hls.on(Hls.Events.ERROR, (event, data) => {
-        console.error('❌ HLS.js error:', data);
-        console.error('Error type:', data.type);
-        console.error('Error details:', data.details);
-        
-        if (data.fatal) {
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              console.log('🔄 Trying to recover from network error');
-              hls.startLoad();
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              console.log('🔄 Trying to recover from media error');
-              hls.recoverMediaError();
-              break;
-            default:
-              console.log('💥 Fatal error, destroying HLS');
-              hls.destroy();
-              break;
-          }
-        }
-      });
-
-      // Auto-next episode functionality
-      video.addEventListener("timeupdate", () => {
-        const currentTime = Math.round(video.currentTime);
-        const duration = Math.round(video.duration);
-        if (duration > 0 && currentTime >= duration - 5) {
-          if (currentEpisodeIndex < episodes?.length - 1 && autoNext) {
-            const nextEpisode = episodes[currentEpisodeIndex + 1];
-            if (nextEpisode) {
-              const episodeMatch = nextEpisode.id.match(/ep=(\d+)/);
-              const nextEpisodeId = episodeMatch?.[1] ?? '';
-              if (nextEpisodeId) {
-                playNext(nextEpisodeId);
-              }
-            }
-          }
-        }
-      });
-
-    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      console.log('✅ Using native HLS support');
-      video.src = safeUrl;
-
-      video.addEventListener('error', (e) => {
-        console.error('❌ Native video error:', e);
-      });
-
-      video.addEventListener("timeupdate", () => {
-        const currentTime = Math.round(video.currentTime);
-        const duration = Math.round(video.duration);
-        if (duration > 0 && currentTime >= duration - 5) {
-          if (currentEpisodeIndex < episodes?.length - 1 && autoNext) {
-            const nextEpisode = episodes[currentEpisodeIndex + 1];
-            if (nextEpisode) {
-              const episodeMatch = nextEpisode.id.match(/ep=(\d+)/);
-              const nextEpisodeId = episodeMatch?.[1] ?? '';
-              if (nextEpisodeId) {
-                playNext(nextEpisodeId);
-              }
-            }
-          }
-        }
-      });
-    } else {
-      console.error("❌ Unsupported playback format: m3u8");
-      error = "Your browser doesn't support HLS playback";
-    }
-  };
-
-  onMount(() => {
-    console.log('🚀 Player component mounted');
-    if (src) {
-      createPlayer();
-    }
-  });
-
-  afterUpdate(() => {
-    console.log('🔄 Player component updated');
-    if (src && src !== previousSrc) {
-      createPlayer();
-    }
-  });
-
-  onDestroy(() => {
-    console.log('🗑️ Destroying player component');
-
-    if (art) {
-      try {
-        if (art.hls) {
-          art.hls.destroy();
-        }
-        art.destroy();
-      } catch (e) {
-        console.warn('⚠️ Error during player cleanup:', e);
-      }
-      art = null;
-    }
-  });
-
-  // Build chapters array
-  const chapters = [];
-  if (intro && intro.start !== 0 && intro.end !== 0) {
-    chapters.push({ start: intro.start, end: intro.end, title: 'Intro' });
+  function getResponsiveFontSize(fontSize: any) {
+    if (typeof fontSize === 'string') return fontSize;
+    // Use window.matchMedia to detect mobile
+    return window.matchMedia('(max-width: 600px)').matches
+      ? fontSize.mobile
+      : fontSize.desktop;
   }
-  if (outro && outro.start !== 0 && outro.end !== 0) {
-    chapters.push({ start: outro.start, end: outro.end, title: 'Outro' });
+
+  function getResponsiveMarginBottom(marginBottom: any) {
+    // You can use a string or an object for marginBottom
+    if (typeof marginBottom === 'string') return marginBottom;
+    return window.matchMedia('(max-width: 600px)').matches
+      ? marginBottom.mobile
+      : marginBottom.desktop;
+  }
+
+  function isMobile() {
+    return window.matchMedia('(max-width: 600px)').matches;
+  }
+
+  // Automatically update subtitle style on resize for responsiveness
+  if (browser) {
+    let lastMobile = isMobile();
+    window.addEventListener('resize', () => {
+      const nowMobile = isMobile();
+      if (nowMobile !== lastMobile) {
+        lastMobile = nowMobile;
+        updateSubtitleStyle();
+      }
+    });
+  }
+
+  function updateSubtitleStyle() {
+    if (art && art.subtitle) {
+      const subtitleElement = art.template.$subtitle;
+      if (subtitleElement) {
+        subtitleElement.style.color = subtitleSettings.color;
+        subtitleElement.style.fontSize = getResponsiveFontSize(subtitleSettings.fontSize);
+        subtitleElement.style.fontFamily = subtitleSettings.fontFamily;
+        subtitleElement.style.textShadow = subtitleSettings.textShadow;
+        // Lower subtitle on mobile
+        subtitleElement.style.marginBottom = isMobile() ? '30px' : '20px';
+        // Reduce padding on mobile
+        subtitleElement.style.padding = isMobile() ? '0.1em 0.3em' : subtitleSettings.padding;
+        subtitleElement.style.borderRadius = subtitleSettings.borderRadius;
+        subtitleElement.style.display = subtitleSettings.display;
+        subtitleElement.style.boxShadow = subtitleSettings.boxShadow;
+        subtitleElement.style.fontWeight = subtitleSettings.fontWeight;
+        subtitleElement.style.letterSpacing = subtitleSettings.letterSpacing;
+        subtitleElement.style.textAlign = 'center';
+        subtitleElement.style.lineHeight = '1.35';
+        subtitleElement.style.whiteSpace = 'pre-line';
+        subtitleElement.style.wordBreak = 'break-word';
+      }
+    }
   }
 
   // Keyboard shortcuts
@@ -371,27 +268,43 @@
       switch (event.key.toLowerCase()) {
         case 'm':
           art.muted = !art.muted;
-          console.log('🔇 Mute toggled:', art.muted);
           break;
         case 'f':
           art.fullscreen = !art.fullscreen;
-          console.log('🖥️ Fullscreen toggled:', art.fullscreen);
           break;
         case ' ':
           event.preventDefault();
           if (art.playing) {
             art.pause();
-            console.log('⏸️ Video paused');
           } else {
             art.play();
-            console.log('▶️ Video playing');
           }
           break;
       }
     });
   }
 
-  // Export fetchWatchData for external use
+  onMount(() => {
+    if (src) createPlayer();
+  });
+
+  afterUpdate(() => {
+    if (src && src !== previousSrc) {
+      createPlayer();
+    }
+  });
+
+  onDestroy(() => {
+    if (art) {
+      try {
+        art.destroy();
+      } catch (e) {
+        console.warn('Error during cleanup:', e);
+      }
+      art = null;
+    }
+  });
+
   export { fetchWatchData };
 </script>
 

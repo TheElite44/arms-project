@@ -6,7 +6,7 @@
 
   export let src: string = '';
   export let poster: string = '';
-  export let subtitles: Array<{ url: string; label: string; kind: string; default?: boolean }> = [];
+  export let subtitles: Array<{ url: string; label: string; lang: string; kind: string; default?: boolean }> = [];
   export let autoNext: boolean = false;
   export let currentEpisodeIndex: number = 0;
   export let episodes: Array<{ id: string }> = [];
@@ -65,11 +65,12 @@
             throw new Error('Invalid or empty source URL');
           }
 
-          subtitles = apiSubtitles.map((sub: any) => ({
-            url: sub.url,
-            label: sub.label || sub.lang || 'Unknown',
-            kind: 'subtitles',
-            default: sub.default ?? false,
+          subtitles = (json.data.tracks ?? []).map((track: any) => ({
+            url: track.file,
+            label: track.label,
+            lang: track.label?.split(' ')[0]?.toLowerCase() || 'en',
+            kind: track.kind || 'subtitles',
+            default: track.default ?? false,
           }));
 
           intro = json.data.intro || null;

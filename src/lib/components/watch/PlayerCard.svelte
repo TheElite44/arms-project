@@ -3,6 +3,7 @@
   import Player2 from './Player2.svelte';
   export let videoSrc: string = '';
   export let poster: string = '';
+  // subtitles: Array<{ url, label, lang, kind, default? }>
   export let subtitles: Array<{ url: string; label: string; lang: string; kind: string; default?: boolean }> = [];
   export let intro: { start: number; end: number } | null = null;
   export let outro: { start: number; end: number } | null = null;
@@ -14,19 +15,19 @@
   {#key videoSrc}
     {#if useArtPlayer}
       <Player 
-        src={videoSrc} 
-        poster={poster} 
-        subtitles={subtitles} 
-        intro={intro} 
-        outro={outro} 
-        playNext={goToEpisode} 
+        src={videoSrc}
+        poster={poster}
+        subtitles={subtitles}
+        intro={intro}
+        outro={outro}
+        playNext={goToEpisode}
       />
     {:else}
       <Player2 
-        src={videoSrc} 
-        subtitles={subtitles} 
-        poster={poster} 
-        playNext={goToEpisode} 
+        src={videoSrc}
+        poster={poster}
+        subtitles={subtitles}
+        playNext={goToEpisode}
       />
     {/if}
   {/key}

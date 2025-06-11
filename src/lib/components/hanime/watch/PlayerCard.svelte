@@ -3,10 +3,22 @@
   export let videoSrc: string = '';
   export let poster: string = '';
   export let subtitles: Array<{ url: string; label: string; lang: string; kind: string; default?: boolean }> = [];
-  export let intro: { start: number; end: number } | null = null;
-  export let outro: { start: number; end: number } | null = null;
   export const useArtPlayer: boolean = true;
-  export let goToEpisode: (id: string) => void;
+  export let srtUrl: string | null = null;
+
+  // Merge srtUrl into subtitles if provided
+  $: mergedSubtitles = [
+    ...(subtitles ?? []),
+    ...(srtUrl
+      ? [{
+          url: srtUrl,
+          label: 'English',
+          lang: 'en',
+          kind: 'subtitles',
+          default: subtitles.length === 0 // default if no other subs
+        }]
+      : [])
+  ];
 </script>
 
 <div class="w-full aspect-video rounded-lg overflow-hidden shadow-lg bg-black">
@@ -14,10 +26,7 @@
     <Player 
       src={videoSrc} 
       poster={poster} 
-      subtitles={subtitles} 
-      intro={intro} 
-      outro={outro} 
-      playNext={goToEpisode} 
+      subtitles={mergedSubtitles} 
     />
   {/key}
 </div>
