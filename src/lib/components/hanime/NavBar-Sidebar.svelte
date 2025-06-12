@@ -183,7 +183,7 @@
   @media (max-width: 768px) {
     .sidebar {
       width: 65%;
-      max-width: none;
+      max-width: 300px;
     }
 
     .menu-item {

@@ -90,7 +90,12 @@
                   <h1 class="text-3xl sm:text-4xl font-extrabold text-[#ff003c] mb-1">{info.name}</h1>
                   <div class="flex flex-wrap gap-2 mb-2">
                     {#each info.genre as genre}
-                      <span class="bg-[#ff003c]/20 text-[#ff003c] px-3 py-1 rounded-full text-xs font-semibold">{genre}</span>
+                      <a
+                        href={`/hanime/genre/${genre.replace(/\s+/g, '-').toLowerCase()}`}
+                        class="bg-[#ff003c]/20 text-[#ff003c] px-3 py-1 rounded-full text-xs font-semibold"
+                        style="text-decoration: none;"
+                        >{genre}</a
+                      >
                     {/each}
                     {#if info.type}
                       <span class="bg-[#ff003c] text-white px-3 py-1 rounded-full text-xs font-bold uppercase">{info.type}</span>

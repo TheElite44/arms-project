@@ -5,6 +5,7 @@
   let mobileSearchOpen = false;
   let searchQuery = '';
   let isOpen = false;
+  let searchInput: HTMLInputElement;
 
   function toggleMobileMenu() {
     mobileMenuOpen = !mobileMenuOpen;
@@ -13,7 +14,11 @@
 
   function toggleMobileSearch() {
     mobileSearchOpen = !mobileSearchOpen;
-    if (mobileSearchOpen) mobileMenuOpen = false;
+    if (mobileSearchOpen) {
+      mobileMenuOpen = false;
+      // Wait for DOM update, then focus
+      setTimeout(() => searchInput?.focus(), 0);
+    }
   }
 
   function closeAll() {
@@ -58,10 +63,12 @@
       <!-- Desktop Search Bar -->
       <form class="hidden md:flex items-center relative w-[28rem]" on:submit={handleSearch}>
         <input
+          bind:this={searchInput}
           class="w-full h-10 rounded bg-[#3a0d16] text-[#ffb3c6] pl-4 pr-12 focus:outline-none focus:ring-2 focus:ring-[#ff003c] placeholder-[#ffb3c6]/60 border border-[#ff003c44]"
           placeholder="Search hanime..."
           type="text"
           bind:value={searchQuery}
+          autofocus
         />
         <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2" aria-label="Search">
           <svg class="h-5 w-5 text-[#ff003c]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -89,6 +96,7 @@
           placeholder="Search hanime..."
           type="text"
           bind:value={searchQuery}
+          autofocus
         />
         <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2" aria-label="Search">
           <svg class="h-5 w-5 text-[#ff003c]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

@@ -60,8 +60,23 @@
     window.location.href = '/';
   }
 
+  import { onMount } from 'svelte';
+  let searchResults: any[] = [];
+  let searchLoading = true;
+
+  // Fetch search results for episodes
+  onMount(async () => {
+    if (data?.search) {
+      searchLoading = true;
+      const res = await fetch(`/api/hanime/search?query=${encodeURIComponent(data.search)}`);
+      const json = await res.json();
+      searchResults = json?.data?.results ?? [];
+      searchLoading = false;
+    }
+  });
+
   function goToEpisode(id: string) {
-    // your navigation logic here
+    window.location.href = `/hanime/watch/${id}`;
   }
 </script>
 
@@ -78,9 +93,9 @@
   </div>
 
   <main class="relative z-10 flex-1 w-full pt-20 pb-2">
-    <div class="max-w-7xl mx-auto flex flex-col gap-10">
+    <div class="max-w-7xl mx-auto flex flex-col gap-6 px-2 sm:px-0">
       {#if info && watch}
-        <section class="flex-1 flex flex-col gap-8 mb-12">
+        <section class="flex-1 flex flex-col gap-8 mb-6">
           <!-- Player Card -->
           <div class="flex flex-col gap-6 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl border border-[#ff003c]/20 p-4 sm:p-8">
             <PlayerCard videoSrc={videoSrc} poster={poster} {srtUrl} />
@@ -127,9 +142,14 @@
                 <div class="text-[#ffb3c6]/80 text-lg font-medium mb-2 italic">{altTitle}</div>
               {/if}
               {#if genres.length}
-                <div class="flex flex-wrap gap-2 mb-2">
+                <div class="flex flex-wrap gap-1 mb-2">
                   {#each genres as genre}
-                    <span class="bg-[#3a0d16] text-[#ffb3c6] px-3 py-1 rounded-full text-xs font-semibold">{genre}</span>
+                    <a
+                      href={`/hanime/genre/${genre.replace(/\s+/g, '-').toLowerCase()}`}
+                      class="bg-[#3a0d16] text-[#ffb3c6] px-2 py-0.5 rounded-full text-xs font-semibold hover:bg-[#ff003c] hover:text-black transition-colors max-w-full truncate"
+                      style="max-width: 100px;"
+                      >{genre}</a
+                    >
                   {/each}
                 </div>
               {/if}
@@ -166,8 +186,62 @@
           <p class="text-[#ffb3c6]/80">The requested video could not be loaded or does not exist.</p>
         </section>
       {/if}
+
+      <!-- Related List -->
+      <section class="flex flex-col gap-4 mt-2">
+        <h2 class="text-xl font-bold text-[#ff003c] mb-2">Related</h2>
+        {#if searchLoading}
+          <div class="text-[#ffb3c6]">Loading related...</div>
+        {:else if searchResults.length}
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            {#each searchResults as ep, idx}
+              <a
+                on:click|preventDefault={() => goToEpisode(ep.id)}
+                class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer"
+                style="display: block;"
+                tabindex="0"
+              >
+                <div class="relative aspect-[3/4]">
+                  <img
+                    src={ep.image}
+                    alt={ep.title}
+                    class="w-full h-full object-cover"
+                    loading={idx < 12 ? 'eager' : 'lazy'}
+                  />
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                  <div class="absolute top-2 left-2">
+                    <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow">
+                      Related
+                    </span>
+                  </div>
+                  <div class="absolute top-2 right-2">
+                    <span class="bg-black/70 backdrop-blur-sm text-[#ffb3c6] px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
+                      <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.657l-6.828-6.829a4 4 0 010-5.656z"/>
+                      </svg>
+                      {ep.views?.toLocaleString() || '0'}
+                    </span>
+                  </div>
+                  <div class="absolute bottom-0 left-0 right-0 p-2">
+                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-[#ffb3c6] transition-colors" title={ep.title}>
+                      {ep.title}
+                    </h3>
+                    <div class="flex items-center justify-between">
+                      <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded text-[10px] font-bold">18+</span>
+                      <span class="text-[#ffb3c6] text-[10px]">{ep.duration || '--:--'}</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            {/each}
+          </div>
+        {:else}
+          <div class="text-[#ffb3c6]">No related found.</div>
+        {/if}
+      </section>
     </div>
   </main>
+  <div class="h-4 sm:h-6"></div>
   <Footer />
 </div>
 
@@ -177,5 +251,11 @@
       margin-left: auto;
       margin-right: auto;
     }
+  }
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 </style>

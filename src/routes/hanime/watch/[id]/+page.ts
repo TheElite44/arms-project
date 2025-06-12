@@ -1,10 +1,23 @@
 import type { PageLoad } from './$types.js';
 
+// Helper to clean id for search: replace - with %20, remove 'episode' and trailing number
+function cleanSearchId(id: string): string {
+  // Remove '-episode-N' or 'episode-N' at end, ignore case
+  let cleaned = id.replace(/-?episode-\d+$/i, '');
+  // Do NOT remove trailing -N or N, keep the main title number
+  // Replace all remaining '-' with '%20'
+  cleaned = cleaned.replace(/-/g, '%20');
+  return cleaned;
+}
+
 export const load: PageLoad = async ({ params, fetch }) => {
   const id = params.id;
   if (!id) {
-    return { info: null, watch: null, videoSrc: null };
+    return { info: null, watch: null, videoSrc: null, search: null };
   }
+
+  // Clean id for search
+  const search = cleanSearchId(id);
 
   // Fetch info for description/poster
   const infoRes = await fetch(`/api/hanime/info?id=${encodeURIComponent(id)}`);
@@ -48,6 +61,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
     info: infoData?.data ?? null,
     watch: watchData?.data ?? null,
     videoSrc,
-    srtUrl
+    srtUrl,
+    search // <-- add cleaned search string to return
   };
 };

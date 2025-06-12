@@ -19,6 +19,27 @@
         }]
       : [])
   ];
+
+  // Prevent spacebar from pausing video when an input is focused (client only)
+  import { onMount, onDestroy } from 'svelte';
+  function preventSpaceOnInput(e: KeyboardEvent) {
+    if (
+      (e.key === ' ' || e.code === 'Space') &&
+      (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA')
+    ) {
+      e.stopPropagation();
+    }
+  }
+  onMount(() => {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('keydown', preventSpaceOnInput, true);
+    }
+  });
+  onDestroy(() => {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('keydown', preventSpaceOnInput, true);
+    }
+  });
 </script>
 
 <div class="w-full aspect-video rounded-lg overflow-hidden shadow-lg bg-black">
