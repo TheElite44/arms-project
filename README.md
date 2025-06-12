@@ -14,16 +14,6 @@
 
 ---
 
-## ✨ Features
-
-- 🎲 **Random Meme Streaming**: Get a new anime meme every time you visit or refresh!
-- 🏷️ **Categorized Memes**: Browse memes by anime, character, or theme.
-- 📱 **Mobile Friendly**: Fully responsive for any device.
-- 🔗 **Easy Sharing**: Share memes directly to your favorite platforms.
-- 👥 **Community-Driven**: Designed for anime Facebook groups and meme lovers.
-
----
-
 ## 🛠️ Built With
 
 - <img src="https://img.shields.io/badge/Svelte-%23FF3E00.svg?style=flat&logo=svelte&logoColor=white" alt="Svelte" height="20"/> **Svelte** – Fast, modern frontend framework
