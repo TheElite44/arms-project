@@ -40,14 +40,6 @@ npm run dev
 
 ---
 
-## 🖼️ Visual Preview
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/Brent001/arms-project/main/screenshot.png" alt="App Screenshot" width="600"/>
-</p>
-
----
-
 ## 🤝 Contributing
 
 Contributions are welcome!
