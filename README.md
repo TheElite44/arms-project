@@ -14,12 +14,6 @@
 
 ---
 
-## 🚀 Overview
-
-**ARMS** (Anime Random Memes Streaming Site) is a fun web app for sharing and streaming random anime memes, tailored for the Facebook anime community. Built with **Svelte** and **TypeScript**, ARMS delivers a smooth, fast, and interactive meme experience for all anime fans.
-
----
-
 ## ✨ Features
 
 - 🎲 **Random Meme Streaming**: Get a new anime meme every time you visit or refresh!
