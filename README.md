@@ -68,7 +68,7 @@ If you like this project, give it a ⭐️!
 
 ---
 
-### 🎉 Enjoy streaming endless anime memes! 🎉
+### 🎉 Enjoy streaming endless anime! 🎉
 
 ---
 
