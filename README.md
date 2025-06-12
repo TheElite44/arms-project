@@ -70,11 +70,3 @@ If you like this project, give it a ⭐️!
 
 ### 🎉 Enjoy streaming endless anime! 🎉
 
----
-
-**Logo/Icon Suggestions:**  
-Replace logo.png and screenshot.png with your own images or use anime-themed icons from [Icons8](https://icons8.com/icons/set/anime) or [Flaticon](https://www.flaticon.com/search?word=anime).
-
----
-
-Let me know if you want this README.md file created in your repo or need help with custom images!
