@@ -1,4 +1,5 @@
 import type { RequestHandler } from '@sveltejs/kit';
+import { Redis } from '@upstash/redis';
 
 const API_URL = import.meta.env.VITE_ANIME_API || '';
 const REFERERS = [
@@ -7,6 +8,13 @@ const REFERERS = [
   'https://megacloud.club/',
   'https://aniwatch.to/'
 ];
+
+const REDIS_URL = import.meta.env.VITE_REDIS_URL;
+const REDIS_TOKEN = import.meta.env.VITE_REDIS_TOKEN;
+const useRedis = !!REDIS_URL && !!REDIS_TOKEN;
+const redis = useRedis
+  ? new Redis({ url: REDIS_URL!, token: REDIS_TOKEN! })
+  : null;
 
 const createErrorResponse = (message: string, status: number) => 
   new Response(JSON.stringify({ success: false, error: message }), {
@@ -62,6 +70,14 @@ const fetchWithRetry = async (
   throw lastError || new Error('All referers failed');
 };
 
+function secondsUntilMidnight(timezone = 'Asia/Tokyo') {
+  const now = new Date();
+  const tzNow = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+  const tomorrow = new Date(tzNow);
+  tomorrow.setHours(24, 0, 0, 0);
+  return Math.floor((tomorrow.getTime() - tzNow.getTime()) / 1000);
+}
+
 export const GET: RequestHandler = async ({ url }) => {
   const params = Object.fromEntries(url.searchParams);
   const { action, animeId, animeEpisodeId, server = 'hd-1', category = 'sub' } = params;
@@ -73,9 +89,20 @@ export const GET: RequestHandler = async ({ url }) => {
     switch (action) {
       case 'info':
         if (!animeId) return createErrorResponse('animeId required', 400);
+        const CACHE_KEY = `anime_info_${animeId}`;
+        if (redis) {
+          const cached = await redis.get(CACHE_KEY);
+          if (cached) {
+            return new Response(JSON.stringify(cached), { status: 200, headers: { 'Content-Type': 'application/json', 'X-Cache': 'HIT' } });
+          }
+        }
         const infoUrl = `${API_URL}/api/v2/hianime/anime/${encodeURIComponent(animeId)}`;
         const { response: infoRes } = await fetchWithRetry(infoUrl);
-        return new Response(JSON.stringify(await infoRes.json()), { status: 200 });
+        const infoJson = await infoRes.json();
+        if (redis) {
+          await redis.set(CACHE_KEY, infoJson, { ex: secondsUntilMidnight('Asia/Tokyo') });
+        }
+        return new Response(JSON.stringify(infoJson), { status: 200, headers: { 'Content-Type': 'application/json', 'X-Cache': redis ? 'MISS' : 'NONE' } });
       
       case 'episodes':
         if (!animeId) return createErrorResponse('animeId required', 400);

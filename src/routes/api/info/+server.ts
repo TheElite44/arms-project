@@ -1,48 +1,58 @@
 import type { RequestHandler } from '@sveltejs/kit';
+import { Redis } from '@upstash/redis';
 
 const API_URL = import.meta.env.VITE_ANIME_API || '';
+const REDIS_URL = import.meta.env.VITE_REDIS_URL;
+const REDIS_TOKEN = import.meta.env.VITE_REDIS_TOKEN;
 
-export const GET: RequestHandler = async ({ params, url }) => {
-  const animeId = params.animeId || url.searchParams.get('animeId');
-  console.log('Requested animeId:', animeId);
+const useRedis = !!REDIS_URL && !!REDIS_TOKEN;
+const redis = useRedis
+  ? new Redis({ url: REDIS_URL!, token: REDIS_TOKEN! })
+  : null;
 
+function secondsUntilMidnight(timezone = 'Asia/Tokyo') {
+  const now = new Date();
+  const tzNow = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+  const tomorrow = new Date(tzNow);
+  tomorrow.setHours(24, 0, 0, 0);
+  return Math.floor((tomorrow.getTime() - tzNow.getTime()) / 1000);
+}
+
+export const GET: RequestHandler = async ({ url }) => {
+  const animeId = url.searchParams.get('animeId');
   if (!animeId) {
-    console.log('No animeId provided');
-    return new Response(JSON.stringify({ success: false, error: 'Anime ID is required' }), { status: 400 });
+    return new Response(JSON.stringify({ success: false, error: 'Anime ID required' }), { status: 400 });
   }
 
+  const CACHE_KEY = `anime_info_${animeId}`;
+
+  // If Redis is not configured, passthrough mode (no caching)
+  if (!redis) {
+    console.warn('[INFO API] Redis not configured, passthrough mode.');
+    const resp = await fetch(`${API_URL}/api/v2/hianime/anime/${animeId}`);
+    const data = await resp.json();
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', 'X-Cache': 'NONE' }
+    });
+  }
+
+  // Try cache first: only fetch from API if cache is missing
+  const cached = await redis.get(CACHE_KEY);
+  if (cached) {
+    return new Response(JSON.stringify(cached), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', 'X-Cache': 'HIT' }
+    });
+  }
+
+  // Cache miss: fetch from API and cache the result
   const resp = await fetch(`${API_URL}/api/v2/hianime/anime/${animeId}`);
-  const json = await resp.json();
+  const data = await resp.json();
+  await redis.set(CACHE_KEY, data, { ex: secondsUntilMidnight('Asia/Tokyo') });
 
-  console.log('API response:', JSON.stringify(json));
-
-  let anime = null;
-  if (json.success && json.data && json.data.anime) {
-    if (Array.isArray(json.data.anime)) {
-      anime = json.data.anime.length > 0 ? json.data.anime[0] : null;
-    } else if (typeof json.data.anime === 'object') {
-      anime = json.data.anime;
-    }
-  }
-
-  if (!anime) {
-    console.log('Anime not found or invalid response');
-    return new Response(JSON.stringify({ success: false, error: json.error || 'Anime not found' }), { status: 404 });
-  }
-
-  console.log('Returning anime:', JSON.stringify(anime));
-
-  return new Response(JSON.stringify({
-    success: true,
-    data: {
-      anime,
-      mostPopularAnimes: json.data.mostPopularAnimes ?? [],
-      recommendedAnimes: json.data.recommendedAnimes ?? [],
-      relatedAnimes: json.data.relatedAnimes ?? [],
-      seasons: json.data.seasons ?? []
-    }
-  }), {
+  return new Response(JSON.stringify(data), {
     status: 200,
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json', 'X-Cache': 'MISS' }
   });
 };
