@@ -10,7 +10,7 @@
   // Subtitle style settings (Netflix-like)
   export let subtitleSettings = {
     color: '#fff',
-    fontSize: { desktop: '26px', mobile: '14px' }, // Responsive default
+    fontSize: { desktop: '24px', mobile: '12px' }, // Responsive default
     fontFamily: '"Arial Narrow", "Roboto Condensed", Arial, sans-serif',
     fontWeight: 400, // Regular or 300 for thinner
     // Thinner black outline using smaller shadow offsets
@@ -83,15 +83,13 @@
       settings: [
         {
           html: 'Subtitle Style',
-          tooltip: 'Customize subtitle appearance',
           selector: [
             {
               html: 'Font Size',
-              tooltip: 'Change subtitle font size',
               selector: [
-                { html: 'Small (18px / 14px mobile)', value: { desktop: '18px', mobile: '14px' } },
-                { html: 'Medium (26px / 18px mobile)', value: { desktop: '26px', mobile: '18px' } }, // Default
-                { html: 'Large (36px / 28px mobile)', value: { desktop: '36px', mobile: '28px' } }
+                { html: 'Small (14px / 12px mobile)', value: { desktop: '14px', mobile: '12px' } },
+                { html: 'Medium (24px / 14px mobile)', value: { desktop: '24px', mobile: '14px' } }, // Default
+                { html: 'Large (34px / 24px mobile)', value: { desktop: '34px', mobile: '24px' } }
               ],
               onSelect: function (item: any) {
                 subtitleSettings.fontSize = item.value;
@@ -101,7 +99,6 @@
             },
             {
               html: 'Font Color',
-              tooltip: 'Change subtitle color',
               selector: [
                 { html: 'White', value: '#ffffff' },
                 { html: 'Yellow', value: '#ffff00' },
@@ -117,7 +114,6 @@
             },
             {
               html: 'Outline',
-              tooltip: 'Change subtitle outline thickness',
               selector: [
                 { html: 'None', value: 'none' },
                 { html: 'Thin', value: `
@@ -211,8 +207,8 @@
       : fontSize.desktop;
   }
 
+  // NEW: Get responsive margin-bottom
   function getResponsiveMarginBottom(marginBottom: any) {
-    // You can use a string or an object for marginBottom
     if (typeof marginBottom === 'string') return marginBottom;
     return window.matchMedia('(max-width: 600px)').matches
       ? marginBottom.mobile
@@ -244,7 +240,7 @@
         subtitleElement.style.fontFamily = subtitleSettings.fontFamily;
         subtitleElement.style.textShadow = subtitleSettings.textShadow;
         // Lower subtitle on mobile
-        subtitleElement.style.marginBottom = isMobile() ? '30px' : '20px';
+        subtitleElement.style.marginBottom = isMobile() ? '60px' : '20px';
         // Reduce padding on mobile
         subtitleElement.style.padding = isMobile() ? '0.1em 0.3em' : subtitleSettings.padding;
         subtitleElement.style.borderRadius = subtitleSettings.borderRadius;
@@ -395,5 +391,78 @@
 
   .retry-button:hover {
     background: #4338ca;
+  }
+
+  /* Artplayer Subtitle Styles */
+  :global(.art-subtitle) {
+    padding-inline: 0px !important;
+    gap: 2px !important;
+    margin-bottom: 1rem !important;
+  }
+
+  :global(.art-subtitle-line) {
+    min-width: fit-content;
+    background-color: transparent !important;
+    padding-inline: 3px !important;
+  }
+
+  :global(.art-subtitle-line),
+  :global(.art-subtitle-line *) {
+    font-size: inherit !important;
+    color: inherit !important;
+    line-height: inherit !important;
+    font-weight: inherit !important;
+    white-space: inherit !important;
+  }
+
+  /* Artplayer Controls Styles */
+  :global(.art-volume-panel) {
+    padding-bottom: 20px !important;
+  }
+
+  :global(.art-settings) {
+    margin-bottom: 20px !important;
+  }
+
+  /* Mobile Responsive Styles */
+  @media screen and (max-width: 370px) {
+    :global(.art-progress) {
+      padding-bottom: 5px !important;
+    }
+
+    :global(.art-controls-left .art-control) {
+      justify-content: flex-start !important;
+    }
+
+    :global(.art-controls-right .art-control) {
+      justify-content: flex-end !important;
+    }
+
+    :global(.art-controls-right .art-control svg) {
+      width: 22px;
+      height: 22px;
+    }
+
+    :global(.art-controls-left .art-control svg) {
+      width: 22px;
+      height: 22px;
+    }
+
+    :global(.art-state .art-icon svg) {
+      width: 50px;
+      height: 50px;
+    }
+  }
+
+  @media screen and (max-width: 350px) {
+    :global(.art-controls-right .art-control svg) {
+      width: 20px;
+      height: 20px;
+    }
+
+    :global(.art-controls-left .art-control svg) {
+      width: 20px;
+      height: 20px;
+    }
   }
 </style>

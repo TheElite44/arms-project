@@ -182,7 +182,7 @@
   @media (max-width: 768px) {
     .sidebar {
       width: 65%; /* Reduce width for mobile */
-      max-width: 300px; /* Add this line to limit sidebar width on mobile */
+      max-width: 290px; /* Add this line to limit sidebar width on mobile */
     }
 
     .menu-item {
