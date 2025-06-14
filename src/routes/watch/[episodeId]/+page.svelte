@@ -64,29 +64,27 @@
         server,
         category,
       });
-      const apiUrl = `/api/anime?${params.toString()}`;
+      const apiUrl = `/api/anime?${params}`;
       const resp = await fetch(apiUrl);
       const json = await resp.json();
 
-      if (json.success) {
-        // Use proxy for m3u8 sources
-        videoSrc = proxiedM3u8(json.data.sources?.[0]?.url || '');
-        subtitles = (json.data.subtitles ?? []).map((sub: any) => ({
-          url: sub.url, // Optionally: proxiedM3u8(sub.url)
-          label: sub.label || sub.lang,
-          lang: sub.lang,
-          kind: 'subtitles',
-          default: sub.default ?? false,
-        }));
-        intro = json.data.intro || null;
-        outro = json.data.outro || null;
-      } else {
-        videoSrc = '';
-        subtitles = [];
-        intro = null;
-        outro = null;
-      }
-    } catch (err) {
+      if (!json.success) throw new Error('No sources');
+
+      // Use proxy for m3u8 sources
+      const source = json.data.sources?.[0]?.url || '';
+      videoSrc = proxiedM3u8(source);
+
+      subtitles = (json.data.tracks ?? []).map((track: any) => ({
+        url: track.file,
+        label: track.label,
+        lang: track.label?.split(' ')[0]?.toLowerCase() || 'en',
+        kind: track.kind || 'subtitles',
+        default: track.default ?? false,
+      }));
+
+      intro = json.data.intro || null;
+      outro = json.data.outro || null;
+    } catch {
       videoSrc = '';
       subtitles = [];
       intro = null;
