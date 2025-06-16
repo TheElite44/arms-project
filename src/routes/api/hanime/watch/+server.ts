@@ -10,7 +10,7 @@ export const GET: RequestHandler = async ({ url }) => {
 
   try {
     // Proxy to your backend API
-    const resp = await fetch(`${API_URL}/api/hen/hentaitv/watch/${encodeURIComponent(id)}`);
+    const resp = await fetch(`${API_URL}/api/hen/tv/watch/${encodeURIComponent(id)}`);
     if (!resp.ok) {
       return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch watch data' }), { status: resp.status });
     }

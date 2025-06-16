@@ -11,7 +11,7 @@ export const GET: RequestHandler = async ({ url }) => {
   }
 
   try {
-    const apiUrl = `${API_URL}/api/hen/hentaitv/search/${encodeURIComponent(query)}/${encodeURIComponent(page)}`;
+    const apiUrl = `${API_URL}/api/hen/tv/search/${encodeURIComponent(query)}/${encodeURIComponent(page)}`;
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {

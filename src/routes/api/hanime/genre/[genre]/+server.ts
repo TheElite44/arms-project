@@ -11,7 +11,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
   }
 
   try {
-    const resp = await fetch(`${API_URL}/api/hen/hentaitv/genre/${encodeURIComponent(genre)}/${encodeURIComponent(page)}`);
+    const resp = await fetch(`${API_URL}/api/hen/tv/genre/${encodeURIComponent(genre)}/${encodeURIComponent(page)}`);
     if (!resp.ok) {
       return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch genre data' }), { status: resp.status });
     }

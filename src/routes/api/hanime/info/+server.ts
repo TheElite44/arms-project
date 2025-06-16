@@ -9,7 +9,7 @@ export const GET: RequestHandler = async ({ url }) => {
   }
 
   try {
-    const resp = await fetch(`${API_URL}/api/hen/hentaitv/info/${encodeURIComponent(id)}`);
+    const resp = await fetch(`${API_URL}/api/hen/tv/info/${encodeURIComponent(id)}`);
     if (!resp.ok) {
       return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch info data' }), { status: resp.status });
     }

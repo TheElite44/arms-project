@@ -4,7 +4,7 @@ const API_URL = import.meta.env.VITE_HANIME_API || '';
 
 export const GET: RequestHandler = async () => {
   try {
-    const resp = await fetch(`${API_URL}/api/hen/hentaitv/recent`);
+    const resp = await fetch(`${API_URL}/api/hen/tv/recent`);
     if (!resp.ok) {
       return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch recent data' }), { status: resp.status });
     }
