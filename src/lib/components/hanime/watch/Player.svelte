@@ -49,6 +49,61 @@
     }
   }
 
+  // Screen orientation functions
+  function isMobileDevice(): boolean {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+           window.matchMedia('(max-width: 768px)').matches;
+  }
+
+  async function lockToLandscape() {
+    if (!isMobileDevice()) return;
+    
+    try {
+      // Modern Screen Orientation API
+      if ((screen.orientation as any)?.lock) {
+        await (screen.orientation as any).lock('landscape');
+        console.log('Screen locked to landscape');
+      }
+      // Fallback for older browsers
+      else if (screen.lockOrientation) {
+        screen.lockOrientation('landscape');
+      }
+      // Alternative fallback
+      else if (screen.mozLockOrientation) {
+        screen.mozLockOrientation('landscape');
+      }
+      else if (screen.msLockOrientation) {
+        screen.msLockOrientation('landscape');
+      }
+    } catch (error) {
+      console.warn('Could not lock screen orientation:', error);
+    }
+  }
+
+  async function unlockOrientation() {
+    if (!isMobileDevice()) return;
+    
+    try {
+      // Modern Screen Orientation API
+      if ((screen.orientation as any)?.unlock) {
+        (screen.orientation as any).unlock();
+        console.log('Screen orientation unlocked');
+      }
+      // Fallback for older browsers
+      else if (screen.unlockOrientation) {
+        screen.unlockOrientation();
+      }
+      else if (screen.mozUnlockOrientation) {
+        screen.mozUnlockOrientation();
+      }
+      else if (screen.msUnlockOrientation) {
+        screen.msUnlockOrientation();
+      }
+    } catch (error) {
+      console.warn('Could not unlock screen orientation:', error);
+    }
+  }
+
   async function createPlayer() {
     if (!container || !src) return;
 
@@ -193,6 +248,26 @@
         console.error('Video error:', error);
       });
 
+      // Add fullscreen event listeners for landscape rotation
+      art.on('fullscreen', (isFullscreen: boolean) => {
+        console.log('Fullscreen changed:', isFullscreen);
+        if (isFullscreen && isMobileDevice()) {
+          lockToLandscape();
+        } else if (!isFullscreen && isMobileDevice()) {
+          unlockOrientation();
+        }
+      });
+
+      // Alternative fullscreen detection for better compatibility
+      art.on('fullscreenWeb', (isFullscreen: boolean) => {
+        console.log('Web fullscreen changed:', isFullscreen);
+        if (isFullscreen && isMobileDevice()) {
+          lockToLandscape();
+        } else if (!isFullscreen && isMobileDevice()) {
+          unlockOrientation();
+        }
+      });
+
     } catch (error) {
       console.error('Failed to create player:', error);
       throw error;
@@ -227,6 +302,44 @@
       if (nowMobile !== lastMobile) {
         lastMobile = nowMobile;
         updateSubtitleStyle();
+      }
+    });
+
+    // Add fullscreen change event listener as backup
+    document.addEventListener('fullscreenchange', () => {
+      const isFullscreen = !!document.fullscreenElement;
+      if (isFullscreen && isMobileDevice()) {
+        lockToLandscape();
+      } else if (!isFullscreen && isMobileDevice()) {
+        unlockOrientation();
+      }
+    });
+
+    // Alternative fullscreen events for better browser compatibility
+    document.addEventListener('webkitfullscreenchange', () => {
+      const isFullscreen = !!document.webkitFullscreenElement;
+      if (isFullscreen && isMobileDevice()) {
+        lockToLandscape();
+      } else if (!isFullscreen && isMobileDevice()) {
+        unlockOrientation();
+      }
+    });
+
+    document.addEventListener('mozfullscreenchange', () => {
+      const isFullscreen = !!document.mozFullScreenElement;
+      if (isFullscreen && isMobileDevice()) {
+        lockToLandscape();
+      } else if (!isFullscreen && isMobileDevice()) {
+        unlockOrientation();
+      }
+    });
+
+    document.addEventListener('msfullscreenchange', () => {
+      const isFullscreen = !!document.msFullscreenElement;
+      if (isFullscreen && isMobileDevice()) {
+        lockToLandscape();
+      } else if (!isFullscreen && isMobileDevice()) {
+        unlockOrientation();
       }
     });
   }
@@ -291,6 +404,11 @@
   });
 
   onDestroy(() => {
+    // Unlock orientation when component is destroyed
+    if (isMobileDevice()) {
+      unlockOrientation();
+    }
+    
     if (art) {
       try {
         art.destroy();
