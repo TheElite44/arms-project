@@ -13,7 +13,7 @@ function cleanSearchId(id: string): string {
 export const load: PageLoad = async ({ params, fetch }) => {
   const id = params.id;
   if (!id) {
-    return { info: null, watch: null, videoSrc: null, search: null };
+    return { info: null, watch: null, videoSrc: null, search: null, subtitles: [] };
   }
 
   // Clean id for search
@@ -57,11 +57,40 @@ export const load: PageLoad = async ({ params, fetch }) => {
     videoSrc = rawSource.src;
   }
 
+  // --- Subtitle API fetch ---
+  let subtitles: Array<{
+    url: string;
+    label: string;
+    lang: string;
+    kind: 'subtitles' | 'metadata' | 'captions' | 'chapters' | 'descriptions';
+    default?: boolean;
+  }> = [];
+
+  try {
+    const subtitleRes = await fetch(`/api/hanime/subtitles?id=${encodeURIComponent(id)}`);
+    if (subtitleRes.ok) {
+      const subtitleJson = await subtitleRes.json();
+      if (subtitleJson.success && Array.isArray(subtitleJson.data?.tracks)) {
+        subtitles = subtitleJson.data.tracks.map((track: any, idx: number) => ({
+          url: track.url,
+          label: track.lang,
+          lang: track.lang.toLowerCase().slice(0, 2),
+          kind: 'subtitles',
+          default: idx === 0
+        }));
+      }
+    }
+  } catch (e) {
+    // Ignore subtitle errors
+  }
+
   return {
     info: infoData?.data ?? null,
     watch: watchData?.data ?? null,
     videoSrc,
     srtUrl,
-    search // <-- add cleaned search string to return
+    search,
+    subtitles,
+    error: null // Always present
   };
 };

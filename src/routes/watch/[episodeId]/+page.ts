@@ -18,6 +18,59 @@ export const load: PageLoad = async ({ params, fetch }) => {
     };
   }
 
+  let sourcesJson: any = null;
+  let subtitles: any[] = [];
+  let intro: { start: number; end: number } | null = null;
+  let outro: { start: number; end: number } | null = null;
+
+  async function fetchSources(episodeId: string, server: string, category: string) {
+    const resp = await fetch(`/api/anime?action=sources&animeEpisodeId=${episodeId}&server=${server}&category=${category}`);
+    sourcesJson = await resp.json();
+    if (sourcesJson.success) {
+      // Format subtitles properly for the video component
+      interface SubtitleTrack {
+        url: string;
+        lang: string;
+      }
+
+      interface Subtitle {
+        src: string;
+        label: string;
+        srclang: string;
+        default: boolean;
+      }
+
+      subtitles = (sourcesJson.data.tracks ?? [])
+        .filter((track: SubtitleTrack) => track.lang !== 'thumbnails')
+        .map((track: SubtitleTrack): Subtitle => ({
+          src: track.url, // Use 'src' instead of 'url'
+          label: track.lang,
+          srclang:
+            track.lang.toLowerCase().startsWith('english')
+              ? 'en'
+              : track.lang.toLowerCase().startsWith('portuguese')
+              ? 'pt'
+              : track.lang.toLowerCase().startsWith('spanish')
+              ? 'es'
+              : track.lang.toLowerCase().startsWith('french')
+              ? 'fr'
+              : track.lang.toLowerCase().startsWith('german')
+              ? 'de'
+              : track.lang.toLowerCase().startsWith('japanese')
+              ? 'ja'
+              : 'en',
+          default: track.lang.toLowerCase().includes('english') // Set English as default
+        }));
+      
+      intro = sourcesJson.data.intro?.start && sourcesJson.data.intro?.end
+        ? { start: sourcesJson.data.intro.start, end: sourcesJson.data.intro.end }
+        : null;
+      outro = sourcesJson.data.outro?.start && sourcesJson.data.outro?.end
+        ? { start: sourcesJson.data.outro.start, end: sourcesJson.data.outro.end }
+        : null;
+    }
+  }
+
   try {
     const animeInfoResp = await fetch(`/api/anime?action=info&animeId=${animeId}`);
     console.log('animeInfoResp status:', animeInfoResp.status);
@@ -29,8 +82,13 @@ export const load: PageLoad = async ({ params, fetch }) => {
       throw new Error(animeInfoJson.error || 'Anime data not found');
     }
 
-    // Extract subtitles from animeInfoJson or another API if available
-    const subtitles = animeInfoJson.data?.subtitles || [];
+    // Format initial subtitles properly
+    const initialSubtitles = (animeInfoJson.data?.subtitles || []).map((sub: any) => ({
+      src: sub.url || sub.src,
+      label: sub.label || sub.lang,
+      srclang: sub.srclang || sub.lang || 'en',
+      default: sub.default || false
+    }));
 
     const episodesResp = await fetch(`/api/anime?action=episodes&animeId=${animeId}`);
     console.log('episodesResp status:', episodesResp.status);
@@ -48,8 +106,9 @@ export const load: PageLoad = async ({ params, fetch }) => {
       episodes: episodesJson.data.episodes || [],
       relatedAnimes: animeInfoJson.data.relatedAnimes || [],
       recommendedAnimes: animeInfoJson.data.recommendedAnimes || [],
-      videoSources: [], // fill this if you have sources
-      subtitles // <-- pass subtitles to the page
+      videoSources: [], // This will be populated when sources are fetched
+      subtitles: initialSubtitles,
+      fetchSources // Export the fetchSources function for use in the page component
     };
   } catch (error) {
     console.error('Error loading page data:', error);
@@ -61,7 +120,8 @@ export const load: PageLoad = async ({ params, fetch }) => {
       episodeId,
       anime: null,
       relatedAnimes: [],
-      recommendedAnimes: []
+      recommendedAnimes: [],
+      fetchSources: null
     };
   }
 };

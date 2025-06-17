@@ -29,6 +29,9 @@
 
   let showWarning = true;
 
+  // Loading state
+  let loading = true;
+
   // Cookie helpers
   function getCookie(name: string) {
     const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
@@ -73,6 +76,8 @@
       searchResults = json?.data?.results ?? [];
       searchLoading = false;
     }
+    // Data is ready, stop loading
+    loading = false;
   });
 
   function goToEpisode(id: string) {
@@ -94,7 +99,11 @@
 
   <main class="relative z-10 flex-1 w-full pt-20 pb-2">
     <div class="max-w-7xl mx-auto flex flex-col gap-6 px-2 sm:px-0">
-      {#if info && watch}
+      {#if loading}
+        <div class="flex items-center justify-center min-h-[300px]">
+          <img src="/assets/loader.gif" alt="Loading..." style="max-width: 120px; max-height: 110px;" />
+        </div>
+      {:else if info && watch}
         <section class="flex-1 flex flex-col gap-8 mb-6">
           <!-- Player Card -->
           <div class="flex flex-col gap-6 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl border border-[#ff003c]/20 p-4 sm:p-8">

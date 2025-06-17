@@ -22,12 +22,12 @@
   let currentServer = '';
   let category: 'sub' | 'dub' | 'raw' = 'sub';
   let videoSrc = '';
-  let subtitles: Array<{ url: string; label: string; lang: string; kind: string; default?: boolean }> = [];
+  let subtitles: Array<{ url: string; label: string; lang: string; kind: 'subtitles' | 'metadata' | 'captions' | 'chapters' | 'descriptions'; default?: boolean }> = [];
   let poster = !isError(data) ? safe(data.anime?.info?.poster, 'https://example.com/default-poster.jpg') : 'https://example.com/default-poster.jpg';
   let title = !isError(data) ? safe(data.anime?.info?.name, 'Episode') : 'Episode';
   let intro: { start: number; end: number } | null = null;
   let outro: { start: number; end: number } | null = null;
-  let useArtPlayer = true;
+  let useArtPlayer = false;
   let loading = true;
 
   // --- Pagination ---
@@ -55,8 +55,8 @@
   }
 
   // --- Fetch Logic ---
-  async function fetchWatchData(episodeId: string, server: string, category: string) {
-    loading = true;
+  async function fetchWatchData(episodeId: string, server: string, category: string, showLoading = true) {
+    if (showLoading) loading = true;
     try {
       const params = new URLSearchParams({
         action: 'sources',
@@ -74,13 +74,31 @@
       const source = json.data.sources?.[0]?.url || '';
       videoSrc = proxiedM3u8(source);
 
-      subtitles = (json.data.tracks ?? []).map((track: any) => ({
-        url: track.file,
-        label: track.label,
-        lang: track.label?.split(' ')[0]?.toLowerCase() || 'en',
-        kind: track.kind || 'subtitles',
-        default: track.default ?? false,
-      }));
+      const allowedKinds = ['metadata', 'subtitles', 'captions', 'chapters', 'descriptions'] as const;
+      subtitles = (json.data.tracks ?? [])
+        .filter((track: any) => track.lang !== 'thumbnails')
+        .map((track: any) => ({
+          src: track.url, // <-- use src, not url/file
+          label: track.lang, // <-- use lang as label
+          srclang:
+            track.lang.toLowerCase().startsWith('english')
+              ? 'en'
+              : track.lang.toLowerCase().startsWith('portuguese')
+              ? 'pt'
+              : track.lang.toLowerCase().startsWith('spanish')
+              ? 'es'
+              : track.lang.toLowerCase().startsWith('french')
+              ? 'fr'
+              : track.lang.toLowerCase().startsWith('german')
+              ? 'de'
+              : track.lang.toLowerCase().startsWith('japanese')
+              ? 'ja'
+              : 'en',
+          default: track.lang.toLowerCase().includes('english')
+        }));
+
+      // After mapping subtitles
+      console.log('Subtitles mapped for PlayerCard:', subtitles);
 
       intro = json.data.intro || null;
       outro = json.data.outro || null;
@@ -90,7 +108,7 @@
       intro = null;
       outro = null;
     } finally {
-      loading = false;
+      if (showLoading) loading = false;
     }
   }
 
@@ -140,17 +158,16 @@
       if (animeKey) localStorage.setItem(animeKey, episodeId);
 
       await fetchServers(episodeId);
-      await fetchWatchData(episodeId, currentServer, category);
+      await fetchWatchData(episodeId, currentServer, category, true); // show loading
 
       goto(`/watch/${episodeId}`);
     }
   }
 
-  function changeServerManual(serverName: string) {
-    if (currentServer !== serverName) {
-      currentServer = serverName;
-      fetchWatchData(currentEpisodeId, currentServer, category);
-    }
+  function changeServerManual(serverName: string, cat: 'sub' | 'dub' | 'raw') {
+    currentServer = serverName;
+    category = cat;
+    fetchWatchData(currentEpisodeId, currentServer, category, false);
   }
 
   function changeCategoryManual(cat: 'sub' | 'dub' | 'raw') {
@@ -220,8 +237,6 @@
               {videoSrc}
               {poster}
               {subtitles}
-              {intro}
-              {outro}
               {useArtPlayer}
               goToEpisode={goToEpisode}
             />
@@ -230,7 +245,7 @@
               {servers}
               {currentServer}
               {category}
-              changeServerManual={changeServerManual}
+              {changeServerManual}
             />
 
             <PlayerSelector

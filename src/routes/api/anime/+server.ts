@@ -16,6 +16,8 @@ const redis = useRedis
   ? new Redis({ url: REDIS_URL!, token: REDIS_TOKEN! })
   : null;
 
+const M3U8_PROXY = import.meta.env.VITE_M3U8_PROXY || 'https://ani-fire-m3u8-proxy.vercel.app/';
+
 const createErrorResponse = (message: string, status: number) => 
   new Response(JSON.stringify({ success: false, error: message }), {
     status,
@@ -139,7 +141,7 @@ export const GET: RequestHandler = async ({ url }) => {
               Referer: referer,
               Origin: referer.slice(0, -1),
             });
-            source.url = `https://ani-fire-m3u8-proxy.vercel.app/m3u8-proxy?url=${
+            source.url = `${M3U8_PROXY.replace(/\/$/, '')}/m3u8-proxy?url=${
               encodeURIComponent(source.url)}&headers=${encodeURIComponent(proxyHeaders)}`;
           }
           return source;
