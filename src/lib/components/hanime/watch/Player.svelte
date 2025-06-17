@@ -348,8 +348,26 @@
     if (art && art.subtitle) {
       const subtitleElement = art.template.$subtitle;
       if (subtitleElement) {
+        // Detect fullscreen (Artplayer or browser fullscreen)
+        const isFullscreen =
+          (art.fullscreen || art.fullscreenWeb) ||
+          document.fullscreenElement ||
+          document.webkitFullscreenElement ||
+          document.mozFullScreenElement ||
+          document.msFullscreenElement;
+
+        // Calculate font size
+        let fontSize = getResponsiveFontSize(subtitleSettings.fontSize);
+        if (isFullscreen) {
+          // Increase font size by 25% in fullscreen
+          if (typeof fontSize === 'string' && fontSize.endsWith('px')) {
+            const num = parseFloat(fontSize);
+            fontSize = `${Math.round(num * 1.25)}px`;
+          }
+        }
+
         subtitleElement.style.color = subtitleSettings.color;
-        subtitleElement.style.fontSize = getResponsiveFontSize(subtitleSettings.fontSize);
+        subtitleElement.style.fontSize = fontSize;
         subtitleElement.style.fontFamily = subtitleSettings.fontFamily;
         subtitleElement.style.textShadow = subtitleSettings.textShadow;
         // Lower subtitle on mobile

@@ -7,7 +7,7 @@
   export let servers: Server[] = [];
   export let currentServer: string = '';
   export let category: 'sub' | 'dub' | 'raw' = 'sub';
-  export let changeServerManual: (name: string) => void;
+  export let changeServerManual: (name: string, category: 'sub' | 'dub' | 'raw') => void;
   const categories: Array<'sub' | 'dub'> = ['sub', 'dub'];
 </script>
 
@@ -21,7 +21,7 @@
         <div class="flex gap-2">
           {#each servers.filter(s => s.category === cat) as server}
             <button
-              on:click={() => { category = cat; changeServerManual(server.serverName); }}
+              on:click={() => changeServerManual(server.serverName, cat)}
               class={`rounded-md bg-white/10 px-4 py-1.5 text-xs font-medium uppercase transition
                 ${currentServer === server.serverName && category === cat
                   ? 'bg-orange-400 text-black'
