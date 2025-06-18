@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
 
   export let isOpen = false;
@@ -44,6 +44,23 @@
     goto(path);
     onClose();
   }
+
+  // Prevent page scroll when sidebar is open
+  $: {
+    if (typeof window !== 'undefined') {
+      if (isOpen) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+  }
+
+  onDestroy(() => {
+    if (typeof window !== 'undefined') {
+      document.body.style.overflow = '';
+    }
+  });
 
   onMount(() => {
     fetchGenres();
