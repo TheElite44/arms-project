@@ -1,5 +1,7 @@
 import type { RequestHandler } from '@sveltejs/kit';
 
+const M3U8_PROXY = import.meta.env.VITE_M3U8_PROXY?.replace(/\/$/, '');
+
 export const GET: RequestHandler = async ({ url }) => {
   const m3u8Url = url.searchParams.get('url');
   const headersParam = url.searchParams.get('headers');
@@ -21,8 +23,11 @@ export const GET: RequestHandler = async ({ url }) => {
     }
   }
 
+  // Always use the proxy base from .env
+  const proxyUrl = `${M3U8_PROXY}/m3u8-proxy?url=${encodeURIComponent(m3u8Url)}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
+
   try {
-    const resp = await fetch(m3u8Url, { headers });
+    const resp = await fetch(proxyUrl);
     const contentType = resp.headers.get('content-type') || 'application/vnd.apple.mpegurl';
     const body = await resp.arrayBuffer();
 

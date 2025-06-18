@@ -9,6 +9,7 @@
   export let data: {
     genre: string;
     animes: Array<{
+      duration: string;
       id: string;
       title: string;
       image: string;
@@ -137,7 +138,7 @@
                 {#each data.animes as anime, index (anime.id)}
                   <a
                     href={`/hanime/info/${anime.id}`}
-                    class="group relative bg-[#1a0106] rounded-2xl overflow-hidden shadow-lg transition-all duration-200 border-2 border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40"
+                    class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block"
                   >
                     <div class="relative aspect-[3/4]">
                       <img
@@ -147,23 +148,25 @@
                         loading={index < 12 ? 'eager' : 'lazy'}
                       />
                       <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                      <div class="absolute top-3 left-3">
-                        <span class="bg-[#ff003c] text-white px-2 py-1 rounded-lg text-xs font-semibold shadow-lg">
+                      <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
+                        <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow">
                           Hanime
                         </span>
-                      </div>
-                      <div class="absolute top-3 right-3">
-                        <span class="bg-black/70 backdrop-blur-sm text-[#ffb3c6] px-2 py-1 rounded-lg text-xs flex items-center gap-1">
+                        <span class="bg-black/70 backdrop-blur-sm text-[#ffb3c6] px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
                           <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.657l-6.828-6.829a4 4 0 010-5.656z"/>
                           </svg>
                           {anime.views?.toLocaleString() || '0'}
                         </span>
                       </div>
-                      <div class="absolute bottom-0 left-0 right-0 p-4">
-                        <h3 class="font-semibold text-white text-sm sm:text-base mb-2 line-clamp-2 group-hover:text-[#ffb3c6] transition-colors" title={anime.title}>
+                      <div class="absolute bottom-0 left-0 right-0 p-2">
+                        <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-[#ffb3c6] transition-colors" title={anime.title}>
                           {anime.title}
                         </h3>
+                        <div class="flex items-center justify-between">
+                          <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded text-[10px] font-bold">18+</span>
+                          <span class="text-[#ffb3c6] text-[10px]">{anime.duration || '--:--'}</span>
+                        </div>
                       </div>
                     </div>
                   </a>

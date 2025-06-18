@@ -29,6 +29,7 @@
   let outro: { start: number; end: number } | null = null;
   let useArtPlayer = false;
   let loading = true;
+  let thumbnailsVtt = '';
 
   // --- Pagination ---
   let episodesPerPage = 50;
@@ -74,27 +75,12 @@
       const source = json.data.sources?.[0]?.url || '';
       videoSrc = proxiedM3u8(source);
 
-      const allowedKinds = ['metadata', 'subtitles', 'captions', 'chapters', 'descriptions'] as const;
       subtitles = (json.data.tracks ?? [])
         .filter((track: any) => track.lang !== 'thumbnails')
         .map((track: any) => ({
-          src: track.url, // <-- use src, not url/file
-          label: track.lang, // <-- use lang as label
-          srclang:
-            track.lang.toLowerCase().startsWith('english')
-              ? 'en'
-              : track.lang.toLowerCase().startsWith('portuguese')
-              ? 'pt'
-              : track.lang.toLowerCase().startsWith('spanish')
-              ? 'es'
-              : track.lang.toLowerCase().startsWith('french')
-              ? 'fr'
-              : track.lang.toLowerCase().startsWith('german')
-              ? 'de'
-              : track.lang.toLowerCase().startsWith('japanese')
-              ? 'ja'
-              : 'en',
-          default: track.lang.toLowerCase().includes('english')
+          src: track.url,
+          label: track.lang,
+          srclang: track.srclang || track.lang || 'en'
         }));
 
       // After mapping subtitles

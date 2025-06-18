@@ -42,7 +42,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
 
       subtitles = (sourcesJson.data.tracks ?? [])
         .filter((track: SubtitleTrack) => track.lang !== 'thumbnails')
-        .map((track: SubtitleTrack): Subtitle => ({
+        .map((track: SubtitleTrack) => ({
           src: track.url, // Use 'src' instead of 'url'
           label: track.lang,
           srclang:
@@ -58,8 +58,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
               ? 'de'
               : track.lang.toLowerCase().startsWith('japanese')
               ? 'ja'
-              : 'en',
-          default: track.lang.toLowerCase().includes('english') // Set English as default
+              : 'en'
         }));
       
       intro = sourcesJson.data.intro?.start && sourcesJson.data.intro?.end

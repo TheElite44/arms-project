@@ -3,10 +3,9 @@ import { Redis } from '@upstash/redis';
 
 const API_URL = import.meta.env.VITE_ANIME_API || '';
 const REFERERS = [
-  'https://hianimez.to/',
-  'https://megacloud.blog/',
   'https://megacloud.club/',
-  'https://aniwatch.to/'
+  'https://hianime.to/'
+
 ];
 
 const REDIS_URL = import.meta.env.VITE_REDIS_URL;
@@ -16,7 +15,7 @@ const redis = useRedis
   ? new Redis({ url: REDIS_URL!, token: REDIS_TOKEN! })
   : null;
 
-const M3U8_PROXY = import.meta.env.VITE_M3U8_PROXY || 'https://ani-fire-m3u8-proxy.vercel.app/';
+const M3U8_PROXY = import.meta.env.VITE_M3U8_PROXY;
 
 const createErrorResponse = (message: string, status: number) => 
   new Response(JSON.stringify({ success: false, error: message }), {
@@ -139,10 +138,9 @@ export const GET: RequestHandler = async ({ url }) => {
           if (source.url?.endsWith('.m3u8') && isValidUrl(source.url)) {
             const proxyHeaders = JSON.stringify({
               Referer: referer,
-              Origin: referer.slice(0, -1),
+              Origin: 'https://hianime.to',
             });
-            source.url = `${M3U8_PROXY.replace(/\/$/, '')}/m3u8-proxy?url=${
-              encodeURIComponent(source.url)}&headers=${encodeURIComponent(proxyHeaders)}`;
+            source.url = `${M3U8_PROXY.replace(/\/$/, '')}/m3u8-proxy?url=${encodeURIComponent(source.url)}&headers=${encodeURIComponent(proxyHeaders)}`;
           }
           return source;
         });
