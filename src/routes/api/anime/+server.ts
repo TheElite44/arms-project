@@ -3,7 +3,8 @@ import { Redis } from '@upstash/redis';
 
 const API_URL = import.meta.env.VITE_ANIME_API || '';
 const REFERERS = [
-  'https://megacloud.club/'
+  'https://megacloud.club/',
+  'https://hianime.to/'
 
 ];
 
@@ -118,20 +119,55 @@ export const GET: RequestHandler = async ({ url }) => {
       
       case 'sources':
         if (!animeEpisodeId) return createErrorResponse('animeEpisodeId required', 400);
+
+        // --- REDIS CACHE KEY FOR SOURCES ---
+        const SOURCES_CACHE_KEY = `anime_sources_${animeEpisodeId}_${server}_${category}`;
+        if (redis) {
+          const cached = await redis.get(SOURCES_CACHE_KEY);
+          if (cached) {
+            return new Response(JSON.stringify({
+              success: true,
+              data: cached,
+              X_Cache: 'HIT'
+            }), { status: 200, headers: { 'Content-Type': 'application/json', 'X-Cache': 'HIT' } });
+          }
+        }
+
         const sourcesUrl = `${API_URL}/api/v2/hianime/episode/sources?${new URLSearchParams({
           animeEpisodeId: decodeURIComponent(animeEpisodeId),
           server,
           category
         })}`;
         console.log('Fetching sources from:', sourcesUrl);
-        const { response: sourcesRes, referer } = await fetchWithRetry(sourcesUrl);
-        const json = await sourcesRes.json();
-        console.log('Upstream sources response:', JSON.stringify(json));
-        
-        if (!json.success || !json.data?.sources) {
-          return createErrorResponse(json.message || 'Invalid sources response', 400);
+
+        let sourcesRes, referer, json;
+        try {
+          ({ response: sourcesRes, referer } = await fetchWithRetry(sourcesUrl));
+          json = await sourcesRes.json();
+        } catch (err) {
+          // Save failed server info if fetch fails
+          if (redis) {
+            await redis.set(SOURCES_CACHE_KEY, {
+              server,
+              serverUrl: sourcesUrl,
+              error: 'fetch_failed'
+            }, { ex: 172800 });
+          }
+          return createErrorResponse('Failed to fetch sources', 500);
         }
-        
+
+        // If sources is null or response is 500, save server info
+        if (!json?.success || !json.data?.sources || sourcesRes.status === 500) {
+          if (redis) {
+            await redis.set(SOURCES_CACHE_KEY, {
+              server,
+              serverUrl: sourcesUrl,
+              error: 'no_sources'
+            }, { ex: 172800 });
+          }
+          return createErrorResponse(json?.message || 'No sources found', 500);
+        }
+
         // Process sources
         const processedSources = json.data.sources.map((source: any) => {
           if (source.url?.endsWith('.m3u8') && isValidUrl(source.url)) {
@@ -143,15 +179,29 @@ export const GET: RequestHandler = async ({ url }) => {
           }
           return source;
         });
+
+        // --- STORE IN REDIS ---
+        if (redis) {
+          // Cache for 2 days (172800 seconds)
+          await redis.set(SOURCES_CACHE_KEY, {
+            ...json.data,
+            sources: processedSources,
+            usedReferer: referer,
+            server,
+            serverUrl: sourcesUrl
+          }, { ex: 172800 });
+        }
         
         return new Response(JSON.stringify({
           success: true,
           data: {
             ...json.data,
             sources: processedSources,
-            usedReferer: referer
+            usedReferer: referer,
+            server,
+            serverUrl: sourcesUrl
           }
-        }), { status: 200 });
+        }), { status: 200, headers: { 'Content-Type': 'application/json', 'X-Cache': redis ? 'MISS' : 'NONE' } });
       
       default:
         return createErrorResponse(`Invalid action: ${action}`, 400);
