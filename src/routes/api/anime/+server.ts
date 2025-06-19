@@ -120,88 +120,105 @@ export const GET: RequestHandler = async ({ url }) => {
       case 'sources':
         if (!animeEpisodeId) return createErrorResponse('animeEpisodeId required', 400);
 
-        // --- REDIS CACHE KEY FOR SOURCES ---
-        const SOURCES_CACHE_KEY = `anime_sources_${animeEpisodeId}_${server}_${category}`;
-        if (redis) {
-          const cached = await redis.get(SOURCES_CACHE_KEY);
-          if (cached) {
-            return new Response(JSON.stringify({
-              success: true,
-              data: cached,
-              X_Cache: 'HIT'
-            }), { status: 200, headers: { 'Content-Type': 'application/json', 'X-Cache': 'HIT' } });
-          }
+        const serversToCache = ['hd-1', 'hd-2'];
+        const requestedServer = server.toLowerCase();
+        const cacheKeys = serversToCache.map(s =>
+          `anime_sources_${animeEpisodeId}_${s}_${category}`
+        );
+
+        let cachedResults = redis
+          ? await Promise.all(cacheKeys.map(key => redis.get(key)))
+          : [null, null];
+
+        // If both are cached, return the requested one
+        const idx = serversToCache.indexOf(requestedServer);
+        if (idx !== -1 && cachedResults[idx]) {
+          return new Response(JSON.stringify({
+            success: true,
+            data: cachedResults[idx],
+            X_Cache: 'HIT'
+          }), { status: 200, headers: { 'Content-Type': 'application/json', 'X-Cache': 'HIT' } });
         }
 
-        const sourcesUrl = `${API_URL}/api/v2/hianime/episode/sources?${new URLSearchParams({
-          animeEpisodeId: decodeURIComponent(animeEpisodeId),
-          server,
-          category
-        })}`;
-        console.log('Fetching sources from:', sourcesUrl);
+        // If either is missing, fetch both and cache both
+        for (let i = 0; i < serversToCache.length; i++) {
+          if (!cachedResults[i]) {
+            const s = serversToCache[i];
+            const sourcesUrl = `${API_URL}/api/v2/hianime/episode/sources?${new URLSearchParams({
+              animeEpisodeId: decodeURIComponent(animeEpisodeId),
+              server: s,
+              category
+            })}`;
+            let sourcesRes, referer, json;
+            try {
+              ({ response: sourcesRes, referer } = await fetchWithRetry(sourcesUrl));
+              json = await sourcesRes.json();
+            } catch (err) {
+              if (redis) {
+                await redis.set(
+                  `anime_sources_${animeEpisodeId}_${s}_${category}`,
+                  { server: s, serverUrl: sourcesUrl, error: 'fetch_failed' },
+                  { ex: 172800 }
+                );
+              }
+              cachedResults[i] = { server: s, serverUrl: sourcesUrl, error: 'fetch_failed' };
+              continue;
+            }
 
-        let sourcesRes, referer, json;
-        try {
-          ({ response: sourcesRes, referer } = await fetchWithRetry(sourcesUrl));
-          json = await sourcesRes.json();
-        } catch (err) {
-          // Save failed server info if fetch fails
-          if (redis) {
-            await redis.set(SOURCES_CACHE_KEY, {
-              server,
-              serverUrl: sourcesUrl,
-              error: 'fetch_failed'
-            }, { ex: 172800 });
-          }
-          return createErrorResponse('Failed to fetch sources', 500);
-        }
+            if (!json?.success || !json.data?.sources || sourcesRes.status === 500) {
+              if (redis) {
+                await redis.set(
+                  `anime_sources_${animeEpisodeId}_${s}_${category}`,
+                  { server: s, serverUrl: sourcesUrl, error: 'no_sources' },
+                  { ex: 172800 }
+                );
+              }
+              cachedResults[i] = { server: s, serverUrl: sourcesUrl, error: 'no_sources' };
+              continue;
+            }
 
-        // If sources is null or response is 500, save server info
-        if (!json?.success || !json.data?.sources || sourcesRes.status === 500) {
-          if (redis) {
-            await redis.set(SOURCES_CACHE_KEY, {
-              server,
-              serverUrl: sourcesUrl,
-              error: 'no_sources'
-            }, { ex: 172800 });
-          }
-          return createErrorResponse(json?.message || 'No sources found', 500);
-        }
-
-        // Process sources
-        const processedSources = json.data.sources.map((source: any) => {
-          if (source.url?.endsWith('.m3u8') && isValidUrl(source.url)) {
-            const proxyHeaders = JSON.stringify({
-              Referer: referer,
-              Origin: 'https://hianime.to',
+            const processedSources = json.data.sources.map((source: any) => {
+              if (source.url?.endsWith('.m3u8') && isValidUrl(source.url)) {
+                const proxyHeaders = JSON.stringify({
+                  Referer: referer,
+                  Origin: 'https://hianime.to',
+                });
+                source.url = `${M3U8_PROXY.replace(/\/$/, '')}/m3u8-proxy?url=${encodeURIComponent(source.url)}&headers=${encodeURIComponent(proxyHeaders)}`;
+              }
+              return source;
             });
-            source.url = `${M3U8_PROXY.replace(/\/$/, '')}/m3u8-proxy?url=${encodeURIComponent(source.url)}&headers=${encodeURIComponent(proxyHeaders)}`;
-          }
-          return source;
-        });
 
-        // --- STORE IN REDIS ---
-        if (redis) {
-          // Cache for 2 days (172800 seconds)
-          await redis.set(SOURCES_CACHE_KEY, {
-            ...json.data,
-            sources: processedSources,
-            usedReferer: referer,
-            server,
-            serverUrl: sourcesUrl
-          }, { ex: 172800 });
-        }
-        
-        return new Response(JSON.stringify({
-          success: true,
-          data: {
-            ...json.data,
-            sources: processedSources,
-            usedReferer: referer,
-            server,
-            serverUrl: sourcesUrl
+            const cacheValue = {
+              ...json.data,
+              sources: processedSources,
+              usedReferer: referer,
+              server: s,
+              serverUrl: sourcesUrl
+            };
+
+            // Cache for 5 days (432000 seconds)
+            if (redis) {
+              await redis.set(
+                `anime_sources_${animeEpisodeId}_${s}_${category}`,
+                cacheValue,
+                { ex: 432000 }
+              );
+            }
+            cachedResults[i] = cacheValue;
           }
-        }), { status: 200, headers: { 'Content-Type': 'application/json', 'X-Cache': redis ? 'MISS' : 'NONE' } });
+        }
+
+        // Return the requested server's result
+        const result = cachedResults[idx];
+        if (result) {
+          return new Response(JSON.stringify({
+            success: true,
+            data: result,
+            X_Cache: 'MISS'
+          }), { status: 200, headers: { 'Content-Type': 'application/json', 'X-Cache': 'MISS' } });
+        } else {
+          return createErrorResponse('No sources found for requested server', 500);
+        }
       
       default:
         return createErrorResponse(`Invalid action: ${action}`, 400);
