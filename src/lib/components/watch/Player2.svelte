@@ -147,21 +147,52 @@
       hls = new Hls();
       hls.loadSource(videoUrl);
       hls.attachMedia(videoRef);
+
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         if (!videoRef) return;
+
+        // Get available quality levels (resolutions)
+        const availableQualities = hls
+          ? hls.levels
+              .map((l) => l.height)
+              .filter((v, i, a) => a.indexOf(v) === i)
+              .sort((a, b) => b - a)
+          : [];
+
         plyr = new Plyr(videoRef, {
           controls: [
             'play-large', 'play', 'progress', 'current-time', 'mute', 'volume',
-            'captions', 'settings', 'fullscreen'
+            'captions', 'settings', 'quality', 'fullscreen'
           ],
           captions: { 
             active: false, 
             language: 'auto',
             update: true 
           },
-          settings: ['captions', 'quality', 'speed']
+          settings: ['captions', 'quality', 'speed'],
+          quality: {
+            default: availableQualities[0],
+            options: availableQualities,
+            forced: true,
+            onChange: (newQuality) => {
+              if (hls) {
+                const levelIndex = hls.levels.findIndex((l) => l.height === newQuality);
+                hls.currentLevel = levelIndex;
+              }
+            }
+          }
         });
-        setupOrientationHandling(); // <-- add this here
+
+        // Sync Plyr UI with hls.js when user changes quality from Plyr menu
+        plyr.on('qualitychange', (event) => {
+          if (hls) {
+            const newQuality = event.detail.plyr.quality;
+            const levelIndex = hls.levels.findIndex((l) => l.height === newQuality);
+            hls.currentLevel = levelIndex;
+          }
+        });
+
+        setupOrientationHandling();
         plyr?.on('languagechange', () => {
           if (!plyr || !videoRef) return;
           if (plyr.currentTrack !== -1 && videoRef.textTracks[plyr.currentTrack]) {
@@ -177,9 +208,7 @@
             }
           }
         });
-        plyr?.on('captionsenabled', () => {
-          // Optionally handle
-        });
+        plyr?.on('captionsenabled', () => {});
         plyr?.on('captionsdisabled', () => {
           selectedLanguage = 'auto';
         });
@@ -199,9 +228,9 @@
             language: 'auto',
             update: true 
           },
-          settings: ['captions', 'quality', 'speed']
+          settings: ['captions', 'speed']
         });
-        setupOrientationHandling(); // <-- add this here
+        setupOrientationHandling();
         plyr?.on('languagechange', () => {
           if (!plyr || !videoRef) return;
           if (plyr.currentTrack !== -1 && videoRef.textTracks[plyr.currentTrack]) {
@@ -583,18 +612,24 @@
     text-shadow: 0 2px 4px #000, 0 0 2px #000;
   }
 
-  /* Make Plyr settings menu smaller on mobile */
+  /* Make Plyr settings and captions menu smaller on mobile */
   @media (max-width: 640px) {
     :global(.plyr__menu__container) {
-      min-width: 140px !important;
-      max-width: 180px !important;
-      font-size: 0.85rem !important;
-      padding: 0.25rem 0.5rem !important;
-      border-radius: 0.4rem !important;
+      max-height: 150px !important;
+      min-width: 90px !important;
+      max-width: 140px !important;
+      font-size: 0.75rem !important;
+      padding: 0.15rem 0.3rem !important;
+      border-radius: 0.3rem !important;
+      overflow-y: auto !important;
+      overscroll-behavior: contain;
     }
-    :global(.plyr__menu__container .plyr__control) {
-      padding: 0.3rem 0.5rem !important;
-      font-size: 0.95em !important;
+    :global(.plyr__menu__container .plyr__control),
+    :global(.plyr__menu__container .plyr__menu__value),
+    :global(.plyr__menu__container .plyr__control[role="menuitemradio"]) {
+      font-size: 0.75rem !important;
+      min-height: 24px !important;
+      padding: 0.15rem 0.3rem !important;
     }
   }
 
