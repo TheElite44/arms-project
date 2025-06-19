@@ -1,4 +1,5 @@
 <script lang="ts">
+/// <reference path="../../types/screen-orientation.d.ts" />
   import { onMount, onDestroy } from 'svelte';
   import Plyr from 'plyr';
   import 'plyr/dist/plyr.css';
@@ -258,12 +259,111 @@
     if (videoRef && videoUrl) {
       initializePlayer();
     }
+
+    // Native fullscreenchange event (works for all triggers)
+    function handleFullscreenChange() {
+      const isFullscreen =
+        document.fullscreenElement === videoRef ||
+        document.webkitFullscreenElement === videoRef ||
+        document.mozFullScreenElement === videoRef ||
+        document.msFullscreenElement === videoRef;
+      if (isFullscreen && isMobileDevice()) {
+        lockToLandscape();
+      } else if (!isFullscreen && isMobileDevice()) {
+        unlockOrientation();
+      }
+    }
+
+    videoRef?.addEventListener('fullscreenchange', handleFullscreenChange);
+    videoRef?.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    videoRef?.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    videoRef?.addEventListener('msfullscreenchange', handleFullscreenChange);
+
+    onDestroy(() => {
+      videoRef?.removeEventListener('fullscreenchange', handleFullscreenChange);
+      videoRef?.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      videoRef?.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      videoRef?.removeEventListener('msfullscreenchange', handleFullscreenChange);
+      unlockOrientation();
+      cleanup();
+      detachBufferingEvents?.();
+    });
   });
 
   onDestroy(() => {
     cleanup();
     detachBufferingEvents();
   });
+
+  function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      || window.matchMedia('(max-width: 768px)').matches;
+  }
+
+  async function lockToLandscape() {
+    if (!isMobileDevice()) return;
+    try {
+      if ((screen.orientation as any)?.lock) {
+        await (screen.orientation as any).lock('landscape');
+      }
+    } catch (e) {}
+  }
+
+  async function unlockOrientation() {
+    if (!isMobileDevice()) return;
+    try {
+      if (screen.orientation?.unlock) {
+        screen.orientation.unlock();
+      }
+    } catch (e) {}
+  }
+
+  // Attach orientation lock to Plyr fullscreen events
+  function setupOrientationHandling() {
+    if (!plyr) return;
+    const onEnter = () => lockToLandscape();
+    const onExit = () => unlockOrientation();
+
+    plyr.on('enterfullscreen', onEnter);
+    plyr.on('exitfullscreen', onExit);
+
+    // Clean up on destroy
+    onDestroy(() => {
+      plyr?.off('enterfullscreen', onEnter);
+      plyr?.off('exitfullscreen', onExit);
+      unlockOrientation();
+    });
+  }
+
+  function initializePlyr() {
+    if (!videoRef || plyr) return;
+
+    addSubtitleTracks();
+
+    plyr = new Plyr(videoRef, {
+      controls: [
+        'play-large',
+        'play',
+        'progress',
+        'current-time',
+        'mute',
+        'volume',
+        'captions',
+        'settings',
+        'fullscreen',
+      ],
+      captions: {
+        active: true,
+        language: 'auto',
+        update: true
+      }
+    });
+
+    // Attach orientation handling after Plyr is ready
+    setupOrientationHandling();
+  }
+
+  // ...existing code...
 </script>
 
 <div class="player-container">
