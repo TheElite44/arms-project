@@ -14,44 +14,28 @@ const CACHE_KEY = 'hanime_recent_v1';
 const CACHE_TTL = 900; // 15 minutes
 
 export const GET: RequestHandler = async () => {
-  if (!redis) {
-    try {
-      const resp = await fetch(`${API_URL}/api/hen/tv/recent`);
-      if (!resp.ok) {
-        return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch recent data' }), { status: resp.status });
-      }
-      const data = await resp.json();
-      return new Response(JSON.stringify(data), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', 'X-Cache': 'NONE' }
-      });
-    } catch (error) {
-      return new Response(JSON.stringify({ status: 'error', error: 'Internal server error' }), { status: 500 });
-    }
-  }
+  let cached = await redis?.get(CACHE_KEY);
 
-  // Try cache first
-  const cached = await redis.get(CACHE_KEY);
-  if (cached) {
+  // Always fetch latest data
+  const resp = await fetch(`${API_URL}/api/hen/tv/recent`);
+  if (!resp.ok) {
+    return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch recent data' }), { status: resp.status });
+  }
+  const data = await resp.json();
+
+  // Compare new data with cached data
+  if (cached && JSON.stringify(cached) === JSON.stringify(data)) {
+    // No new data, return cached
     return new Response(JSON.stringify(cached), {
       status: 200,
       headers: { 'Content-Type': 'application/json', 'X-Cache': 'HIT' }
     });
-  }
-
-  // Cache miss: fetch and cache
-  try {
-    const resp = await fetch(`${API_URL}/api/hen/tv/recent`);
-    if (!resp.ok) {
-      return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch recent data' }), { status: resp.status });
-    }
-    const data = await resp.json();
-    await redis.set(CACHE_KEY, data, { ex: CACHE_TTL });
+  } else {
+    // New data, update cache
+    await redis?.set(CACHE_KEY, data, { ex: CACHE_TTL });
     return new Response(JSON.stringify(data), {
       status: 200,
-      headers: { 'Content-Type': 'application/json', 'X-Cache': 'MISS' }
+      headers: { 'Content-Type': 'application/json', 'X-Cache': cached ? 'UPDATE' : 'MISS' }
     });
-  } catch (error) {
-    return new Response(JSON.stringify({ status: 'error', error: 'Internal server error' }), { status: 500 });
   }
 };

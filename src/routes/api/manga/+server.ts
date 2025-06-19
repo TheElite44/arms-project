@@ -1,6 +1,17 @@
 import type { RequestHandler } from '@sveltejs/kit';
+import { Redis } from '@upstash/redis';
 
 const API_URL = import.meta.env.VITE_CONSUMET_API;
+
+const REDIS_URL = import.meta.env.VITE_REDIS_URL;
+const REDIS_TOKEN = import.meta.env.VITE_REDIS_TOKEN;
+const useRedis = !!REDIS_URL && !!REDIS_TOKEN;
+const redis = useRedis
+  ? new Redis({ url: REDIS_URL!, token: REDIS_TOKEN! })
+  : null;
+
+const CACHE_TTL = 1800; // 30 minutes
+const CACHE_TTL_READ = 432000; // 5 days in seconds
 
 export const GET: RequestHandler = async ({ url }) => {
   const type = url.searchParams.get('type'); // 'search', 'info', or 'read'
@@ -24,10 +35,26 @@ export const GET: RequestHandler = async ({ url }) => {
       if (!id) {
         return new Response(JSON.stringify({ success: false, error: 'Missing manga id' }), { status: 400 });
       }
+      const CACHE_KEY = `manga_info_${provider}_${id}`;
+      if (redis) {
+        const cached = await redis.get(CACHE_KEY);
+        if (cached) {
+          return new Response(JSON.stringify({ success: true, data: cached }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json', 'X-Cache': 'HIT' }
+          });
+        }
+      }
       const apiUrl = `${API_URL}/meta/anilist-manga/info/${encodeURIComponent(id)}?provider=${provider}`;
       const resp = await fetch(apiUrl);
       const data = await resp.json();
-      return new Response(JSON.stringify({ success: true, data }), { status: 200 });
+      if (redis) {
+        await redis.set(CACHE_KEY, data, { ex: CACHE_TTL });
+      }
+      return new Response(JSON.stringify({ success: true, data }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', 'X-Cache': redis ? 'MISS' : 'NONE' }
+      });
     }
 
     if (type === 'read') {
@@ -35,10 +62,26 @@ export const GET: RequestHandler = async ({ url }) => {
       if (!chapterId) {
         return new Response(JSON.stringify({ success: false, error: 'Missing chapterId' }), { status: 400 });
       }
+      const CACHE_KEY = `manga_read_${provider}_${chapterId}`;
+      if (redis) {
+        const cached = await redis.get(CACHE_KEY);
+        if (cached) {
+          return new Response(JSON.stringify({ success: true, data: cached }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json', 'X-Cache': 'HIT' }
+          });
+        }
+      }
       const apiUrl = `${API_URL}/meta/anilist-manga/read?chapterId=${encodeURIComponent(chapterId)}&provider=${provider}`;
       const resp = await fetch(apiUrl);
       const data = await resp.json();
-      return new Response(JSON.stringify({ success: true, data }), { status: 200 });
+      if (redis) {
+        await redis.set(CACHE_KEY, data, { ex: CACHE_TTL_READ });
+      }
+      return new Response(JSON.stringify({ success: true, data }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', 'X-Cache': redis ? 'MISS' : 'NONE' }
+      });
     }
 
     // New endpoint to proxy manga images with proper headers
