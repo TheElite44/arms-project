@@ -1,5 +1,5 @@
 <script lang="ts">
-/// <reference path="../../types/screen-orientation.d.ts" />
+/// <reference path="../../lib/types/screen-orientation.d.ts" />
   import { onMount, onDestroy } from 'svelte';
   import Plyr from 'plyr';
   import 'plyr/dist/plyr.css';
@@ -109,17 +109,29 @@
     // Remove existing tracks
     const existingTracks = videoRef.querySelectorAll('track');
     existingTracks.forEach(track => track.remove());
-    // Add new subtitle tracks
+
+    // Count English subtitles
+    const englishSubs = subtitles.filter(
+      (subtitle) => getLanguageCode(subtitle.label) === 'en'
+    );
+
     subtitles.forEach((subtitle) => {
       const track = document.createElement('track');
       track.kind = 'captions';
       track.src = processSubtitleUrl(subtitle.src);
       track.srclang = getLanguageCode(subtitle.label);
       track.label = subtitle.label;
-      // Set English as default if available
-      if (getLanguageCode(subtitle.label) === 'en') {
+
+      // Only set default if there is exactly one English subtitle
+      if (
+        getLanguageCode(subtitle.label) === 'en' &&
+        englishSubs.length === 1
+      ) {
         track.default = true;
+      } else {
+        track.default = false;
       }
+
       if (videoRef) {
         videoRef.appendChild(track);
       }
@@ -149,6 +161,7 @@
           },
           settings: ['captions', 'quality', 'speed']
         });
+        setupOrientationHandling(); // <-- add this here
         plyr?.on('languagechange', () => {
           if (!plyr || !videoRef) return;
           if (plyr.currentTrack !== -1 && videoRef.textTracks[plyr.currentTrack]) {
@@ -188,6 +201,7 @@
           },
           settings: ['captions', 'quality', 'speed']
         });
+        setupOrientationHandling(); // <-- add this here
         plyr?.on('languagechange', () => {
           if (!plyr || !videoRef) return;
           if (plyr.currentTrack !== -1 && videoRef.textTracks[plyr.currentTrack]) {
@@ -209,7 +223,6 @@
         });
       }, { once: true });
     }
-    // At the end of initializePlayer:
     setTimeout(() => {
       detachBufferingEvents();
       attachBufferingEvents();
@@ -259,31 +272,8 @@
     if (videoRef && videoUrl) {
       initializePlayer();
     }
-
-    // Native fullscreenchange event (works for all triggers)
-    function handleFullscreenChange() {
-      const isFullscreen =
-        document.fullscreenElement === videoRef ||
-        document.webkitFullscreenElement === videoRef ||
-        document.mozFullScreenElement === videoRef ||
-        document.msFullscreenElement === videoRef;
-      if (isFullscreen && isMobileDevice()) {
-        lockToLandscape();
-      } else if (!isFullscreen && isMobileDevice()) {
-        unlockOrientation();
-      }
-    }
-
-    videoRef?.addEventListener('fullscreenchange', handleFullscreenChange);
-    videoRef?.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    videoRef?.addEventListener('mozfullscreenchange', handleFullscreenChange);
-    videoRef?.addEventListener('msfullscreenchange', handleFullscreenChange);
-
+    // No need for native fullscreenchange events anymore
     onDestroy(() => {
-      videoRef?.removeEventListener('fullscreenchange', handleFullscreenChange);
-      videoRef?.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-      videoRef?.removeEventListener('mozfullscreenchange', handleFullscreenChange);
-      videoRef?.removeEventListener('msfullscreenchange', handleFullscreenChange);
       unlockOrientation();
       cleanup();
       detachBufferingEvents?.();
@@ -303,10 +293,13 @@
   async function lockToLandscape() {
     if (!isMobileDevice()) return;
     try {
+      // Prefer the modern API
       if ((screen.orientation as any)?.lock) {
         await (screen.orientation as any).lock('landscape');
       }
-    } catch (e) {}
+    } catch (e) {
+      // fallback: try to rotate using deprecated APIs or do nothing
+    }
   }
 
   async function unlockOrientation() {
@@ -318,21 +311,55 @@
     } catch (e) {}
   }
 
-  // Attach orientation lock to Plyr fullscreen events
+  // Store handler references
+  let enterFullscreenHandler: (() => void) | null = null;
+  let exitFullscreenHandler: (() => void) | null = null;
+
   function setupOrientationHandling() {
     if (!plyr) return;
-    const onEnter = () => lockToLandscape();
-    const onExit = () => unlockOrientation();
 
-    plyr.on('enterfullscreen', onEnter);
-    plyr.on('exitfullscreen', onExit);
+    // Remove previous listeners if any
+    if (enterFullscreenHandler) {
+      plyr.off('enterfullscreen', enterFullscreenHandler);
+    }
+    if (exitFullscreenHandler) {
+      plyr.off('exitfullscreen', exitFullscreenHandler);
+    }
 
-    // Clean up on destroy
-    onDestroy(() => {
-      plyr?.off('enterfullscreen', onEnter);
-      plyr?.off('exitfullscreen', onExit);
-      unlockOrientation();
-    });
+    enterFullscreenHandler = async () => {
+      if (!isMobileDevice()) return;
+      // Standard API
+      if (screen.orientation?.lock) {
+        try {
+          await screen.orientation.lock('landscape');
+        } catch {}
+      } else if (screen.lockOrientation) {
+        screen.lockOrientation('landscape');
+      } else if (screen.mozLockOrientation) {
+        screen.mozLockOrientation('landscape');
+      } else if (screen.msLockOrientation) {
+        screen.msLockOrientation('landscape');
+      }
+    };
+
+    exitFullscreenHandler = async () => {
+      if (!isMobileDevice()) return;
+      // Standard API
+      if (screen.orientation?.unlock) {
+        try {
+          screen.orientation.unlock();
+        } catch {}
+      } else if (screen.unlockOrientation) {
+        screen.unlockOrientation();
+      } else if (screen.mozUnlockOrientation) {
+        screen.mozUnlockOrientation();
+      } else if (screen.msUnlockOrientation) {
+        screen.msUnlockOrientation();
+      }
+    };
+
+    plyr.on('enterfullscreen', enterFullscreenHandler);
+    plyr.on('exitfullscreen', exitFullscreenHandler);
   }
 
   function initializePlyr() {
