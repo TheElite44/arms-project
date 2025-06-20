@@ -228,7 +228,7 @@
                   {/each}
                 </div>
               </section>
-
+              
               <!-- Tabs for Trending/Popular/Top Rated/Latest Episodes -->
               <section class="max-w-[1800px] mx-auto px-2">
                 <div class="flex flex-wrap gap-2 justify-center mb-4 sm:mb-6">
@@ -258,118 +258,116 @@
                     <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-8">
                       <!-- Example for TRENDING, repeat for POPULAR, TOP RATED, LATEST EPISODES -->
                       {#each data.trendingAnimes as anime (anime.id)}
-                        <div class="relative group">
-                          <a href={`/info/${anime.id}`} class="group bg-gray-800 rounded-lg shadow-lg overflow-hidden block hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200 border-2 border-transparent hover:border-orange-400">
-                            <div class="relative">
-                              <img src={anime.poster} alt={anime.name} class="w-full h-40 sm:h-52 object-cover group-hover:brightness-90 transition rounded-lg" />
-                              <span class="absolute top-2 left-2 bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold shadow">#{anime.rank}</span>
+                        <a
+                          href={`/info/${anime.id}`}
+                          class="group relative bg-gray-800 rounded-xl overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03]"
+                        >
+                          <div class="relative aspect-[3/4]">
+                            <img
+                              src={anime.poster}
+                              alt={anime.name}
+                              class="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                            <div class="absolute top-2 left-2">
+                              <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded text-[10px] font-semibold shadow">
+                                #{anime.rank}
+                              </span>
                             </div>
-                            <div class="p-2 sm:p-4">
-                              <h3
-                                class="font-bold truncate text-xs sm:text-base mb-1 group-hover:text-orange-400 transition"
-                                style="max-width:100%"
-                                title={anime.name}
-                              >
-                                {anime.name}
-                              </h3>
-                              <div class="flex flex-wrap gap-1">
-                                {#each anime.genres?.slice(0, 2) as genre}
-                                  <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded text-xs">{genre}</span>
-                                {/each}
-                              </div>
-                              <!-- Use a button for More Info to avoid nested <a> tags -->
-                            </div>
-                          </a>
-                        </div>
+                            <!-- No views badge -->
+                          </div>
+                          <div class="absolute bottom-0 left-0 right-0 p-2">
+                            <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-orange-200 transition-colors" title={anime.name}>
+                              {anime.name}
+                            </h3>
+                          </div>
+                        </a>
                       {/each}
                     </div>
                   {:else if activeTab === 'popular'}
                     <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-8">
-                      {#each data.mostPopularAnimes as anime}
-                        <div class="relative group">
-                          <a href={`/info/${anime.id}`} class="group bg-gray-800 rounded-lg shadow-lg overflow-hidden block hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200 border-2 border-transparent hover:border-orange-400">
-                            <div class="relative">
-                              <img src={anime.poster} alt={anime.name} class="w-full h-40 sm:h-52 object-cover group-hover:brightness-90 transition" />
+                      {#each data.mostPopularAnimes as anime (anime.id)}
+                        <a
+                          href={`/info/${anime.id}`}
+                          class="group relative bg-gray-800 rounded-xl overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03]"
+                        >
+                          <div class="relative aspect-[3/4]">
+                            <img
+                              src={anime.poster}
+                              alt={anime.name}
+                              class="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                          </div>
+                          <div class="absolute bottom-0 left-0 right-0 p-2">
+                            <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-orange-200 transition-colors" title={anime.name}>
+                              {anime.name}
+                            </h3>
+                            <div class="flex flex-wrap gap-1">
+                              {#each anime.genres?.slice(0, 2) as genre}
+                                <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded text-[10px]">{genre}</span>
+                              {/each}
                             </div>
-                            <div class="p-2 sm:p-4">
-                              <h3
-                                class="font-bold truncate text-xs sm:text-base mb-1 group-hover:text-orange-400 transition relative"
-                                style="max-width:100%"
-                                title={anime.name}
-                              >
-                                {anime.name}
-                              </h3>
-                              <div class="flex flex-wrap gap-1">
-                                {#each anime.genres?.slice(0, 2) as genre}
-                                  <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded text-xs">{genre}</span>
-                                {/each}
-                              </div>
-                            </div>
-                          </a>
-                        </div>
+                          </div>
+                        </a>
                       {/each}
                     </div>
                   {:else if activeTab === 'topRated'}
                     <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-8">
-                      {#each data.mostFavoriteAnimes as anime}
-                        <div class="relative group">
-                          <a href={`/info/${anime.id}`} class="group bg-gray-800 rounded-lg shadow-lg overflow-hidden block hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200 border-2 border-transparent hover:border-orange-400">
-                            <div class="relative">
-                              <img src={anime.poster} alt={anime.name} class="w-full h-40 sm:h-52 object-cover group-hover:brightness-90 transition" />
+                      {#each data.mostFavoriteAnimes as anime (anime.id)}
+                        <a
+                          href={`/info/${anime.id}`}
+                          class="group relative bg-gray-800 rounded-xl overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03]"
+                        >
+                          <div class="relative aspect-[3/4]">
+                            <img
+                              src={anime.poster}
+                              alt={anime.name}
+                              class="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                          </div>
+                          <div class="absolute bottom-0 left-0 right-0 p-2">
+                            <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-orange-200 transition-colors" title={anime.name}>
+                              {anime.name}
+                            </h3>
+                            <div class="flex flex-wrap gap-1">
+                              {#each anime.genres?.slice(0, 2) as genre}
+                                <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded text-[10px]">{genre}</span>
+                              {/each}
                             </div>
-                            <div class="p-2 sm:p-4">
-                              <h3
-                                class="font-bold truncate text-xs sm:text-base mb-1 group-hover:text-orange-400 transition"
-                                style="max-width:100%"
-                                title={anime.name}
-                              >
-                                {anime.name}
-                              </h3>
-                              <div class="flex flex-wrap gap-1">
-                                {#each anime.genres?.slice(0, 2) as genre}
-                                  <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded text-xs">{genre}</span>
-                                {/each}
-                              </div>
-                            </div>
-                          </a>
-                        </div>
+                          </div>
+                        </a>
                       {/each}
                     </div>
                   {:else if activeTab === 'latest'}
                     <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-8">
-                      {#each data?.latestEpisodeAnimes ?? [] as ep}
-                        <div class="relative group">
-                          <a
-                            href={`/info/${ep.id}`}
-                            class="group bg-gray-800 rounded-lg shadow-lg overflow-hidden block hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200 border-2 border-transparent hover:border-orange-400"
-                          >
-                            <div class="relative">
-                              <img
-                                src={ep.poster}
-                                alt={ep.name}
-                                class="w-full h-40 sm:h-52 object-cover group-hover:brightness-90 transition"
-                                loading="lazy"
-                              />
-                              <span class="absolute top-2 left-2 bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold shadow">
-                                EP {ep.episodes.sub}
-                              </span>
-                            </div>
-                            <div class="p-2 sm:p-4">
-                              <h3
-                                class="font-bold truncate text-xs sm:text-base mb-1 group-hover:text-orange-400 transition"
-                                style="max-width:100%"
-                                title={ep.name}
-                              >
-                                {ep.name}
-                              </h3>
-                              <div class="flex flex-wrap gap-1">
-                                <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded text-xs">
-                                  {ep.episodes.sub} Sub / {ep.episodes.dub} Dub
-                                </span>
-                              </div>
-                            </div>
-                          </a>
-                        </div>
+                      {#each data?.latestEpisodeAnimes ?? [] as ep (ep.id)}
+                        <a
+                          href={`/info/${ep.id}`}
+                          class="group relative bg-gray-800 rounded-xl overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03]"
+                        >
+                          <div class="relative aspect-[3/4]">
+                            <img
+                              src={ep.poster}
+                              alt={ep.name}
+                              class="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                            <span class="absolute top-2 left-2 bg-gray-900/80 text-orange-300 px-2 py-0.5 rounded text-[10px] shadow">
+                              {ep.episodes?.sub ?? 0} Sub / {ep.episodes?.dub ?? 0} Dub
+                            </span>
+                          </div>
+                          <div class="absolute bottom-0 left-0 right-0 p-2">
+                            <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-orange-200 transition-colors" title={ep.name}>
+                              {ep.name}
+                            </h3>
+                          </div>
+                        </a>
                       {/each}
                     </div>
                   {/if}
