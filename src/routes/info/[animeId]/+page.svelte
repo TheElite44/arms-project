@@ -132,19 +132,30 @@
                 {#if recommended.length}
                   <section class="mb-12">
                     <h2 class="text-2xl font-bold text-orange-400 mb-4">Recommended Anime</h2>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                       {#each recommended as rec}
                         <a 
                           href={`/info/${rec.id}`} 
                           on:click|preventDefault={() => handleAnimeClick(rec.id)}
-                          class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400"
+                          class="group relative bg-gray-800 rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03]"
+                          style="min-height: 120px;"
                         >
-                          <img src={rec.poster} alt={rec.name} class="w-full h-40 object-cover rounded-lg" />
-                          <div class="p-3">
-                            <h3 class="font-bold text-base mb-1 truncate">{rec.name}</h3>
-                            <div class="flex flex-wrap gap-1 mb-1">
-                              <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold">{rec.type}</span>
-                              <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded-full text-xs">{rec.episodes.sub} Sub / {rec.episodes.dub} Dub</span>
+                          <div class="relative aspect-[3/4]">
+                            <img
+                              src={rec.poster}
+                              alt={rec.name}
+                              class="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                          </div>
+                          <div class="absolute bottom-0 left-0 right-0 p-2">
+                            <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-orange-200 transition-colors" title={rec.name}>
+                              {rec.name}
+                            </h3>
+                            <div class="flex flex-wrap gap-1">
+                              <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded text-[10px] font-bold">{rec.type}</span>
+                              <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded text-[10px]">{rec.episodes.sub} Sub / {rec.episodes.dub} Dub</span>
                             </div>
                           </div>
                         </a>
@@ -157,19 +168,29 @@
                 {#if related.length}
                   <section>
                     <h2 class="text-2xl font-bold text-orange-400 mb-4">Related Anime</h2>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                       {#each related as rel}
                         <a 
                           href={`/info/${rel.id}`}
                           on:click|preventDefault={() => handleAnimeClick(rel.id)}
-                          class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400"
+                          class="group relative bg-gray-800 rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03]"
                         >
-                          <img src={rel.poster} alt={rel.name} class="w-full h-40 object-cover rounded-lg" />
-                          <div class="p-3">
-                            <h3 class="font-bold text-base mb-1 truncate">{rel.name}</h3>
-                            <div class="flex flex-wrap gap-1 mb-1">
-                              <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold">{rel.type}</span>
-                              <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded-full text-xs">{rel.episodes.sub} Sub / {rel.episodes.dub} Dub</span>
+                          <div class="relative aspect-[3/4]">
+                            <img
+                              src={rel.poster}
+                              alt={rel.name}
+                              class="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                          </div>
+                          <div class="absolute bottom-0 left-0 right-0 p-2">
+                            <h3 class="font-semibold text-white text-[11px] mb-0.5 line-clamp-2 group-hover:text-orange-200 transition-colors" title={rel.name}>
+                              {rel.name}
+                            </h3>
+                            <div class="flex flex-wrap gap-0.5">
+                              <span class="bg-orange-400 text-gray-900 px-1.5 py-0.5 rounded text-[10px] font-bold">{rel.type}</span>
+                              <span class="bg-gray-900 text-orange-300 px-1.5 py-0.5 rounded text-[10px]">{rel.episodes.sub} Sub / {rel.episodes.dub} Dub</span>
                             </div>
                           </div>
                         </a>

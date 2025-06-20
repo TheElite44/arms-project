@@ -90,7 +90,7 @@
 
 <div class="flex flex-col min-h-screen bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106] text-white pt-16">
   <div class="flex-1 w-full">
-    <div class="max-w-7xl mx-auto flex flex-col gap-8 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-2 sm:px-6">
       {#if loading}
         <div class="flex items-center justify-center min-h-[60vh] w-full">
           <img
@@ -121,11 +121,11 @@
           {#if hanimeResults.length === 0}
             <div class="text-[#ffb3c6]">No results found.</div>
           {:else}
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 lg:gap-6">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-6 gap-2 lg:gap-2">
               {#each hanimeResults as hanime, index}
                 <a
                   href={`/hanime/info/${hanime.id}`}
-                  class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block"
+                  class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block hover:scale-[1.03]"
                 >
                   <div class="relative aspect-[3/4]">
                     <img
@@ -180,15 +180,6 @@
 </div>
 
 <style>
-  .loader-adult {
-    border: 4px solid #ff003c33;
-    border-top: 4px solid #ff003c;
-    border-radius: 50%;
-    width: 48px;
-    height: 48px;
-    animation: spin 1s linear infinite;
-    margin: 0 auto;
-  }
   @keyframes spin {
     0% { transform: rotate(0deg);}
     100% { transform: rotate(360deg);}
@@ -196,6 +187,7 @@
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }

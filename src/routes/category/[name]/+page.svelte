@@ -170,37 +170,35 @@
           <!-- Anime Grid -->
           <section class="max-w-[1800px] mx-auto px-2">
             {#if data.animes && data.animes.length > 0}
-              <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-8">
+              <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
                 {#each data.animes as anime (anime.id)}
-                  <a 
-                    href={`/info/${anime.id}`} 
-                    class="group bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl overflow-hidden flex flex-col hover:scale-[1.03] hover:shadow-orange-400/40 transition-transform duration-200 border-2 border-transparent hover:border-orange-400"
+                  <a
+                    href={`/info/${anime.id}`}
+                    class="group relative bg-gray-800 rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03]"
+                    style="min-height: 120px;"
                   >
-                    <div class="relative">
-                      <img 
-                        src={anime.poster} 
+                    <div class="relative aspect-[3/4]">
+                      <img
+                        src={anime.poster}
                         alt={anime.name}
-                        class="w-full h-48 sm:h-64 object-cover group-hover:brightness-90 transition"
+                        class="w-full h-full object-cover"
                         loading="lazy"
                       />
-                      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none rounded-lg"></div>
-                      <span class="absolute top-3 left-3 bg-orange-400 text-gray-900 px-3 py-0.5 rounded-full text-[10px] font-bold shadow-lg">
-                        {anime.type}
-                      </span>
-                      <span class="absolute bottom-3 right-3 bg-gray-900/80 text-orange-300 px-2 py-0.5 rounded text-[10px] shadow">
-                        {anime.episodes.sub} Sub{anime.episodes.dub ? ` / ${anime.episodes.dub} Dub` : ' / No Dub'}
-                      </span>
+                      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                     </div>
-                    <div class="p-4 flex-1 flex flex-col">
+                    <div class="absolute bottom-0 left-0 right-0 p-2">
                       <h3
-                        class="font-bold truncate text-base sm:text-lg mb-1 group-hover:text-orange-400 transition"
+                        class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-orange-200 transition-colors"
                         title={anime.name}
                       >
                         {anime.name}
                       </h3>
-                      <p class="text-gray-300 text-xs mb-2 line-clamp-3">
-                        {anime.duration} | Rating: {anime.rating || 'N/A'}
-                      </p>
+                      <div class="flex flex-wrap gap-1">
+                        <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded text-[10px] font-bold">{anime.type}</span>
+                        <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded text-[10px]">
+                          {anime.episodes.sub} Sub{anime.episodes.dub ? ` / ${anime.episodes.dub} Dub` : ' / No Dub'}
+                        </span>
+                      </div>
                     </div>
                   </a>
                 {/each}

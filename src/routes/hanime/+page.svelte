@@ -126,11 +126,11 @@
             </div>
           </div>
           
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 lg:gap-6">
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-6 gap-2 lg:gap-2">
             {#each trending as item, index}
               <a
                 href={`/hanime/info/${item.id}`}
-                class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block"
+                class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block hover:scale-[1.03]"
               >
                 <div class="relative aspect-[3/4]">
                   <img
@@ -169,7 +169,7 @@
         <!-- Recent Section -->
         <section id="recent" class="mb-16">
           <div class="flex items-center justify-between mb-8">
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-">
               <div class="w-1 h-8 bg-[#ff003c] rounded-full"></div>
               <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">Recently Added</h2>
               <span class="bg-[#ff003c]/20 text-[#ff003c] px-3 py-1 rounded-full text-sm font-medium">
@@ -178,10 +178,10 @@
             </div>
           </div>
           
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 lg:gap-6">
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-6 gap-2 lg:gap-2">
             {#each recent as item, index}
               <a
-                href={`/hanime/watch/${item.id}`}
+                href={`/hanime/info/${item.id}`}
                 class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block"
               >
                 <div class="relative aspect-[3/4]">
@@ -243,9 +243,6 @@
 {/if}
 
 <style>
-  .animate-fade-in {
-    animation: fade-in 0.4s ease-out;
-  }
   
   @keyframes fade-in {
     from { 
@@ -258,16 +255,7 @@
     }
   }
   
-  .loader-adult {
-    border: 4px solid #ff003c33;
-    border-top: 4px solid #ff003c;
-    border-radius: 50%;
-    width: 48px;
-    height: 48px;
-    animation: spin 1s linear infinite;
-    margin: 0 auto;
-  }
-  
+
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -278,23 +266,7 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-  }
-  
-  /* Smooth scrolling for anchor links */
-  html {
-    scroll-behavior: smooth;
-  }
-  
-  /* Enhanced focus styles for accessibility */
-  a:focus,
-  button:focus {
-    outline: 2px solid #ff003c;
-    outline-offset: 2px;
-  }
-  
-  /* Professional hover effects */
-  .group:hover .group-hover\:scale-110 {
-    transform: none;
+    line-clamp: 2; /* Add this line for compatibility */
   }
   
   /* Home-style border animation on hover */

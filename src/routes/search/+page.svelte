@@ -111,13 +111,42 @@
               {#if animeResults.length === 0}
                 <div class="text-gray-400">No anime found.</div>
               {:else}
-                <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-8">
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                   {#each animeResults as anime}
-                    <a href={`/info/${anime.id}`} class="anime-card group">
-                      <img src={anime.poster} alt={anime.name} class="w-full h-48 object-cover rounded-lg" />
-                      <div class="p-4">
-                        <h3 class="font-bold text-lg truncate group-hover:text-orange-400 transition">{anime.name}</h3>
-                        <p class="text-gray-300 text-sm">{anime.description}</p>
+                    <a 
+                      href={`/info/${anime.id}`}
+                      class="group relative bg-gray-800 rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03]"
+                      style="min-height: 120px;"
+                    >
+                      <!-- Type label -->
+                      <span class="absolute top-2 left-2 z-10 bg-orange-400 text-gray-900 text-xs font-bold px-2 py-0.5 rounded shadow">
+                        Anime
+                      </span>
+                      <div class="relative aspect-[3/4]">
+                        <img
+                          src={anime.poster}
+                          alt={anime.name}
+                          class="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                      </div>
+                      <div class="absolute bottom-0 left-0 right-0 p-2">
+                        <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-orange-200 transition-colors" title={anime.name}>
+                          {anime.name}
+                        </h3>
+                        {#if anime.type || anime.episodes}
+                          <div class="flex flex-wrap gap-1">
+                            {#if anime.type}
+                              <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded text-[10px] font-bold">{anime.type}</span>
+                            {/if}
+                            {#if anime.episodes}
+                              <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded text-[10px]">
+                                {anime.episodes.sub} Sub / {anime.episodes.dub} Dub
+                              </span>
+                            {/if}
+                          </div>
+                        {/if}
                       </div>
                     </a>
                   {/each}
@@ -131,12 +160,28 @@
                   <svg class="w-6 h-6 sm:w-7 sm:h-7 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20m10-10H2" /></svg>
                   Manga Results for "{query}"
                 </h2>
-                <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-8">
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                   {#each mangaResults as manga}
-                    <a href={`/manga/info/${manga.id}`} class="anime-card group">
-                      <img src={manga.image} alt={manga.title?.english || manga.title?.romaji || manga.title?.native || manga.title} class="w-full h-48 object-cover rounded-lg" />
-                      <div class="p-4">
-                        <h3 class="font-bold text-lg truncate group-hover:text-orange-400 transition">
+                    <a 
+                      href={`/manga/info/${manga.id}`}
+                      class="group relative bg-gray-800 rounded-xl overflow-hidden shadow border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03] transition-transform duration-200"
+                      style="min-height: 120px;"
+                    >
+                      <!-- Type label -->
+                      <span class="absolute top-2 left-2 z-10 bg-orange-400 text-gray-900 text-xs font-bold px-2 py-0.5 rounded shadow">
+                        Manga
+                      </span>
+                      <div class="relative aspect-[3/4]">
+                        <img
+                          src={manga.image}
+                          alt={manga.title?.english || manga.title?.romaji || manga.title?.native || manga.title}
+                          class="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                      </div>
+                      <div class="absolute bottom-0 left-0 right-0 p-2">
+                        <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-orange-200 transition-colors" title={manga.title?.english || manga.title?.romaji || manga.title?.native || manga.title}>
                           {manga.title?.english || manga.title?.romaji || manga.title?.native || manga.title}
                         </h3>
                       </div>
@@ -185,47 +230,12 @@
   }
 
 
-  .text-gray-300 {
-    color: #d1d5db; /* gray-300 */
-  }
 
   .text-gray-400 {
     color: #9ca3af; /* gray-400 */
   }
 
 
-  .anime-card {
-    background: linear-gradient(to bottom right, #1f2937, #111827); /* gray-800 to gray-900 gradient */
-    border-radius: 0.5rem;
-    overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s, color 0.3s;
-    border: 2px solid transparent;
-  }
-
-  .anime-card:hover {
-    transform: scale(1.03);
-    box-shadow: 0 6px 8px rgba(251, 191, 36, 0.4); /* orange-400 glow */
-    border-color: #fbbf24; /* orange-400 */
-  }
-
-  .anime-card img {
-    transition: brightness 0.3s, transform 0.3s;
-  }
-
-  .anime-card:hover img {
-    filter: brightness(90%);
-    transform: scale(1.05); /* Slight zoom effect */
-  }
-
-  .anime-card .p-4 {
-    transition: color 0.3s;
-    color: #ffffff; /* Default text color */
-  }
-
-  .anime-card:hover .p-4 {
-    color: #fbbf24; /* orange-400 text color on hover */
-  }
 
   /* Button Styles */
   button {

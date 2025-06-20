@@ -194,7 +194,7 @@
                   </svg>
                   Top 10 Trending Today
                 </h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-2">
                   {#each data.top10Animes.today as anime}
                     <a href={`/info/${anime.id}`} class="group bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl overflow-hidden flex flex-col hover:scale-[1.03] hover:shadow-orange-400/40 transition-transform duration-200 border-2 border-transparent hover:border-orange-400">
                       <div class="relative">
@@ -255,7 +255,7 @@
                 </div>
                 <div>
                   {#if activeTab === 'trending'}
-                    <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-8">
+                    <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2">
                       <!-- Example for TRENDING, repeat for POPULAR, TOP RATED, LATEST EPISODES -->
                       {#each data.trendingAnimes as anime (anime.id)}
                         <a
@@ -286,7 +286,7 @@
                       {/each}
                     </div>
                   {:else if activeTab === 'popular'}
-                    <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-8">
+                    <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2">
                       {#each data.mostPopularAnimes as anime (anime.id)}
                         <a
                           href={`/info/${anime.id}`}
@@ -315,7 +315,7 @@
                       {/each}
                     </div>
                   {:else if activeTab === 'topRated'}
-                    <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-8">
+                    <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2">
                       {#each data.mostFavoriteAnimes as anime (anime.id)}
                         <a
                           href={`/info/${anime.id}`}
@@ -344,7 +344,7 @@
                       {/each}
                     </div>
                   {:else if activeTab === 'latest'}
-                    <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-8">
+                    <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2">
                       {#each data?.latestEpisodeAnimes ?? [] as ep (ep.id)}
                         <a
                           href={`/info/${ep.id}`}

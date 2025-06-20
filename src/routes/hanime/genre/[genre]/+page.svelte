@@ -134,11 +134,11 @@
 
           <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {#if data.animes && data.animes.length > 0}
-              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 lg:gap-6">
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-6 gap-2 lg:gap-2">
                 {#each data.animes as anime, index (anime.id)}
                   <a
                     href={`/hanime/info/${anime.id}`}
-                    class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block"
+                    class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block hover:scale-[1.03]"
                   >
                     <div class="relative aspect-[3/4]">
                       <img
