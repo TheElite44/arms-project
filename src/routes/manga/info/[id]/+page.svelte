@@ -147,20 +147,29 @@
                 {#if recommendations.length}
                   <section class="mb-12">
                     <h2 class="text-2xl font-bold text-orange-400 mb-4">Recommended Manga</h2>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
                       {#each recommendations as rec}
                         <a 
                           href={`/manga/info/${rec.id}`} 
                           on:click|preventDefault={() => handleMangaClick(rec.id)}
-                          class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden block hover:scale-105 hover:shadow-orange-400/40 transition-transform border-2 border-transparent hover:border-orange-400"
+                          class="group relative bg-gray-800 rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03]"
+                          style="min-height: 120px;"
                         >
-                          <img src={rec.image} alt={rec.title?.english || rec.title?.romaji || rec.title?.native} class="w-full h-40 object-cover rounded-lg" />
-                          <div class="p-3">
-                            <h3 class="font-bold text-base mb-1 truncate">{rec.title?.english || rec.title?.romaji || rec.title?.native}</h3>
-                            <div class="flex flex-wrap gap-1 mb-1">
-                              <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold">{rec.type}</span>
+                          <span class="absolute top-2 left-2 z-10 bg-orange-400 text-gray-900 text-xs font-bold px-2 py-0.5 rounded shadow">
+                            Manga
+                          </span>
+                          <div class="relative aspect-[3/4]">
+                            <img src={rec.image} alt={rec.title?.english || rec.title?.romaji || rec.title?.native} class="w-full h-full object-cover" loading="lazy" />
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                          </div>
+                          <div class="absolute bottom-0 left-0 right-0 p-1">
+                            <h3 class="font-semibold text-white text-xs mb-0.5 line-clamp-2 group-hover:text-orange-200 transition-colors" title={rec.title?.english || rec.title?.romaji || rec.title?.native}>
+                              {rec.title?.english || rec.title?.romaji || rec.title?.native}
+                            </h3>
+                            <div class="flex flex-wrap gap-0.5">
+                              <span class="bg-orange-400 text-gray-900 px-1 py-0.5 rounded text-[9px] font-bold">{rec.type}</span>
                               {#if rec.rating}
-                                <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded-full text-xs">Rating: {rec.rating}</span>
+                                <span class="bg-gray-900 text-orange-300 px-1 py-0.5 rounded text-[9px]">Rating: {rec.rating}</span>
                               {/if}
                             </div>
                           </div>
@@ -174,20 +183,32 @@
                 {#if relations.length}
                   <section class="mb-12">
                     <h2 class="text-2xl font-bold text-orange-400 mb-4">Related Works</h2>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
                       {#each relations as rel}
-                        <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden block border-2 border-transparent hover:border-orange-400">
-                          <img src={rel.image} alt={rel.title?.english || rel.title?.romaji || rel.title?.native} class="w-full h-40 object-cover rounded-lg" />
-                          <div class="p-3">
-                            <h3 class="font-bold text-base mb-1 truncate">{rel.title?.english || rel.title?.romaji || rel.title?.native}</h3>
-                            <div class="flex flex-wrap gap-1 mb-1">
-                              <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold">{rel.type}</span>
+                        <a 
+                          href={`/manga/info/${rel.id}`}
+                          class="group relative bg-gray-800 rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03]"
+                          style="min-height: 120px;"
+                        >
+                          <span class="absolute top-2 left-2 z-10 bg-orange-400 text-gray-900 text-xs font-bold px-2 py-0.5 rounded shadow">
+                            Manga
+                          </span>
+                          <div class="relative aspect-[3/4]">
+                            <img src={rel.image} alt={rel.title?.english || rel.title?.romaji || rel.title?.native} class="w-full h-full object-cover" loading="lazy" />
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                          </div>
+                          <div class="absolute bottom-0 left-0 right-0 p-1">
+                            <h3 class="font-semibold text-white text-xs mb-0.5 line-clamp-2 group-hover:text-orange-200 transition-colors" title={rel.title?.english || rel.title?.romaji || rel.title?.native}>
+                              {rel.title?.english || rel.title?.romaji || rel.title?.native}
+                            </h3>
+                            <div class="flex flex-wrap gap-0.5">
+                              <span class="bg-orange-400 text-gray-900 px-1 py-0.5 rounded text-[9px] font-bold">{rel.type}</span>
                               {#if rel.rating}
-                                <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded-full text-xs">Rating: {rel.rating}</span>
+                                <span class="bg-gray-900 text-orange-300 px-1 py-0.5 rounded text-[9px]">Rating: {rel.rating}</span>
                               {/if}
                             </div>
                           </div>
-                        </div>
+                        </a>
                       {/each}
                     </div>
                   </section>
