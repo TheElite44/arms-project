@@ -110,24 +110,46 @@
     const existingTracks = videoRef.querySelectorAll('track');
     existingTracks.forEach(track => track.remove());
 
-    // Count English subtitles
+    // Enhanced logic for handling duplicate English subtitles
     const englishSubs = subtitles.filter(
       (subtitle) => getLanguageCode(subtitle.label) === 'en'
     );
 
-    subtitles.forEach((subtitle) => {
+    // Track counter for duplicate language codes
+    const languageCounters: { [key: string]: number } = {};
+    
+    subtitles.forEach((subtitle, index) => {
       const track = document.createElement('track');
       track.kind = 'captions';
       track.src = processSubtitleUrl(subtitle.src);
-      track.srclang = getLanguageCode(subtitle.label);
+      
+      const langCode = getLanguageCode(subtitle.label);
+      
+      // Handle duplicate language codes by appending a counter
+      if (languageCounters[langCode]) {
+        languageCounters[langCode]++;
+        track.srclang = `${langCode}-${languageCounters[langCode]}`;
+      } else {
+        languageCounters[langCode] = 1;
+        track.srclang = langCode;
+      }
+      
+      // Use the original label to preserve distinction between duplicates
       track.label = subtitle.label;
 
-      // Only set default if there is exactly one English subtitle
-      if (
-        getLanguageCode(subtitle.label) === 'en' &&
-        englishSubs.length === 1
-      ) {
-        track.default = true;
+      // Enhanced default selection logic
+      // Set the first English subtitle as default if multiple exist
+      // Or set as default if it's the only English subtitle
+      if (langCode === 'en') {
+        if (englishSubs.length === 1) {
+          // Single English subtitle - set as default
+          track.default = true;
+        } else if (englishSubs.length > 1 && index === subtitles.findIndex(s => getLanguageCode(s.label) === 'en')) {
+          // Multiple English subtitles - set the first one as default
+          track.default = true;
+        } else {
+          track.default = false;
+        }
       } else {
         track.default = false;
       }
@@ -136,6 +158,14 @@
         videoRef.appendChild(track);
       }
     });
+
+    // Log subtitle tracks for debugging
+    console.log('Added subtitle tracks:', subtitles.map((sub, i) => ({
+      index: i,
+      label: sub.label,
+      langCode: getLanguageCode(sub.label),
+      src: sub.src
+    })));
   }
 
   function initializePlayer() {
@@ -193,25 +223,7 @@
         });
 
         setupOrientationHandling();
-        plyr?.on('languagechange', () => {
-          if (!plyr || !videoRef) return;
-          if (plyr.currentTrack !== -1 && videoRef.textTracks[plyr.currentTrack]) {
-            const currentTrack = videoRef.textTracks[plyr.currentTrack];
-            selectedLanguage = currentTrack.language;
-            for (let i = 0; i < videoRef.textTracks.length; i++) {
-              videoRef.textTracks[i].mode = i === plyr.currentTrack ? 'showing' : 'disabled';
-            }
-          } else {
-            selectedLanguage = 'auto';
-            for (let i = 0; i < videoRef.textTracks.length; i++) {
-              videoRef.textTracks[i].mode = 'disabled';
-            }
-          }
-        });
-        plyr?.on('captionsenabled', () => {});
-        plyr?.on('captionsdisabled', () => {
-          selectedLanguage = 'auto';
-        });
+        setupCaptionEvents();
       });
     } else {
       if (!videoRef) return;
@@ -231,31 +243,48 @@
           settings: ['captions', 'speed']
         });
         setupOrientationHandling();
-        plyr?.on('languagechange', () => {
-          if (!plyr || !videoRef) return;
-          if (plyr.currentTrack !== -1 && videoRef.textTracks[plyr.currentTrack]) {
-            const currentTrack = videoRef.textTracks[plyr.currentTrack];
-            selectedLanguage = currentTrack.language;
-            for (let i = 0; i < videoRef.textTracks.length; i++) {
-              videoRef.textTracks[i].mode = i === plyr.currentTrack ? 'showing' : 'disabled';
-            }
-          } else {
-            selectedLanguage = 'auto';
-            for (let i = 0; i < videoRef.textTracks.length; i++) {
-              videoRef.textTracks[i].mode = 'disabled';
-            }
-          }
-        });
-        plyr?.on('captionsenabled', () => {});
-        plyr?.on('captionsdisabled', () => {
-          selectedLanguage = 'auto';
-        });
+        setupCaptionEvents();
       }, { once: true });
     }
     setTimeout(() => {
       detachBufferingEvents();
       attachBufferingEvents();
     }, 0);
+  }
+
+  // Extracted caption event setup for reusability
+  function setupCaptionEvents() {
+    if (!plyr) return;
+    
+    plyr.on('languagechange', () => {
+      if (!plyr || !videoRef) return;
+      if (plyr.currentTrack !== -1 && videoRef.textTracks[plyr.currentTrack]) {
+        const currentTrack = videoRef.textTracks[plyr.currentTrack];
+        selectedLanguage = currentTrack.language;
+        console.log('Selected caption track:', {
+          index: plyr.currentTrack,
+          language: currentTrack.language,
+          label: currentTrack.label
+        });
+        for (let i = 0; i < videoRef.textTracks.length; i++) {
+          videoRef.textTracks[i].mode = i === plyr.currentTrack ? 'showing' : 'disabled';
+        }
+      } else {
+        selectedLanguage = 'auto';
+        for (let i = 0; i < videoRef.textTracks.length; i++) {
+          videoRef.textTracks[i].mode = 'disabled';
+        }
+      }
+    });
+    
+    plyr.on('captionsenabled', () => {
+      console.log('Captions enabled');
+    });
+    
+    plyr.on('captionsdisabled', () => {
+      selectedLanguage = 'auto';
+      console.log('Captions disabled');
+    });
   }
 
   // Add event listeners for buffering/loading
