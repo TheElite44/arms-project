@@ -177,20 +177,24 @@ export const GET: RequestHandler = async ({ url }) => {
               continue;
             }
 
+            // Only rewrite .m3u8 URLs for the response, not for the cache
             const processedSources = json.data.sources.map((source: any) => {
               if (source.url?.endsWith('.m3u8') && isValidUrl(source.url)) {
                 const proxyHeaders = JSON.stringify({
                   Referer: referer,
                   Origin: 'https://hianime.to',
                 });
-                source.url = `${M3U8_PROXY.replace(/\/$/, '')}/m3u8-proxy?url=${encodeURIComponent(source.url)}&headers=${encodeURIComponent(proxyHeaders)}`;
+                return {
+                  ...source,
+                  url: `${M3U8_PROXY.replace(/\/$/, '')}/m3u8-proxy?url=${encodeURIComponent(source.url)}&headers=${encodeURIComponent(proxyHeaders)}`
+                };
               }
               return source;
             });
 
             const cacheValue = {
               ...json.data,
-              sources: processedSources,
+              // Store original sources in cache
               usedReferer: referer,
               server: s,
               serverUrl: sourcesUrl
@@ -204,7 +208,11 @@ export const GET: RequestHandler = async ({ url }) => {
                 { ex: 432000 }
               );
             }
-            cachedResults[i] = cacheValue;
+            // For the response, use processedSources
+            cachedResults[i] = {
+              ...cacheValue,
+              sources: processedSources
+            };
           }
         }
 
