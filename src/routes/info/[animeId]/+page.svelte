@@ -314,6 +314,11 @@
       return [];
     }
   }
+
+  type CharacterVoiceActor = {
+    character: { poster: string; name: string; cast?: string };
+    voiceActor: { poster: string; name: string; cast?: string };
+  };
 </script>
 
 <Navbar />
@@ -321,7 +326,14 @@
 <div class="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white pt-16">
   {#if !mounted || loading}
     <div class="flex items-center justify-center flex-1">
-      <img src="/assets/loader.gif" alt="Loading..." class="object-contain w-24 h-24" on:error={handleImageError} />
+      <!-- Use this for both loading screens -->
+      <img
+        src="/assets/loader.gif"
+        alt="Loading..."
+        class="object-contain"
+        style="max-width: 120px; max-height: 110px; aspect-ratio: 1 / 1;"
+        on:error={handleImageError}
+      />
     </div>
   {:else if error}
     <div class="flex items-center justify-center flex-1">
@@ -473,8 +485,8 @@
                   </div>
                   <div class="flex flex-col gap-3">
                     {#each safeSlice(anime.charactersVoiceActors, 0, 2) as cva}
-                      {#if cva}
-                        <CharacterVoiceActorRow {cva} />
+                      {#if cva && typeof cva === 'object' && 'character' in cva && 'voiceActor' in cva}
+                        <CharacterVoiceActorRow cva={cva as CharacterVoiceActor} />
                       {/if}
                     {/each}
                   </div>
@@ -527,7 +539,7 @@
               <!-- Related Anime -->
               {#if related.length > 0}
                 <section>
-                  <h2 class="text-2xl font-bold text-orange-400 mb-4">Related Anime</h2>
+                  <h2 class="text-2z font-bold text-orange-400 mb-4">Related Anime</h2>
                   <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                     {#each related.filter(rel => rel && rel.id && rel.name) as rel}
                       <a 
