@@ -285,7 +285,11 @@
                 {#if data.anime.moreInfo.genres}
                   <div class="flex flex-wrap gap-2 mb-2">
                     {#each data.anime.moreInfo.genres as genre}
-                      <span class="bg-gray-800 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold">{genre}</span>
+                      <a
+                        href={`/genre/${genre.replace(/\s+/g, '-').toLowerCase()}`}
+                        class="bg-gray-800 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold hover:underline transition"
+                        >{genre}</a
+                      >
                     {/each}
                   </div>
                 {/if}
@@ -296,7 +300,15 @@
                   <span class="bg-gray-900 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold">Rating: {data.anime.info.stats.rating}</span>
                   <span class="bg-gray-900 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold">Quality: {data.anime.info.stats.quality}</span>
                   <span class="bg-gray-900 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold">Status: {data.anime.moreInfo.status}</span>
-                  <span class="bg-gray-900 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold">Studios: {data.anime.moreInfo.studios}</span>
+                  {#if data.anime.moreInfo.studios}
+                    {#each Array.isArray(data.anime.moreInfo.studios) ? data.anime.moreInfo.studios : [data.anime.moreInfo.studios] as studio}
+                      <a
+                        href={`/producer/${studio.replace(/\s+/g, '-').toLowerCase()}`}
+                        class="bg-gray-900 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold hover:underline transition"
+                        >Studios: {studio}</a
+                      >
+                    {/each}
+                  {/if}
                 </div>
                 <div class="text-gray-400 text-sm mb-2">Aired: {data.anime.moreInfo.aired}</div>
               </div>

@@ -1,38 +1,57 @@
+// +page.ts - CORRECTED VERSION
 import type { PageLoad } from './$types.js';
+import { error } from '@sveltejs/kit';
 
-// Add dynamic flag to ensure data is refetched when params change
 export const load: PageLoad = async ({ params, fetch }) => {
   const animeId = params.animeId;
+  
   if (!animeId) {
-    return { status: 400, error: 'Anime ID is required' };
+    // Use SvelteKit's error function instead of returning error objects
+    throw error(400, 'Anime ID is required');
   }
 
   try {
-    // Fetch from your own API route, not directly from the external API
+    // Fetch from your own API route
     const resp = await fetch(`/api/info?animeId=${animeId}`);
+    
+    if (!resp.ok) {
+      // Handle HTTP errors properly
+      if (resp.status === 404) {
+        throw error(404, 'Anime not found');
+      }
+      throw error(resp.status, `Failed to fetch anime: ${resp.statusText}`);
+    }
+
     const json = await resp.json();
 
     if (!json.success) {
-      return { status: 404, error: json.error || 'Anime not found' };
+      // Handle API-level errors
+      throw error(404, json.error || 'Anime not found');
     }
 
+    // Return the data directly - no status properties needed
     return {
       anime: json.data.anime,
       moreInfo: json.data.moreInfo,
-      mostPopularAnimes: json.data.mostPopularAnimes,
-      recommendedAnimes: json.data.recommendedAnimes,
-      relatedAnimes: json.data.relatedAnimes,
-      seasons: json.data.seasons
+      mostPopularAnimes: json.data.mostPopularAnimes || [],
+      recommendedAnimes: json.data.recommendedAnimes || [],
+      relatedAnimes: json.data.relatedAnimes || [],
+      seasons: json.data.seasons || []
     };
-  } catch (error) {
-    console.error('Error loading anime:', error);
-    return {
-      status: 500,
-      error: 'Failed to load anime information'
-    };
+    
+  } catch (err) {
+    console.error('Error loading anime:', err);
+    
+    // If it's already a SvelteKit error, re-throw it
+    if (err && typeof err === 'object' && 'status' in err && 'body' in err) {
+      throw err;
+    }
+    
+    // Otherwise, throw a generic error
+    throw error(500, 'Failed to load anime information');
   }
 };
 
-// Add this line to ensure the page is treated as dynamic
+// These settings are correct
 export const ssr = true;
 export const csr = true;

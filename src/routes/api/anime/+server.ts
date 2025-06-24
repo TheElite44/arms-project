@@ -200,12 +200,12 @@ export const GET: RequestHandler = async ({ url }) => {
               serverUrl: sourcesUrl
             };
 
-            // Cache for 5 days (432000 seconds)
+            // Cache for 2 days (172800 seconds)
             if (redis) {
               await redis.set(
                 `anime_sources_${animeEpisodeId}_${s}_${category}`,
                 cacheValue,
-                { ex: 432000 }
+                { ex: 172800 }
               );
             }
             // For the response, use processedSources
