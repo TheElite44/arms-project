@@ -387,14 +387,20 @@
                   {#if moreInfo.genres && Array.isArray(moreInfo.genres)}
                     <div class="flex flex-wrap gap-2 mb-2">
                       {#each moreInfo.genres.filter((g: unknown) => g && typeof g === 'string') as genre}
-                        <span class="bg-gray-800 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold">
+                        <a
+                          href={`/genre/${encodeURIComponent(genre.toLowerCase())}`}
+                          class="bg-gray-800 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold hover:underline transition"
+                          title={`View more ${genre} anime`}
+                        >
                           {safeTruncate(genre, 20)}
-                        </span>
+                        </a>
                       {/each}
                       {#if moreInfo.studios}
                         {#each (Array.isArray(moreInfo.studios) ? moreInfo.studios : [moreInfo.studios]).filter((s: string) => s && typeof s === 'string') as studio}
                           <a
-                            href={`/producer/${encodeURIComponent(studio.replace(/\s+/g, '-').toLowerCase())}`}
+                            href={`/producer/${encodeURIComponent(
+                              studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase()
+                              )}`}
                             class="bg-gray-800 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold hover:underline transition"
                           >
                             Studio: {safeTruncate(studio, 25)}

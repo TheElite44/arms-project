@@ -130,17 +130,17 @@ export const GET: RequestHandler = async ({ url }) => {
           ? await Promise.all(cacheKeys.map(key => redis.get(key)))
           : [null, null];
 
-        // If both are cached, return the requested one
+        // Only check cache for HD-2
         const idx = serversToCache.indexOf(requestedServer);
-        if (idx !== -1 && cachedResults[idx]) {
+        if (requestedServer === 'hd-2' && cachedResults[1]) {
           return new Response(JSON.stringify({
             success: true,
-            data: cachedResults[idx],
+            data: cachedResults[1],
             X_Cache: 'HIT'
           }), { status: 200, headers: { 'Content-Type': 'application/json', 'X-Cache': 'HIT' } });
         }
 
-        // If either is missing, fetch both and cache both
+        // If either is missing, fetch both but only cache HD-2
         for (let i = 0; i < serversToCache.length; i++) {
           if (!cachedResults[i]) {
             const s = serversToCache[i];
@@ -154,7 +154,8 @@ export const GET: RequestHandler = async ({ url }) => {
               ({ response: sourcesRes, referer } = await fetchWithRetry(sourcesUrl));
               json = await sourcesRes.json();
             } catch (err) {
-              if (redis) {
+              // Only cache HD-2 errors
+              if (redis && s === 'hd-2') {
                 await redis.set(
                   `anime_sources_${animeEpisodeId}_${s}_${category}`,
                   { server: s, serverUrl: sourcesUrl, error: 'fetch_failed' },
@@ -166,7 +167,8 @@ export const GET: RequestHandler = async ({ url }) => {
             }
 
             if (!json?.success || !json.data?.sources || sourcesRes.status === 500) {
-              if (redis) {
+              // Only cache HD-2 errors
+              if (redis && s === 'hd-2') {
                 await redis.set(
                   `anime_sources_${animeEpisodeId}_${s}_${category}`,
                   { server: s, serverUrl: sourcesUrl, error: 'no_sources' },
@@ -194,21 +196,19 @@ export const GET: RequestHandler = async ({ url }) => {
 
             const cacheValue = {
               ...json.data,
-              // Store original sources in cache
               usedReferer: referer,
               server: s,
               serverUrl: sourcesUrl
             };
 
-            // Cache for 2 days (172800 seconds)
-            if (redis) {
+            // Only cache HD-2
+            if (redis && s === 'hd-2') {
               await redis.set(
                 `anime_sources_${animeEpisodeId}_${s}_${category}`,
                 cacheValue,
                 { ex: 172800 }
               );
             }
-            // For the response, use processedSources
             cachedResults[i] = {
               ...cacheValue,
               sources: processedSources
@@ -222,8 +222,8 @@ export const GET: RequestHandler = async ({ url }) => {
           return new Response(JSON.stringify({
             success: true,
             data: result,
-            X_Cache: 'MISS'
-          }), { status: 200, headers: { 'Content-Type': 'application/json', 'X-Cache': 'MISS' } });
+            X_Cache: (requestedServer === 'hd-2' && cachedResults[1]) ? 'MISS' : 'NONE'
+          }), { status: 200, headers: { 'Content-Type': 'application/json', 'X-Cache': (requestedServer === 'hd-2' && cachedResults[1]) ? 'MISS' : 'NONE' } });
         } else {
           return createErrorResponse('No sources found for requested server', 500);
         }

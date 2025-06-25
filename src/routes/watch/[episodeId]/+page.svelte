@@ -304,7 +304,7 @@
                   {#if data.anime.moreInfo.studios}
                     {#each Array.isArray(data.anime.moreInfo.studios) ? data.anime.moreInfo.studios : [data.anime.moreInfo.studios] as studio}
                       <a
-                        href={`/producer/${studio.replace(/\s+/g, '-').toLowerCase()}`}
+                        href={`/producer/${studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase()}`}
                         class="bg-gray-900 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold hover:underline transition"
                         >Studios: {studio}</a
                       >
