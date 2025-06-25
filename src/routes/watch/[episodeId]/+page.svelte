@@ -139,12 +139,13 @@
 
   async function goToEpisode(episodeId: string) {
     if (episodeId && episodeId !== currentEpisodeId) {
+      // loading = true; // REMOVE THIS LINE
       currentEpisodeId = episodeId;
       const animeKey = data.anime?.info?.id ? `lastEpisodeId:${data.anime.info.id}` : null;
       if (animeKey) localStorage.setItem(animeKey, episodeId);
 
       await fetchServers(episodeId);
-      await fetchWatchData(episodeId, currentServer, category, true); // show loading
+      await fetchWatchData(episodeId, currentServer, category, false);
 
       goto(`/watch/${episodeId}`);
     }
