@@ -5,6 +5,7 @@
   import Sidebar from '$lib/components/Sidebar.svelte'; // <-- import Sidebar component
   import Footer from '$lib/components/Footer.svelte';
   import AnimeSchedule from '$lib/components/AnimeSchedule.svelte'; // <-- Import AnimeSchedule component
+  import Carousel from '$lib/components/Carousel.svelte';
 
   
   let loading = true;
@@ -113,71 +114,11 @@
           <!-- Carousel -->
           {#if data.spotlightAnimes?.length > 0}
             <section class="mb-4 sm:mb-8">
-              <div class="relative w-full max-w-[1800px] mx-auto rounded-lg overflow-hidden shadow-2xl min-h-[220px] sm:min-h-[420px] flex items-center bg-black">
-                {#each data.spotlightAnimes as anime, i (anime.id)}
-                  <div
-                    class="carousel-slide {i === carouselIndex ? 'active' : i === (carouselIndex - 1 + data.spotlightAnimes.length) % data.spotlightAnimes.length ? 'prev' : i === (carouselIndex + 1) % data.spotlightAnimes.length ? 'next' : ''}"
-                  >
-                    {#if i === carouselIndex}
-                      <a href={`/info/${anime.id}`} class="block group relative w-full h-[220px] sm:h-[420px]">
-                        <div class="absolute inset-0 w-full h-full">
-                          <img
-                            src={anime.poster}
-                            alt={anime.name}
-                            class="w-full h-full object-cover rounded-lg"
-                            style="object-position:center;"
-                            draggable="false"
-                          />
-                          <div class="absolute inset-0 bg-gradient-to-tr from-black/90 via-black/60 to-transparent rounded-lg pointer-events-none"></div>
-                        </div>
-                        <div class="absolute left-3 sm:left-6 bottom-3 sm:bottom-10 z-10 max-w-[95vw] sm:max-w-[60%] flex flex-col gap-2 sm:gap-4">
-                          <h2 class="text-white text-lg sm:text-3xl md:text-4xl font-bold truncate drop-shadow">{anime.name}</h2>
-                          <div class="flex gap-2 sm:gap-3 text-white text-xs sm:text-base font-medium">
-                            <span class="flex items-center gap-1 bg-orange-400 text-gray-900 px-2 sm:px-3 py-1 rounded-full text-xs font-bold shadow">
-                              Rank #{anime.rank}
-                            </span>
-                            <span class="flex items-center gap-1 bg-gray-900 text-orange-300 px-2 sm:px-3 py-1 rounded text-xs">
-                              {anime.episodes.sub} Sub / {anime.episodes.dub} Dub
-                            </span>
-                          </div>
-                          <p class="text-gray-200 text-xs sm:text-base line-clamp-2 sm:line-clamp-3 max-w-xs sm:max-w-xl drop-shadow">
-                            {anime.description ?? ''}
-                          </p>
-                        </div>
-                        <button
-                          class="absolute right-3 sm:right-10 bottom-3 sm:bottom-10 z-10 flex items-center gap-2 sm:gap-3 bg-orange-400 text-gray-900 font-bold rounded-lg px-4 sm:px-8 py-2 sm:py-4 text-xs sm:text-lg shadow-lg hover:bg-orange-500 transition"
-                          title="Watch now"
-                          on:click|preventDefault={() => goto(`/watch/${anime.id}`)}
-                        >
-                          <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4l12 6-12 6V4z"/></svg>
-                          <span class="hidden sm:inline">WATCH NOW</span>
-                        </button>
-                      </a>
-                    {/if}
-                  </div>
-                {/each}
-                <!-- Carousel Controls -->
-                <button
-                  on:click={prevSlide}
-                  aria-label="Previous Slide"
-                  class="absolute left-2 sm:left-8 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-orange-400 text-white hover:text-gray-900 rounded-full w-8 sm:w-14 h-8 sm:h-14 flex items-center justify-center shadow-lg transition z-10 border-2 border-white/10 hover:border-orange-400"
-                >
-                  <svg class="w-5 h-5 sm:w-8 sm:h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" /></svg>
-                </button>
-                <button
-                  on:click={nextSlide}
-                  aria-label="Next Slide"
-                  class="absolute right-2 sm:right-8 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-orange-400 text-white hover:text-gray-900 rounded-full w-8 sm:w-14 h-8 sm:h-14 flex items-center justify-center shadow-lg transition z-10 border-2 border-white/10 hover:border-orange-400"
-                >
-                  <svg class="w-5 h-5 sm:w-8 sm:h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg>
-                </button>
-                <!-- Dots -->
-                <div class="absolute bottom-2 sm:bottom-8 left-1/2 -translate-x-1/2 flex z-10">
-                  {#each data.spotlightAnimes as _, i}
-                    <span class="carousel-dot {i === carouselIndex ? 'active' : ''}"></span>
-                  {/each}
-                </div>
-              </div>
+              <Carousel
+                animes={data.spotlightAnimes}
+                intervalMs={10000}
+                onWatch={(id) => goto(`/watch/${id}`)}
+              />
             </section>
           {/if}
 
