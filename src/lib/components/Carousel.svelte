@@ -338,30 +338,7 @@
 
   .carousel-control {
     transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-
-  /* Remove hover animations on mobile devices */
-  @media (max-width: 639px) {
-    .carousel-control:hover {
-      transform: translateY(-50%); /* Only keep vertical centering on mobile */
-      box-shadow: none; /* No shadow animation on mobile */
-    }
-    
-    .carousel-control:active {
-      transform: translateY(-50%); /* Only keep vertical centering on mobile */
-    }
-  }
-
-  /* Keep hover animations on desktop */
-  @media (min-width: 640px) {
-    .carousel-control:hover {
-      transform: translateY(-50%) scale(1.1);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-    }
-
-    .carousel-control:active {
-      transform: translateY(-50%) scale(0.95);
-    }
+    top: 45%; /* moved up from 50% */
   }
 
   .gradient-overlay {
