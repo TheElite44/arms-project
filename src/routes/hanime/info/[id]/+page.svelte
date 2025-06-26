@@ -53,6 +53,14 @@
   }
 </script>
 
+<svelte:head>
+  <title>{info?.name || 'ARMS Hentai'} | ARMS Hentai</title>
+  <meta name="description" content={info?.description || 'Hanime information page'}>
+  <meta property="og:title" content={info?.name || 'Hanime Info'}>
+  <meta property="og:description" content={info?.description || 'Hanime information page'}>
+  <meta property="og:url" content={info ? `/hanime/info/${info.id}` : ''}>
+</svelte:head>
+
 <Navbar />
 
 {#if showWarning}
