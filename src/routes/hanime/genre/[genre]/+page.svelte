@@ -90,6 +90,15 @@
   );
 </script>
 
+
+<svelte:head>
+  <title>{data.genre || 'Genre'} | ARMS Hentai</title>
+  <meta name="description" content={`Explore the best hanime in the ${data.genre} genre.`}>
+  <meta property="og:title" content={`${data.genre || 'Genre'} | ARMS Hanime`}>
+  <meta property="og:description" content={`Explore the best hanime in the ${data.genre} genre.`}>  
+  <meta property="og:url" content={data ? `/hanime/genre/${data.genre}` : ''}>
+</svelte:head>
+
 <Navbar />
 
 {#if showWarning}
