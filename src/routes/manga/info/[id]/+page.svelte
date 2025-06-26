@@ -36,6 +36,16 @@
   }
 </script>
 
+<svelte:head>
+  <title>{manga?.title?.english || manga?.title?.romaji || manga?.title?.native} | ARMS Manga</title>
+  <meta name="description" content={manga?.description || 'Discover this manga on ARMS Anime Streaming.'} />
+  <meta property="og:title" content={manga?.title?.english || manga?.title?.romaji || manga?.title?.native} />
+  <meta property="og:description" content={manga?.description || 'Discover this manga on ARMS.'} />
+  <meta property="og:image" content={manga?.image || '/assets/default-manga-cover.jpg'} />
+  <meta property="og:type" content="website" /> 
+  <meta property="og:url" content={`https://arms-anime.com/manga/info/${manga?.id}`} />
+</svelte:head>
+
 <Navbar />
 
 <div class="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white pt-16">
