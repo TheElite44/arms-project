@@ -62,6 +62,11 @@
   );
 </script>
 
+<svelte:head>
+  <title>Discover {decodeURIComponent(data.producerName).replace(/-/g, ' ')} | ARMS Anime</title>
+  <meta name="description" content={`Explore the best animes by ${decodeURIComponent(data.producerName).replace(/-/g, ' ')}.`} />
+</svelte:head>
+
 <Navbar />
 
 <div class="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white pt-16">
