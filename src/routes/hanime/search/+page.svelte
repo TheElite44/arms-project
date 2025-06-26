@@ -82,6 +82,14 @@
   }
 </script>
 
+<svelte:head>
+  <title>Hanime Search - {query}</title>
+  <meta name="description" content={`Search results for "${query}" on ARMS Hentai`}>
+  <meta property="og:title" content={`Hanime Search - ${query}`}>
+  <meta property="og:description" content={`Search results for "${query}" on ARMS Hanime`}>
+  <meta property="og:url" content={`/hanime/search?query=${encodeURIComponent(query)}&page=${page}`}>
+</svelte:head>
+
 <Navbar />
 
 {#if showWarning}
@@ -125,7 +133,7 @@
               {#each hanimeResults as hanime, index}
                 <a
                   href={`/hanime/info/${hanime.id}`}
-                  class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block hover:scale-[1.03]"
+                  class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block hover:scale-[1.03]"
                 >
                   <div class="relative aspect-[3/4]">
                     <img
