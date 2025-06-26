@@ -89,6 +89,10 @@
   }
 </script>
 
+<svelte:head>
+  <title>Home | ARMS Anime Streaming</title>
+</svelte:head>
+
 <Navbar />
 
 <div class="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white pt-16">
