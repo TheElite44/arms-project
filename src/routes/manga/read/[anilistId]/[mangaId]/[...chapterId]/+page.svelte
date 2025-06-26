@@ -241,6 +241,11 @@
   }
 </script>
 
+<svelte:head>
+  <title>Read {title} - Chapter {chapterNumber} | ARMS Manga</title>
+  <meta name="description" content={`Read ${title} Chapter ${chapterNumber} on ARMS Anime Streaming`} />
+</svelte:head>
+
 <div class="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-white flex flex-col relative">
   <!-- Mobile Header -->
   {#if isMobile}
