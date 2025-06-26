@@ -8,6 +8,11 @@
   function hideInfo(id: string) { if (infoBoxId === id) infoBoxId = null; }
 </script>
 
+<svelte:head>
+  <title>ARMS Anime</title>
+  <meta name="description" content="Discover, stream, and enjoy trending, simulcast, and classic anime—no registration required!">
+</svelte:head>
+
 <div class="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white flex flex-col">
   <Navbar />
 
