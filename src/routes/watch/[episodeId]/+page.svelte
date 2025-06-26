@@ -203,6 +203,11 @@
   }
 </script>
 
+<svelte:head>
+  <title>Watch {data.anime?.info?.name || 'Anime'} | Arms Anime</title>
+  <meta name="description" content="Watch {data.anime?.info?.name || 'anime'} episode {data.episodeId} online for free. Enjoy high-quality streaming with subtitles and multiple servers." />
+</svelte:head>
+
 <Navbar/>
 
 <div class="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white flex flex-col">
