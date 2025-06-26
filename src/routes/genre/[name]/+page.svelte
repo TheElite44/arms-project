@@ -60,6 +60,11 @@
   );
 </script>
 
+<svelte:head>
+  <title>{data.genre} Anime - ARMS Anime</title>
+  <meta name="description" content={`Explore the best animes in the ${data.genre} genre.`} />
+</svelte:head>
+
 <Navbar />
 
 <div class="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white pt-16">
