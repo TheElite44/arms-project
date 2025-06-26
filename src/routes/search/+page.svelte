@@ -80,6 +80,10 @@
   }
 </script>
 
+<svelte:head>
+  <title>Search Results for "{query}" | ARMS Anime & Manga</title>
+  <meta name="description" content={`Search results for "${query}" on ARMS Anime Streaming.`} /> 
+</svelte:head>
 <Navbar />
 
 <div class="min-h-screen flex flex-col bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white pt-16">
