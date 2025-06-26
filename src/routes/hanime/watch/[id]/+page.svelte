@@ -85,6 +85,12 @@
   }
 </script>
 
+<svelte:head>
+  <title>Watch {title} | ARMS Hentai</title>
+  <meta name="description" content={description} />
+</svelte:head>
+
+
 <Navbar />
 
 {#if showWarning}
