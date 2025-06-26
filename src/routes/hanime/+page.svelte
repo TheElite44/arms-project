@@ -65,6 +65,11 @@
   }
 </script>
 
+<svelte:head>
+  <title>Home | ARMS Hentai</title>
+  <meta name="description" content="Explore premium adult anime for mature audiences. Trending & new series, updated daily." />
+</svelte:head>
+
 <Navbar />
 
 <div class="flex flex-col min-h-screen bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106] text-white">
