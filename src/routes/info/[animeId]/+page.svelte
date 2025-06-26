@@ -320,6 +320,9 @@
     voiceActor: { poster: string; name: string; cast?: string };
   };
 </script>
+<svelte:head>
+  <title>{anime?.name ? `${anime.name} | ARMS Anime` : 'Anime Info | ARMS Anime'}</title>
+</svelte:head>
 
 <Navbar />
 
