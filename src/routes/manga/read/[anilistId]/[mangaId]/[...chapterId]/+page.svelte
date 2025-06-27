@@ -239,14 +239,6 @@
       if (currentPage < pages.length - 1) currentPage++;
     }
   }
-
-  $: {
-    if (showSidebar) {
-      document.body.style.overflow = 'hidden';
-    } else if (!zoomed) {
-      document.body.style.overflow = '';
-    }
-  }
 </script>
 
 <svelte:head>
