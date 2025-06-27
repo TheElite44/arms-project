@@ -306,14 +306,75 @@
                   <span class="bg-gray-900 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold">Rating: {data.anime.info.stats.rating}</span>
                   <span class="bg-gray-900 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold">Quality: {data.anime.info.stats.quality}</span>
                   <span class="bg-gray-900 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold">Status: {data.anime.moreInfo.status}</span>
-                  {#if data.anime.moreInfo.studios}
-                    {#each Array.isArray(data.anime.moreInfo.studios) ? data.anime.moreInfo.studios : [data.anime.moreInfo.studios] as studio}
-                      <a
-                        href={`/producer/${studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase()}`}
-                        class="bg-gray-900 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold hover:underline transition"
-                        >Studios: {studio}</a
-                      >
-                    {/each}
+                  {#if data.anime.moreInfo.studios && (
+                    (Array.isArray(data.anime.moreInfo.studios) && data.anime.moreInfo.studios.filter((s: string) => s && s.trim()).length > 0) ||
+                    (typeof data.anime.moreInfo.studios === 'string' && data.anime.moreInfo.studios.split(',').filter((s: string) => s.trim()).length > 0)
+                  )}
+                    <div class="w-full flex flex-wrap items-center gap-x-2 gap-y-1 mb-1 text-sm">
+                      <span class="font-semibold text-orange-300">
+                        Studio{Array.isArray(data.anime.moreInfo.studios) && data.anime.moreInfo.studios.length > 1 ? 's' : ''}:
+                      </span>
+                      {#each (
+                        Array.isArray(data.anime.moreInfo.studios)
+                          ? data.anime.moreInfo.studios
+                          : typeof data.anime.moreInfo.studios === 'string'
+                            ? data.anime.moreInfo.studios.split(',').map((s: string) => s.trim())
+                            : []
+                      ).filter((s: string) => s) as studio, i (studio)}
+                        <span class="nowrap">
+                          <span
+                            role="link"
+                            tabindex="0"
+                            class="cursor-pointer hover:underline hover:text-orange-400 transition"
+                            on:click={() => goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
+                            on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
+                          >
+                            {studio}
+                          </span>{#if i < (
+                            Array.isArray(data.anime.moreInfo.studios)
+                              ? data.anime.moreInfo.studios.length
+                              : typeof data.anime.moreInfo.studios === 'string'
+                                ? data.anime.moreInfo.studios.split(',').filter((s: string) => s.trim()).length
+                                : 0
+                          ) - 1}, {/if}
+                        </span>
+                      {/each}
+                    </div>
+                  {/if}
+                  {#if data.anime.moreInfo.producers && (
+                    (Array.isArray(data.anime.moreInfo.producers) && data.anime.moreInfo.producers.filter((s: string) => s && s.trim()).length > 0) ||
+                    (typeof data.anime.moreInfo.producers === 'string' && data.anime.moreInfo.producers.split(',').filter((s: string) => s.trim()).length > 0)
+                  )}
+                    <div class="w-full flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                      <span class="font-semibold text-orange-300">
+                        Producer{Array.isArray(data.anime.moreInfo.producers) && data.anime.moreInfo.producers.length > 1 ? 's' : ''}:
+                      </span>
+                      {#each (
+                        Array.isArray(data.anime.moreInfo.producers)
+                          ? data.anime.moreInfo.producers
+                          : typeof data.anime.moreInfo.producers === 'string'
+                            ? data.anime.moreInfo.producers.split(',').map((s: string) => s.trim())
+                            : []
+                      ).filter((s: string) => s) as producer, i (producer)}
+                        <span class="nowrap">
+                          <span
+                            role="link"
+                            tabindex="0"
+                            class="cursor-pointer hover:underline hover:text-orange-400 transition"
+                            on:click={() => goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
+                            on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
+                          >
+                            {producer}
+                          </span>{#if i < (
+                            Array.isArray(data.anime.moreInfo.producers)
+                              ? data.anime.moreInfo.producers.length
+                              : typeof data.anime.moreInfo.producers === 'string'
+                                ? data.anime.moreInfo.producers.split(',').filter((s: string) => s.trim()).length
+                                : 0
+                          ) - 1}, {/if}
+                        </span>
+                      {/each}
+                    </div>
                   {/if}
                 </div>
                 <div class="text-gray-400 text-sm mb-2">Aired: {data.anime.moreInfo.aired}</div>
@@ -416,5 +477,9 @@
       margin-left: auto;
       margin-right: auto;
     }
+  }
+
+  .nowrap {
+    white-space: nowrap;
   }
 </style>

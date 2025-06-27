@@ -398,17 +398,73 @@
                           {safeTruncate(genre, 20)}
                         </a>
                       {/each}
-                      {#if moreInfo.studios}
-                        {#each (Array.isArray(moreInfo.studios) ? moreInfo.studios : [moreInfo.studios]).filter((s: string) => s && typeof s === 'string') as studio}
-                          <a
-                            href={`/producer/${encodeURIComponent(
-                              studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase()
-                              )}`}
-                            class="bg-gray-800 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold hover:underline transition"
-                          >
-                            Studio: {safeTruncate(studio, 25)}
-                          </a>
-                        {/each}
+                      {#if moreInfo.studios || moreInfo.producers}
+                        <div class="w-full mt-2 text-sm text-gray-300 flex flex-col gap-1">
+                          {#if moreInfo.studios && (Array.isArray(moreInfo.studios) ? moreInfo.studios.filter((s: string) => s && s.trim()).length > 0 : typeof moreInfo.studios === 'string' && moreInfo.studios.split(',').filter((s: string) => s.trim()).length > 0)}
+                            <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                              <span class="font-semibold text-orange-300">
+                                Studio{Array.isArray(moreInfo.studios) && moreInfo.studios.length > 1 ? 's' : ''}:
+                              </span>
+                              {#each (
+                                Array.isArray(moreInfo.studios)
+                                  ? moreInfo.studios
+                                  : typeof moreInfo.studios === 'string'
+                                    ? moreInfo.studios.split(',').map((s: string) => s.trim())
+                                    : []
+                              ).filter((s: string) => s) as studio, i (studio)}
+                                <span class="nowrap">
+                                  <span
+                                    role="link"
+                                    tabindex="0"
+                                    class="cursor-pointer hover:underline hover:text-orange-400 transition"
+                                    on:click={() => goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
+                                    on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
+                                  >
+                                    {safeTruncate(studio, 25)}
+                                  </span>{#if i < (
+                                    Array.isArray(moreInfo.studios)
+                                      ? moreInfo.studios.length
+                                      : typeof moreInfo.studios === 'string'
+                                        ? moreInfo.studios.split(',').filter((s: string) => s.trim()).length
+                                        : 0
+                                  ) - 1}, {/if}
+                                </span>
+                              {/each}
+                            </div>
+                          {/if}
+                          {#if moreInfo.producers && (Array.isArray(moreInfo.producers) ? moreInfo.producers.filter((s: string) => s && s.trim()).length > 0 : typeof moreInfo.producers === 'string' && moreInfo.producers.split(',').filter((s: string) => s.trim()).length > 0)}
+                            <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                              <span class="font-semibold text-orange-300">
+                                Producer{Array.isArray(moreInfo.producers) && moreInfo.producers.length > 1 ? 's' : ''}:
+                              </span>
+                              {#each (
+                                Array.isArray(moreInfo.producers)
+                                  ? moreInfo.producers
+                                  : typeof moreInfo.producers === 'string'
+                                    ? moreInfo.producers.split(',').map((s: string) => s.trim())
+                                    : []
+                              ).filter((s: string) => s) as producer, i (producer)}
+                                <span class="nowrap">
+                                  <span
+                                    role="link"
+                                    tabindex="0"
+                                    class="cursor-pointer hover:underline hover:text-orange-400 transition"
+                                    on:click={() => goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
+                                    on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
+                                  >
+                                    {safeTruncate(producer, 25)}
+                                  </span>{#if i < (
+                                    Array.isArray(moreInfo.producers)
+                                      ? moreInfo.producers.length
+                                      : typeof moreInfo.producers === 'string'
+                                        ? moreInfo.producers.split(',').filter((s: string) => s.trim()).length
+                                        : 0
+                                  ) - 1}, {/if}
+                                </span>
+                              {/each}
+                            </div>
+                          {/if}
+                        </div>
                       {/if}
                     </div>
                   {/if}
@@ -619,5 +675,9 @@
       margin-left: auto;
       margin-right: auto;
     }
+  }
+
+  .nowrap {
+    white-space: nowrap;
   }
 </style>
