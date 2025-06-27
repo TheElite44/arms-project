@@ -269,8 +269,8 @@
   /* Large desktop screens */
   @media (min-width: 1024px) {
     .anime-description {
-      max-height: 5.6em; /* 4 lines on large screens */
-      -webkit-line-clamp: 4;
+      max-height: 4.2em; /* keep 3 lines on large screens too */
+      -webkit-line-clamp: 3;
     }
   }
 
@@ -299,7 +299,7 @@
     
     @media (min-width: 1024px) {
       .anime-description {
-        max-height: 5.6em;
+        max-height: 4.2em;
       }
     }
   }
@@ -364,7 +364,7 @@
   .dots-container {
     position: absolute;
     left: 50%;
-    bottom: 1rem;
+    bottom: 1rem; 
     transform: translateX(-50%);
     display: flex;
     z-index: 10;
@@ -380,7 +380,7 @@
 
   @media (min-width: 640px) {
     .dots-container {
-      bottom: 2rem;
+      bottom: 1rem; /* was 2rem */
       display: flex;
     }
   }
