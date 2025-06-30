@@ -30,6 +30,7 @@
   let useArtPlayer = false;
   let loading = true;
   let thumbnailsVtt = '';
+  let updatingSources = false;
 
   // --- Pagination ---
   let episodesPerPage = 50;
@@ -201,6 +202,15 @@
       goToPage(selectedPage);
     }
   }
+
+  async function handleRefreshSource(videoUrl: string) {
+    updatingSources = true;
+    // Delete cache for this episode/server/category
+    await fetch(`/api/anime?action=delete-source-cache&animeEpisodeId=${currentEpisodeId}&category=${category}`);
+    // Refetch sources and update videoSrc
+    await fetchWatchData(currentEpisodeId, currentServer, category, false); // don't set loading=true
+    updatingSources = false;
+  }
 </script>
 
 <svelte:head>
@@ -212,7 +222,7 @@
 
 <div class="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white flex flex-col">
   <div class="flex-1 px-4 py-4 pt-16 flex flex-col">
-    {#if loading}
+    {#if loading && !updatingSources}
       <div class="flex-1 flex items-center justify-center">
         <img src="/assets/loader.gif" alt="Loading..." style="max-width: 120px; max-height: 110px;" />
       </div>
@@ -231,6 +241,7 @@
               {subtitles}
               {useArtPlayer}
               goToEpisode={goToEpisode}
+              onRefreshSource={handleRefreshSource}
             />
 
             <ServerSelector

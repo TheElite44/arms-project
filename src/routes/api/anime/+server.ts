@@ -159,7 +159,7 @@ export const GET: RequestHandler = async ({ url }) => {
                 await redis.set(
                   `anime_sources_${animeEpisodeId}_${s}_${category}`,
                   { server: s, serverUrl: sourcesUrl, error: 'fetch_failed' },
-                  { ex: 172800 }
+                  { ex: 7200 } // 2 hours in seconds
                 );
               }
               cachedResults[i] = { server: s, serverUrl: sourcesUrl, error: 'fetch_failed' };
@@ -172,7 +172,7 @@ export const GET: RequestHandler = async ({ url }) => {
                 await redis.set(
                   `anime_sources_${animeEpisodeId}_${s}_${category}`,
                   { server: s, serverUrl: sourcesUrl, error: 'no_sources' },
-                  { ex: 172800 }
+                  { ex: 7200 } // 2 hours in seconds
                 );
               }
               cachedResults[i] = { server: s, serverUrl: sourcesUrl, error: 'no_sources' };
@@ -228,6 +228,17 @@ export const GET: RequestHandler = async ({ url }) => {
           return createErrorResponse('No sources found for requested server', 500);
         }
       
+      case 'delete-source-cache': {
+        if (!animeEpisodeId) return createErrorResponse('animeEpisodeId required', 400);
+        const serversToCache = ['hd-1', 'hd-2'];
+        const keys = serversToCache.map(s => `anime_sources_${animeEpisodeId}_${s}_${category}`);
+        if (redis) {
+          await Promise.all(keys.map(key => redis.del(key)));
+          return new Response(JSON.stringify({ success: true, deleted: keys }), { status: 200 });
+        }
+        return createErrorResponse('Redis not configured', 500);
+      }
+
       default:
         return createErrorResponse(`Invalid action: ${action}`, 400);
     }
