@@ -14,6 +14,7 @@
   }> = [];
   export let poster: string = '';
   export let thumbnailsVtt: string = ''; // <-- add this
+  export let onRefreshSource: (videoUrl: string) => void = () => {};
 
   let videoRef: HTMLVideoElement | null = null;
   let plyr: Plyr | null = null;
@@ -224,6 +225,13 @@
 
         setupOrientationHandling();
         setupCaptionEvents();
+      });
+
+      hls.on(Hls.Events.ERROR, function (event, data) {
+        if (data.fatal && data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          // Notify parent to delete cache and refetch sources
+          onRefreshSource(videoUrl);
+        }
       });
     } else {
       if (!videoRef) return;

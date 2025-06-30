@@ -3,17 +3,10 @@
   import Player2 from './Player2.svelte';
   export let videoSrc: string = '';
   export let poster: string = '';
-  export let subtitles: Array<{
-    url: string;
-    label: string;
-    lang: string;
-    kind: 'subtitles' | 'metadata' | 'captions' | 'chapters' | 'descriptions';
-    default?: boolean;
-  }> = [];
+  export let subtitles: Array<any> = [];
   export let useArtPlayer: boolean = true;
   export let goToEpisode: (id: string) => void;
-
-  $: console.log('Original subtitles:', subtitles);
+  export let onRefreshSource: (videoUrl: string) => void = () => {};
 </script>
 
 <div class="w-full aspect-video rounded-lg overflow-hidden shadow-lg bg-black flex items-center justify-center">
@@ -30,6 +23,7 @@
         videoUrl={videoSrc}
         poster={poster}
         subtitles={subtitles}
+        onRefreshSource={onRefreshSource}
       />
     {/if}
   {/key}

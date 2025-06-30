@@ -255,6 +255,7 @@
     line-height: 1.4;
     max-height: 2.8em; /* 2 lines on mobile */
     -webkit-line-clamp: 2;
+    line-clamp: 2; /* add this */
   }
 
   /* Desktop and larger screens */
@@ -262,6 +263,7 @@
     .anime-description {
       max-height: 4.2em; /* 3 lines on desktop */
       -webkit-line-clamp: 3;
+      line-clamp: 3; /* add this */
       line-height: 1.4;
     }
   }
@@ -271,6 +273,7 @@
     .anime-description {
       max-height: 4.2em; /* keep 3 lines on large screens too */
       -webkit-line-clamp: 3;
+      line-clamp: 3; /* add this */
     }
   }
 
