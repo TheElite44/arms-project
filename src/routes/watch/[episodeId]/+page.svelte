@@ -121,11 +121,15 @@
           .sort((a, b) => a.serverName.localeCompare(b.serverName));
         servers = servers.filter((server) => server.serverName);
 
-        if (!currentServer) {
-          const defaultServer = servers.find((s) => s.category === category);
-          if (defaultServer) {
-            currentServer = defaultServer.serverName;
-          }
+        // --- Default server logic ---
+        // Try to set hd-2 as default, else hd-1, else first available
+        let preferred = servers.find(s => s.serverName.toLowerCase() === 'hd-2');
+        if (!preferred) preferred = servers.find(s => s.serverName.toLowerCase() === 'hd-1');
+        if (!preferred) preferred = servers[0];
+
+        if (preferred) {
+          currentServer = preferred.serverName;
+          category = preferred.category;
         }
       }
     } catch (err) {
@@ -140,7 +144,6 @@
 
   async function goToEpisode(episodeId: string) {
     if (episodeId && episodeId !== currentEpisodeId) {
-      // loading = true; // REMOVE THIS LINE
       currentEpisodeId = episodeId;
       const animeKey = data.anime?.info?.id ? `lastEpisodeId:${data.anime.info.id}` : null;
       if (animeKey) localStorage.setItem(animeKey, episodeId);
@@ -183,15 +186,9 @@
 
     await fetchServers(currentEpisodeId);
 
-    if (currentServer) {
-      await fetchWatchData(currentEpisodeId, currentServer, category);
-    } else {
-      const defaultServer = servers.find((s) => s.category === category);
-      if (defaultServer) {
-        currentServer = defaultServer.serverName;
-        await fetchWatchData(currentEpisodeId, currentServer, category);
-      }
-    }
+    // Always fetch with the currentServer set by fetchServers
+    await fetchWatchData(currentEpisodeId, currentServer, category);
+
     loading = false;
   });
 
