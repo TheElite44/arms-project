@@ -16,6 +16,7 @@ const redis = useRedis
   : null;
 
 const M3U8_PROXY = import.meta.env.VITE_M3U8_PROXY;
+const M3U8_PROXY_HD1 = import.meta.env.VITE_M3U8_PROXY_HD1;
 
 const createErrorResponse = (message: string, status: number) => 
   new Response(JSON.stringify({ success: false, error: message }), {
@@ -186,9 +187,14 @@ export const GET: RequestHandler = async ({ url }) => {
                   Referer: referer,
                   Origin: 'https://hianime.to',
                 });
+                // Use different proxy for hd-1 and hd-2
+                const proxyBase =
+                  s === 'hd-1' && M3U8_PROXY_HD1
+                    ? M3U8_PROXY_HD1.replace(/\/$/, '')
+                    : M3U8_PROXY.replace(/\/$/, '');
                 return {
                   ...source,
-                  url: `${M3U8_PROXY.replace(/\/$/, '')}/m3u8-proxy?url=${encodeURIComponent(source.url)}&headers=${encodeURIComponent(proxyHeaders)}`
+                  url: `${proxyBase}/m3u8-proxy?url=${encodeURIComponent(source.url)}&headers=${encodeURIComponent(proxyHeaders)}`
                 };
               }
               return source;
