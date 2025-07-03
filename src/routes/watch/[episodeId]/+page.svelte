@@ -211,6 +211,26 @@
     await fetchWatchData(currentEpisodeId, currentServer, category, false); // don't set loading=true
     updatingSources = false;
   }
+
+  const AUTO_PLAY_KEY = 'arms:autoPlay';
+  const AUTO_SKIP_INTRO_KEY = 'arms:autoSkipIntro';
+  const AUTO_NEXT_KEY = 'arms:autoNext';
+
+  function saveToggle(key: string, value: boolean) {
+    localStorage.setItem(key, value ? '1' : '0');
+  }
+  function loadToggle(key: string, fallback = false): boolean {
+    if (typeof localStorage === 'undefined') return fallback;
+    const v = localStorage.getItem(key);
+    return v === '1' ? true : v === '0' ? false : fallback;
+  }
+
+  // Load toggle states from localStorage
+  onMount(() => {
+    autoPlay = loadToggle(AUTO_PLAY_KEY, false);
+    autoSkipIntro = loadToggle(AUTO_SKIP_INTRO_KEY, false);
+    autoNext = loadToggle(AUTO_NEXT_KEY, false);
+  });
 </script>
 
 <svelte:head>
@@ -249,15 +269,30 @@
 
             <!-- Simple text toggles below the player, single line -->
             <div class="flex gap-4 mt-2 mb-4 text-xs font-semibold select-none">
-              <div class="cursor-pointer" on:click={() => autoPlay = !autoPlay}>
+              <button
+                type="button"
+                class="cursor-pointer bg-transparent border-none p-0 m-0 text-inherit"
+                on:click={() => { autoPlay = !autoPlay; saveToggle(AUTO_PLAY_KEY, autoPlay); }}
+                aria-pressed={autoPlay}
+              >
                 Auto Play <span class={autoPlay ? 'text-green-400' : 'text-red-400'}>{autoPlay ? 'On' : 'Off'}</span>
-              </div>
-              <div class="cursor-pointer" on:click={() => autoSkipIntro = !autoSkipIntro}>
+              </button>
+              <button
+                type="button"
+                class="cursor-pointer bg-transparent border-none p-0 m-0 text-inherit"
+                on:click={() => { autoSkipIntro = !autoSkipIntro; saveToggle(AUTO_SKIP_INTRO_KEY, autoSkipIntro); }}
+                aria-pressed={autoSkipIntro}
+              >
                 Auto Skip Intro <span class={autoSkipIntro ? 'text-green-400' : 'text-red-400'}>{autoSkipIntro ? 'On' : 'Off'}</span>
-              </div>
-              <div class="cursor-pointer" on:click={() => autoNext = !autoNext}>
+              </button>
+              <button
+                type="button"
+                class="cursor-pointer bg-transparent border-none p-0 m-0 text-inherit"
+                on:click={() => { autoNext = !autoNext; saveToggle(AUTO_NEXT_KEY, autoNext); }}
+                aria-pressed={autoNext}
+              >
                 Auto Next <span class={autoNext ? 'text-green-400' : 'text-red-400'}>{autoNext ? 'On' : 'Off'}</span>
-              </div>
+              </button>
             </div>
 
             <ServerSelector
