@@ -47,7 +47,8 @@
   export let playNext: (nextEpisodeId: string) => void = () => {};
 
   export let videoUrl: string = '';
-  export let videoType: string = 'application/x-mpegURL';
+  // svelte-ignore export_let_unused
+    export let videoType: string = 'application/x-mpegURL';
 
   // === STATE ===
   let art: any = null;
@@ -193,7 +194,7 @@
     }
 
     const source = availableSources[currentSourceIndex];
-    src = source.url;
+    videoUrl = source.url;
     
     logPlayerEvent('Trying source', { 
       index: currentSourceIndex + 1, 

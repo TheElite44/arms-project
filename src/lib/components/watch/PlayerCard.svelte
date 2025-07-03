@@ -7,6 +7,9 @@
   export let useArtPlayer: boolean = true;
   export let goToEpisode: (id: string) => void;
   export let onRefreshSource: (videoUrl: string) => void = () => {};
+  export let intro: { start: number; end: number } | null = null;
+  export let outro: { start: number; end: number } | null = null;
+  export let autoSkipIntro: boolean = false;
 </script>
 
 <div class="w-full aspect-video rounded-lg overflow-hidden shadow-lg bg-black flex items-center justify-center">
@@ -24,6 +27,9 @@
         poster={poster}
         subtitles={subtitles}
         onRefreshSource={onRefreshSource}
+        {intro}
+        {outro}
+        {autoSkipIntro}
       />
     {/if}
   {/key}

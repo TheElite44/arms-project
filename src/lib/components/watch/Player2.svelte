@@ -1,6 +1,6 @@
 <script lang="ts">
 /// <reference path="../../lib/types/screen-orientation.d.ts" />
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, afterUpdate } from 'svelte';
   import Plyr from 'plyr';
   import 'plyr/dist/plyr.css';
   import Hls from 'hls.js';
@@ -15,6 +15,10 @@
   export let poster: string = '';
   export let thumbnailsVtt: string = ''; // <-- add this
   export let onRefreshSource: (videoUrl: string) => void = () => {};
+
+  export let intro: { start: number; end: number } | null = null;
+  export let outro: { start: number; end: number } | null = null; // <-- add outro
+  export let autoSkipIntro: boolean = false;
 
   let videoRef: HTMLVideoElement | null = null;
   let plyr: Plyr | null = null;
@@ -196,7 +200,7 @@
             'captions', 'settings', 'quality', 'fullscreen'
           ],
           captions: { 
-            active: false, 
+            active: true, // <-- ensure captions are ON by default
             language: 'auto',
             update: true 
           },
@@ -244,7 +248,7 @@
             'captions', 'settings', 'fullscreen'
           ],
           captions: { 
-            active: false, 
+            active: true, // <-- ensure captions are ON by default
             language: 'auto',
             update: true 
           },
@@ -338,6 +342,15 @@
     if (videoRef && videoUrl) {
       initializePlayer();
     }
+    // Ensure video stops at the end and buffering spinner hides
+    videoRef?.addEventListener('ended', () => {
+      if (videoRef) {
+        videoRef.pause();
+        buffering = false; // Hide spinner
+        // Optionally, reset to start:
+        // videoRef.currentTime = 0;
+      }
+    });
     // No need for native fullscreenchange events anymore
     onDestroy(() => {
       unlockOrientation();
@@ -395,16 +408,16 @@
     enterFullscreenHandler = async () => {
       if (!isMobileDevice()) return;
       // Standard API
-      if (screen.orientation?.lock) {
+      if ((screen.orientation as any)?.lock) {
         try {
-          await screen.orientation.lock('landscape');
+          await (screen.orientation as any).lock('landscape');
         } catch {}
-      } else if (screen.lockOrientation) {
-        screen.lockOrientation('landscape');
-      } else if (screen.mozLockOrientation) {
-        screen.mozLockOrientation('landscape');
-      } else if (screen.msLockOrientation) {
-        screen.msLockOrientation('landscape');
+      } else if ((screen as any).lockOrientation) {
+        (screen as any).lockOrientation('landscape');
+      } else if ((screen as any).mozLockOrientation) {
+        (screen as any).mozLockOrientation('landscape');
+      } else if ((screen as any).msLockOrientation) {
+        (screen as any).msLockOrientation('landscape');
       }
     };
 
@@ -455,8 +468,71 @@
     // Attach orientation handling after Plyr is ready
     setupOrientationHandling();
   }
+let timeUpdateHandler: (() => void) | null = null;
 
-  // ...existing code...
+let outroSkipped = false; // <-- Track if outro was skipped
+
+function handleTimeUpdate() {
+  // Skip intro if enabled
+  if (
+    intro &&
+    autoSkipIntro &&
+    videoRef &&
+    videoRef.currentTime >= intro.start &&
+    videoRef.currentTime < intro.end
+  ) {
+    videoRef.currentTime = intro.end;
+  }
+  // Skip outro if enabled, but only once per video
+  if (
+    outro &&
+    autoSkipIntro &&
+    videoRef &&
+    videoRef.currentTime >= outro.start &&
+    videoRef.currentTime < outro.end &&
+    !outroSkipped
+  ) {
+    outroSkipped = true;
+    videoRef.currentTime = videoRef.duration;
+    videoRef.pause();
+    buffering = false;
+    return;
+  }
+  // Always stop at the end, even if outro skip didn't trigger
+  if (
+    videoRef &&
+    videoRef.currentTime >= videoRef.duration - 0.1
+  ) {
+    videoRef.pause();
+    buffering = false;
+  }
+}
+
+// Attach/detach timeupdate handler reactively
+$: {
+  if (videoRef) {
+    // Remove previous handler if any
+    videoRef.removeEventListener('timeupdate', handleTimeUpdate);
+    // Only add if enabled and intro exists
+    if (intro && autoSkipIntro) {
+      videoRef.addEventListener('timeupdate', handleTimeUpdate);
+    }
+  }
+}
+
+// Also clean up on destroy
+onDestroy(() => {
+  if (videoRef) {
+    videoRef.removeEventListener('timeupdate', handleTimeUpdate);
+  }
+  cleanup();
+  detachBufferingEvents();
+});
+
+afterUpdate(() => {
+  // Remove all marker logic
+  // (No marker code here anymore)
+});
 </script>
 
 <div class="player-container">
@@ -471,10 +547,9 @@
     {#if thumbnailsVtt}
       <track kind="metadata" label="thumbnails" src={thumbnailsVtt} />
     {/if}
-    <!-- Always include at least one captions track for accessibility -->
     <track kind="captions" label="No captions" srclang="en" src="" default hidden />
-    <!-- Subtitle tracks are added dynamically -->
   </video>
+
   {#if buffering}
     <div class="buffering-spinner" aria-label="Loading">
       <div class="spinner"></div>
@@ -725,4 +800,23 @@
     fill: #fff !important;
     color: #fff !important;
   }
+  :global(.plyr__progress) {
+    position: relative !important;
+  }
+
+  :global(.plyr__menu__container) {
+  max-height: 220px !important;   /* Allow scrolling for long subtitle lists */
+  min-width: 90px !important;
+  max-width: 220px !important;
+  font-size: 0.95rem !important;
+  padding: 0.15rem 0.3rem !important;
+  border-radius: 0.3rem !important;
+  overflow-y: auto !important;    /* Always allow vertical scroll */
+  overscroll-behavior: contain;
+  scrollbar-width: none;           /* Firefox */
+  -ms-overflow-style: none;        /* IE and Edge */
+}
+:global(.plyr__menu__container::-webkit-scrollbar) {
+  display: none;                   /* Chrome, Safari, Opera */
+}
 </style>
