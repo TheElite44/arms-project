@@ -180,26 +180,7 @@ export const GET: RequestHandler = async ({ url }) => {
               continue;
             }
 
-            // Only rewrite .m3u8 URLs for the response, not for the cache
-            const processedSources = json.data.sources.map((source: any) => {
-              if (source.url?.endsWith('.m3u8') && isValidUrl(source.url)) {
-                const proxyHeaders = JSON.stringify({
-                  Referer: referer,
-                  Origin: 'https://hianime.to',
-                });
-                // Use different proxy for hd-1 and hd-2
-                const proxyBase =
-                  s === 'hd-1' && M3U8_PROXY_HD1
-                    ? M3U8_PROXY_HD1.replace(/\/$/, '')
-                    : M3U8_PROXY.replace(/\/$/, '');
-                return {
-                  ...source,
-                  url: `${proxyBase}/m3u8-proxy?url=${encodeURIComponent(source.url)}&headers=${encodeURIComponent(proxyHeaders)}`
-                };
-              }
-              return source;
-            });
-
+            // Prepare cache value with original sources (no proxy rewrite)
             const cacheValue = {
               ...json.data,
               usedReferer: referer,
@@ -215,6 +196,26 @@ export const GET: RequestHandler = async ({ url }) => {
                 { ex: 172800 }
               );
             }
+
+            // When returning, rewrite .m3u8 URLs to proxy links
+            const processedSources = json.data.sources.map((source: any) => {
+              if (source.url?.endsWith('.m3u8') && isValidUrl(source.url)) {
+                const proxyHeaders = JSON.stringify({
+                  Referer: referer,
+                  Origin: 'https://hianime.to',
+                });
+                const proxyBase =
+                  s === 'hd-1' && M3U8_PROXY_HD1
+                    ? M3U8_PROXY_HD1.replace(/\/$/, '')
+                    : M3U8_PROXY.replace(/\/$/, '');
+                return {
+                  ...source,
+                  url: `${proxyBase}/m3u8-proxy?url=${encodeURIComponent(source.url)}&headers=${encodeURIComponent(proxyHeaders)}`
+                };
+              }
+              return source;
+            });
+
             cachedResults[i] = {
               ...cacheValue,
               sources: processedSources

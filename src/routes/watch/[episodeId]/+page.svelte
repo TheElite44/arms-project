@@ -31,6 +31,9 @@
   let loading = true;
   let thumbnailsVtt = '';
   let updatingSources = false;
+  let autoPlay = false;
+  let autoSkipIntro = false;
+  let autoNext = false;
 
   // --- Pagination ---
   let episodesPerPage = 50;
@@ -239,7 +242,23 @@
               {useArtPlayer}
               goToEpisode={goToEpisode}
               onRefreshSource={handleRefreshSource}
+              {intro}
+              {outro}
+              {autoSkipIntro}
             />
+
+            <!-- Simple text toggles below the player, single line -->
+            <div class="flex gap-4 mt-2 mb-4 text-xs font-semibold select-none">
+              <div class="cursor-pointer" on:click={() => autoPlay = !autoPlay}>
+                Auto Play <span class={autoPlay ? 'text-green-400' : 'text-red-400'}>{autoPlay ? 'On' : 'Off'}</span>
+              </div>
+              <div class="cursor-pointer" on:click={() => autoSkipIntro = !autoSkipIntro}>
+                Auto Skip Intro <span class={autoSkipIntro ? 'text-green-400' : 'text-red-400'}>{autoSkipIntro ? 'On' : 'Off'}</span>
+              </div>
+              <div class="cursor-pointer" on:click={() => autoNext = !autoNext}>
+                Auto Next <span class={autoNext ? 'text-green-400' : 'text-red-400'}>{autoNext ? 'On' : 'Off'}</span>
+              </div>
+            </div>
 
             <ServerSelector
               {servers}
