@@ -48,6 +48,20 @@ export const GET: RequestHandler = async () => {
       return new Response(JSON.stringify({ success: false, error: 'Failed to fetch anime home data' }), { status: resp.status });
     }
     const data = await resp.json();
+
+    // Validate data before saving to Redis
+    if (
+      !data ||
+      !data.data ||
+      (Array.isArray(data.data) && data.data.length === 0) ||
+      (typeof data.data === 'object' && Object.keys(data.data).length === 0)
+    ) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid or empty home data' }),
+        { status: 500 }
+      );
+    }
+
     await redis.set(CACHE_KEY_HOME, data.data, { ex: CACHE_TTL_HOME });
     return new Response(JSON.stringify({ success: true, data: data.data }), {
       status: 200,

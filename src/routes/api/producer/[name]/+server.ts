@@ -64,9 +64,14 @@ export const GET: RequestHandler = async ({ params, url }) => {
       }
 
       const data = await resp.json();
-      if (!data || !data.data) {
+      if (
+        !data ||
+        !data.data ||
+        (Array.isArray(data.data) && data.data.length === 0) ||
+        (typeof data.data === 'object' && Object.keys(data.data).length === 0)
+      ) {
         return new Response(
-          JSON.stringify({ success: false, error: 'Invalid API response format' }),
+          JSON.stringify({ success: false, error: 'Invalid or empty API response format' }),
           {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
@@ -131,9 +136,14 @@ export const GET: RequestHandler = async ({ params, url }) => {
     }
 
     const data = await resp.json();
-    if (!data || !data.data) {
+    if (
+      !data ||
+      !data.data ||
+      (Array.isArray(data.data) && data.data.length === 0) ||
+      (typeof data.data === 'object' && Object.keys(data.data).length === 0)
+    ) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Invalid API response format' }),
+        JSON.stringify({ success: false, error: 'Invalid or empty API response format' }),
         {
           status: 500,
           headers: { 'Content-Type': 'application/json' }
@@ -141,6 +151,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
       );
     }
 
+    // Only cache if data is valid and not empty
     await redis.set(CACHE_KEY, data.data, { ex: CACHE_TTL });
     return new Response(
       JSON.stringify({ success: true, data: data.data }),

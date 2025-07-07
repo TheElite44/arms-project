@@ -48,7 +48,26 @@ export const GET: RequestHandler = async ({ url }) => {
 
   // Cache miss: fetch from API and cache the result
   const resp = await fetch(`${API_URL}/api/v2/hianime/anime/${animeId}`);
+  if (!resp.ok) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Failed to fetch anime info' }),
+      { status: resp.status }
+    );
+  }
   const data = await resp.json();
+
+  // Validate data before caching
+  if (
+    !data ||
+    !data.data ||
+    (typeof data.data === 'object' && Object.keys(data.data).length === 0)
+  ) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Invalid or empty anime info' }),
+      { status: 500 }
+    );
+  }
+
   await redis.set(CACHE_KEY, data, { ex: secondsUntilMidnight('Asia/Tokyo') });
 
   return new Response(JSON.stringify(data), {

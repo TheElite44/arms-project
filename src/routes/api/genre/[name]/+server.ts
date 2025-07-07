@@ -19,9 +19,18 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
     const data = await resp.json();
 
-    // Validate the response structure
-    if (!data || !data.data || !data.data.animes) {
-      return new Response(JSON.stringify({ success: false, error: 'Invalid response structure' }), { status: 500 });
+    // Validate the response structure and content
+    if (
+      !data ||
+      !data.data ||
+      !data.data.animes ||
+      !Array.isArray(data.data.animes) ||
+      data.data.animes.length === 0
+    ) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid or empty response structure' }),
+        { status: 500 }
+      );
     }
 
     return new Response(JSON.stringify({ success: true, data: data.data }), {

@@ -133,9 +133,14 @@ export const GET: RequestHandler = async ({ params, url }) => {
     }
 
     const data = await resp.json();
-    if (!data || !data.data) {
+    if (
+      !data ||
+      !data.data ||
+      (Array.isArray(data.data) && data.data.length === 0)
+    ) {
+      // Don't save to Redis if data is empty or invalid
       return new Response(
-        JSON.stringify({ success: false, error: 'Invalid API response format' }),
+        JSON.stringify({ success: false, error: 'Invalid or empty API response' }),
         { 
           status: 500,
           headers: { 'Content-Type': 'application/json' }
@@ -143,6 +148,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
       );
     }
 
+    // Only save if data is valid and not empty
     await redis.set(CACHE_KEY, data.data, { ex: CACHE_TTL });
     return new Response(
       JSON.stringify({ success: true, data: data.data }), 
