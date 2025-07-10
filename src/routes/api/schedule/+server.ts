@@ -54,7 +54,22 @@ export const GET: RequestHandler = async ({ url }) => {
       return new Response(JSON.stringify({ success: false, error: 'Failed to fetch schedule data' }), { status: resp.status });
     }
     const data = await resp.json();
-    await redis!.set(CACHE_KEY, data.data, { ex: CACHE_TTL });
+
+    // Validate data before caching
+    if (
+      !data ||
+      !data.data ||
+      (Array.isArray(data.data) && data.data.length === 0) ||
+      (typeof data.data === 'object' && Object.keys(data.data).length === 0)
+    ) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid or empty schedule data' }),
+        { status: 500 }
+      );
+    }
+
+    // Only cache if data is valid and not empty
+    await redis!.set(CACHE_KEY, data.data, { ex: secondsUntilJapanMidnight() });
     return new Response(JSON.stringify({ success: true, data: data.data }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', 'X-Cache': 'MISS' }
@@ -64,3 +79,18 @@ export const GET: RequestHandler = async ({ url }) => {
     return new Response(JSON.stringify({ success: false, error: 'Internal server error' }), { status: 500 });
   }
 };
+
+function secondsUntilJapanMidnight(): number {
+  // Get current time in Asia/Tokyo
+  const now = new Date();
+  // Convert to Japan time (UTC+9)
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const japanNow = new Date(utc + 9 * 60 * 60000);
+
+  // Next midnight in Japan
+  const nextMidnight = new Date(japanNow);
+  nextMidnight.setHours(24, 0, 0, 0);
+
+  // Seconds until next midnight
+  return Math.floor((nextMidnight.getTime() - japanNow.getTime()) / 1000);
+}
