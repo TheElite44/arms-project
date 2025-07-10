@@ -10,9 +10,22 @@
   }> = [];
   let error: string | null = null;
   let currentTime = new Date();
-  let selectedDate = new Date().toISOString().split('T')[0]; // Auto-select today's date
+  let selectedDate = getLocalDateString(new Date()); // Use local date string
   let dates: Array<{ date: string; dayName: string; monthName: string }> = [];
   let containerRef: HTMLDivElement | null = null;
+
+  // Helper function to get local date string (YYYY-MM-DD)
+  function getLocalDateString(date: Date): string {
+    return date.getFullYear() + '-' + 
+           String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+           String(date.getDate()).padStart(2, '0');
+  }
+
+  // Helper function to create date from local date string
+  function createLocalDate(dateString: string): Date {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
 
   const GMTOffset = `GMT ${
     new Date().getTimezoneOffset() > 0 ? '-' : '+'
@@ -37,8 +50,9 @@
 
   function generateDates() {
     const today = new Date();
-    const todayString = today.toISOString().split('T')[0];
+    const todayString = getLocalDateString(today);
 
+    // Ensure selectedDate is valid, default to today if not
     if (!selectedDate || selectedDate === '') {
       selectedDate = todayString;
     }
@@ -46,6 +60,7 @@
     const prevDates = [];
     const nextDates = [];
 
+    // Generate dates using local date arithmetic
     for (let i = 1; i <= 7; i++) {
       const prevDate = new Date(today);
       prevDate.setDate(today.getDate() - i);
@@ -61,7 +76,7 @@
       today,
       ...nextDates,
     ].map((date) => ({
-      date: date.toISOString().split('T')[0],
+      date: getLocalDateString(date),
       dayName: date.toLocaleString('default', { weekday: 'short' }),
       monthName: date.toLocaleString('default', { month: 'short' }),
     }));
@@ -90,6 +105,13 @@
 
   function navigateWeek(direction: 'prev' | 'next') {
     const currentIndex = dates.findIndex((date) => date.date === selectedDate);
+    
+    if (currentIndex === -1) {
+      // If current date not found, regenerate dates and try again
+      generateDates();
+      return;
+    }
+
     const newIndex =
       direction === 'prev'
         ? Math.max(currentIndex - 1, 0)
@@ -109,10 +131,13 @@
   onMount(() => {
     generateDates();
     fetchSchedule(selectedDate);
+    
+    // Scroll to selected date after component mounts
     setTimeout(() => {
       scrollToSelectedDate();
     }, 200);
 
+    // Update current time every second
     const timer = setInterval(() => {
       currentTime = new Date();
     }, 1000);
@@ -120,12 +145,8 @@
     return () => clearInterval(timer);
   });
 
-  $: {
-    const today = new Date().toISOString().split('T')[0];
-    if (dates.length > 0 && !dates.some(d => d.date === selectedDate)) {
-      selectedDate = today;
-    }
-  }
+  // Remove the problematic reactive statement that could cause infinite loops
+  // Instead, handle date validation in the functions that modify selectedDate
 </script>
 
 <div class="anime-schedule w-full mt-8 xl:mt-0">
@@ -144,7 +165,7 @@
       class="relative my-7 flex w-full flex-nowrap items-center gap-x-2 sm:gap-x-4 overflow-x-auto rounded-xl scrollbar-hide"
     >
       {#each dates as { date, dayName, monthName }}
-        {@const isToday = date === new Date().toISOString().split('T')[0]}
+        {@const isToday = date === getLocalDateString(new Date())}
         {@const isSelected = selectedDate === date}
         <div
           data-date={date}
