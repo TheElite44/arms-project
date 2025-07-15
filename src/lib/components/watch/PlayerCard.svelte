@@ -12,7 +12,7 @@
   export let autoSkipIntro: boolean = false;
 </script>
 
-<div class="w-full aspect-video rounded-lg overflow-hidden shadow-lg bg-black flex items-center justify-center">
+<div class="w-full aspect-video rounded-md overflow-hidden shadow-lg bg-black flex items-center justify-center">
   {#key videoSrc}
     {#if useArtPlayer}
       <Player 
