@@ -47,7 +47,7 @@
       }
       await goto(newUrl.toString(), { replaceState: true, noScroll: true });
 
-      const apiUrl = `/api/most-favorite?page=${newPage}`;
+      const apiUrl = `/api/updated?page=${newPage}`;
       const resp = await fetch(apiUrl);
 
       if (!resp.ok) {
@@ -98,7 +98,7 @@
 </script>
 
 <svelte:head>
-  <title>Most Favorite Anime - ARMS Anime</title>
+  <title>Recently Updated Anime - ARMS Anime</title>
   <meta name="description" content={`Browse the latest completed anime series. Page ${data.currentPage} of ${data.totalPages}.`} />
 </svelte:head>
 
@@ -131,10 +131,10 @@
           <!-- Header for Latest Completed -->
           <section class="mb-4 sm:mb-8">
             <h1 class="text-3xl sm:text-4xl font-bold text-orange-400 mb-4">
-              Most Favorite
+              Recently Updated
             </h1>
             <p class="text-gray-300 text-sm sm:text-base">
-              Browse the most-favorite anime series.
+              Browse the most recently updated anime series.
             </p>
             <p class="text-gray-400 text-xs mt-2">
               Page {data.currentPage} of {data.totalPages} • {data.animes?.length || 0} animes

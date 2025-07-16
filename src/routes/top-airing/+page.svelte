@@ -131,7 +131,7 @@
           <!-- Header for Latest Completed -->
           <section class="mb-4 sm:mb-8">
             <h1 class="text-3xl sm:text-4xl font-bold text-orange-400 mb-4">
-              Top Airing Anime
+              Top Airing
             </h1>
             <p class="text-gray-300 text-sm sm:text-base">
               Browse the  top airing anime series.
