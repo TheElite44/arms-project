@@ -134,7 +134,7 @@
             </div>
           </a>
         {/each}
-        <a href="/latest-completed" class="block text-left text-orange-300 hover:text-orange-400 font-semibold mt-2 transition">View more &gt;</a>
+        <a href="/recently-completed" class="block text-left text-orange-300 hover:text-orange-400 font-semibold mt-2 transition">View more &gt;</a>
       </div>
     </div>
   </div>
