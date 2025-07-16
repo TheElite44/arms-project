@@ -1,10 +1,8 @@
 <script lang="ts">
 /// <reference path="../../lib/types/screen-orientation.d.ts" />
   import { onMount, onDestroy } from 'svelte';
-  import Plyr from 'plyr';
-  import 'plyr/dist/plyr.css';
-  import Hls from 'hls.js';
-
+  import { browser } from '$app/environment';
+  
   export let videoUrl: string = '';
   export let videoType: string = 'application/x-mpegURL';
   export let subtitles: Array<{
@@ -13,20 +11,44 @@
     srclang?: string;
   }> = [];
   export let poster: string = '';
-  export let thumbnailsVtt: string = ''; // <-- add this
+  export let thumbnailsVtt: string = '';
   export let onRefreshSource: (videoUrl: string) => void = () => {};
 
   export let intro: { start: number; end: number } | null = null;
   export let autoSkipIntro: boolean = false;
 
   let videoRef: HTMLVideoElement | null = null;
-  let plyr: Plyr | null = null;
-  let hls: Hls | null = null;
+  let plyr: any = null;
+  let hls: any = null;
   let lastVideoUrl = '';
   let lastSubtitles: string = '';
   let selectedLanguage = 'auto';
   let loading = false;
   let buffering = false;
+
+  // Dynamically import libraries only in browser
+  let Plyr: any = null;
+  let Hls: any = null;
+
+  async function loadLibraries() {
+    if (!browser) return;
+    
+    try {
+      // Dynamic imports to avoid SSR issues
+      const [PlyrModule, HlsModule] = await Promise.all([
+        import('plyr'),
+        import('hls.js')
+      ]);
+      
+      Plyr = PlyrModule.default;
+      Hls = HlsModule.default;
+      
+      // Import CSS dynamically
+      await import('plyr/dist/plyr.css');
+    } catch (error) {
+      console.error('Failed to load video player libraries:', error);
+    }
+  }
 
   function cleanup() {
     if (plyr) {
@@ -109,7 +131,7 @@
   }
 
   function addSubtitleTracks() {
-    if (!videoRef) return;
+    if (!videoRef || !browser) return;
     // Remove existing tracks
     const existingTracks = videoRef.querySelectorAll('track');
     existingTracks.forEach(track => track.remove());
@@ -172,8 +194,9 @@
     })));
   }
 
-  function initializePlayer() {
-    if (!videoRef) return;
+  async function initializePlayer() {
+    if (!videoRef || !browser || !Plyr || !Hls) return;
+    
     cleanup();
     addSubtitleTracks();
 
@@ -188,9 +211,9 @@
         // Get available quality levels (resolutions)
         const availableQualities = hls
           ? hls.levels
-              .map((l) => l.height)
-              .filter((v, i, a) => a.indexOf(v) === i)
-              .sort((a, b) => b - a)
+              .map((l: any) => l.height)
+              .filter((v: any, i: number, a: any[]) => a.indexOf(v) === i)
+              .sort((a: number, b: number) => b - a)
           : [];
 
         plyr = new Plyr(videoRef, {
@@ -208,9 +231,9 @@
             default: availableQualities[0],
             options: availableQualities,
             forced: true,
-            onChange: (newQuality) => {
+            onChange: (newQuality: number) => {
               if (hls) {
-                const levelIndex = hls.levels.findIndex((l) => l.height === newQuality);
+                const levelIndex = hls.levels.findIndex((l: any) => l.height === newQuality);
                 hls.currentLevel = levelIndex;
               }
             }
@@ -218,10 +241,10 @@
         });
 
         // Sync Plyr UI with hls.js when user changes quality from Plyr menu
-        plyr.on('qualitychange', (event) => {
+        plyr.on('qualitychange', (event: any) => {
           if (hls) {
             const newQuality = event.detail.plyr.quality;
-            const levelIndex = hls.levels.findIndex((l) => l.height === newQuality);
+            const levelIndex = hls.levels.findIndex((l: any) => l.height === newQuality);
             hls.currentLevel = levelIndex;
           }
         });
@@ -230,7 +253,7 @@
         setupCaptionEvents();
       });
 
-      hls.on(Hls.Events.ERROR, function (event, data) {
+      hls.on(Hls.Events.ERROR, function (event: any, data: any) {
         if (data.fatal && data.type === Hls.ErrorTypes.NETWORK_ERROR) {
           // Notify parent to delete cache and refetch sources
           onRefreshSource(videoUrl);
@@ -257,6 +280,7 @@
         setupCaptionEvents();
       }, { once: true });
     }
+    
     setTimeout(() => {
       detachBufferingEvents();
       attachBufferingEvents();
@@ -265,7 +289,7 @@
 
   // Extracted caption event setup for reusability
   function setupCaptionEvents() {
-    if (!plyr) return;
+    if (!plyr || !browser) return;
     
     plyr.on('languagechange', () => {
       if (!plyr || !videoRef) return;
@@ -300,7 +324,7 @@
 
   // Add event listeners for buffering/loading
   function attachBufferingEvents() {
-    if (!videoRef) return;
+    if (!videoRef || !browser) return;
     // HTML5 events
     videoRef.addEventListener('waiting', () => { buffering = true; });
     videoRef.addEventListener('playing', () => { buffering = false; });
@@ -315,7 +339,7 @@
   }
 
   function detachBufferingEvents() {
-    if (!videoRef) return;
+    if (!videoRef || !browser) return;
     videoRef.removeEventListener('waiting', () => { buffering = true; });
     videoRef.removeEventListener('playing', () => { buffering = false; });
     videoRef.removeEventListener('canplay', () => { buffering = false; });
@@ -326,41 +350,44 @@
   }
 
   $: {
-    const subsString = JSON.stringify(subtitles);
-    if (
-      videoRef &&
-      (videoUrl !== lastVideoUrl || subsString !== lastSubtitles)
-    ) {
-      lastVideoUrl = videoUrl;
-      lastSubtitles = subsString;
-      initializePlayer();
+    if (browser && Plyr && Hls) {
+      const subsString = JSON.stringify(subtitles);
+      if (
+        videoRef &&
+        (videoUrl !== lastVideoUrl || subsString !== lastSubtitles)
+      ) {
+        lastVideoUrl = videoUrl;
+        lastSubtitles = subsString;
+        initializePlayer();
+      }
     }
   }
 
-  onMount(() => {
-    if (videoRef && videoUrl) {
-      initializePlayer();
+  onMount(async () => {
+    if (browser) {
+      await loadLibraries();
+      if (videoRef && videoUrl && Plyr && Hls) {
+        await initializePlayer();
+      }
     }
-    // No need for native fullscreenchange events anymore
-    onDestroy(() => {
-      unlockOrientation();
-      cleanup();
-      detachBufferingEvents?.();
-    });
   });
 
   onDestroy(() => {
-    cleanup();
-    detachBufferingEvents();
+    if (browser) {
+      unlockOrientation();
+      cleanup();
+      detachBufferingEvents();
+    }
   });
 
   function isMobileDevice() {
+    if (!browser) return false;
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
       || window.matchMedia('(max-width: 768px)').matches;
   }
 
   async function lockToLandscape() {
-    if (!isMobileDevice()) return;
+    if (!isMobileDevice() || !browser) return;
     try {
       // Prefer the modern API
       if ((screen.orientation as any)?.lock) {
@@ -372,7 +399,7 @@
   }
 
   async function unlockOrientation() {
-    if (!isMobileDevice()) return;
+    if (!isMobileDevice() || !browser) return;
     try {
       if (screen.orientation?.unlock) {
         screen.orientation.unlock();
@@ -385,7 +412,7 @@
   let exitFullscreenHandler: (() => void) | null = null;
 
   function setupOrientationHandling() {
-    if (!plyr) return;
+    if (!plyr || !browser) return;
 
     // Remove previous listeners if any
     if (enterFullscreenHandler) {
@@ -402,12 +429,12 @@
         try {
           await screen.orientation.lock('landscape');
         } catch {}
-      } else if (screen.lockOrientation) {
-        screen.lockOrientation('landscape');
-      } else if (screen.mozLockOrientation) {
-        screen.mozLockOrientation('landscape');
-      } else if (screen.msLockOrientation) {
-        screen.msLockOrientation('landscape');
+      } else if ((screen as any).lockOrientation) {
+        (screen as any).lockOrientation('landscape');
+      } else if ((screen as any).mozLockOrientation) {
+        (screen as any).mozLockOrientation('landscape');
+      } else if ((screen as any).msLockOrientation) {
+        (screen as any).msLockOrientation('landscape');
       }
     };
 
@@ -418,12 +445,12 @@
         try {
           screen.orientation.unlock();
         } catch {}
-      } else if (screen.unlockOrientation) {
-        screen.unlockOrientation();
-      } else if (screen.mozUnlockOrientation) {
-        screen.mozUnlockOrientation();
-      } else if (screen.msUnlockOrientation) {
-        screen.msUnlockOrientation();
+      } else if ((screen as any).unlockOrientation) {
+        (screen as any).unlockOrientation();
+      } else if ((screen as any).mozUnlockOrientation) {
+        (screen as any).mozUnlockOrientation();
+      } else if ((screen as any).msUnlockOrientation) {
+        (screen as any).msUnlockOrientation();
       }
     };
 
@@ -432,7 +459,7 @@
   }
 
   function initializePlyr() {
-    if (!videoRef || plyr) return;
+    if (!videoRef || plyr || !browser || !Plyr) return;
 
     addSubtitleTracks();
 
@@ -460,7 +487,7 @@
   }
 
   function setupIntroSkipPlyr() {
-    if (!plyr || !intro || !autoSkipIntro) return;
+    if (!plyr || !intro || !autoSkipIntro || !browser) return;
     const onTimeUpdate = () => {
       if (
         plyr && // <-- add this check
@@ -474,7 +501,7 @@
     onDestroy(() => plyr && plyr.off('timeupdate', onTimeUpdate));
   }
 
-  $: if (plyr && intro && autoSkipIntro) {
+  $: if (browser && plyr && intro && autoSkipIntro) {
     setupIntroSkipPlyr();
   }
 </script>
