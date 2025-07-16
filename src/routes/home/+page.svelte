@@ -217,20 +217,23 @@
               </div>
 
               <!-- Latest Episodes Section (outside tabs) -->
-              <section class="max-w-[1800px] mx-auto px-2 mt-8">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-4">
-                  <h2 class="text-xl sm:text-2xl font-bold text-orange-400 flex items-center gap-3">
-                    <svg class="w-6 h-6 sm:w-7 sm:h-7 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                    </svg>
-                    Latest Episodes
-                  </h2>
-                  <a
-                    href="/recently-updated"
-                    class="text-orange-300 hover:text-orange-400 font-semibold text-sm transition block"
-                  >
-                    View more &gt;
-                  </a>
+              <section class="max-w-[1800px] mx-auto px-2 mt-2">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-2 gap-2">
+                  <div class="flex items-center justify-between w-full">
+                    <h2 class="text-xl sm:text-2xl font-bold text-orange-400 flex items-center gap-3">
+                      <svg class="w-6 h-6 sm:w-7 sm:h-7 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                      </svg>
+                      Latest Episodes
+                    </h2>
+                    <a
+                      href="/recently-updated"
+                      class="text-orange-300 hover:text-orange-400 font-semibold text-sm transition block ml-2"
+                      style="white-space: nowrap;"
+                    >
+                      View more &gt;
+                    </a>
+                  </div>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2">
                   {#each data?.latestEpisodeAnimes.slice(0, 10) as ep (ep.id)}
@@ -242,6 +245,40 @@
                       genres={ep.genres ?? []}
                       duration={ep.duration ?? ''}
                       type={ep.type ?? ''}
+                    />
+                  {/each}
+                </div>
+              </section>
+
+              <!-- New Anime Section (like Latest Episodes) -->
+              <section class="max-w-[1800px] mx-auto px-2 mt-2">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-2 gap-2">
+                  <div class="flex items-center justify-between w-full">
+                    <h2 class="text-xl sm:text-2xl font-bold text-orange-400 flex items-center gap-3">
+                      <svg class="w-6 h-6 sm:w-7 sm:h-7 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                      </svg>
+                      New Anime
+                    </h2>
+                    <a
+                      href="/recently-added"
+                      class="text-orange-300 hover:text-orange-400 font-semibold text-sm transition block ml-2"
+                      style="white-space: nowrap;"
+                    >
+                      View more &gt;
+                    </a>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2">
+                  {#each data?.latestAddedAnimes?.slice(0, 10) as anime (anime.id)}
+                    <AnimeCard 
+                      anime={anime}
+                      showRank={true}
+                      showDescription={true}
+                      description={anime.description ?? ''}
+                      genres={anime.genres ?? []}
+                      duration={anime.otherInfo?.[1] ?? ''}
+                      type={anime.type ?? ''}
                     />
                   {/each}
                 </div>
