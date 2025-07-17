@@ -28,6 +28,7 @@
   let intro: { start: number; end: number } | null = null;
   let outro: { start: number; end: number } | null = null;
   let useArtPlayer = false;
+  let useIframePlayer = false;
   let loading = true;
   let thumbnailsVtt = '';
   let updatingSources = false;
@@ -87,9 +88,6 @@
           srclang: track.srclang || track.lang || 'en'
         }));
 
-      // After mapping subtitles
-      console.log('Subtitles mapped for PlayerCard:', subtitles);
-
       intro = json.data.intro || null;
       outro = json.data.outro || null;
     } catch {
@@ -125,7 +123,6 @@
         servers = servers.filter((server) => server.serverName);
 
         // --- Default server logic ---
-        // Try to set hd-2 as default, else hd-1, else first available
         let preferred = servers.find(s => s.serverName.toLowerCase() === 'hd-2');
         if (!preferred) preferred = servers.find(s => s.serverName.toLowerCase() === 'hd-1');
         if (!preferred) preferred = servers[0];
@@ -162,16 +159,19 @@
     currentServer = serverName;
     category = cat;
     fetchWatchData(currentEpisodeId, currentServer, category, false);
+    useIframePlayer = false; // Reset iframe player when server changes
   }
 
   function changeCategoryManual(cat: 'sub' | 'dub' | 'raw') {
     if (category !== cat) {
       category = cat;
       fetchWatchData(currentEpisodeId, currentServer, category);
+      useIframePlayer = false; // Reset iframe player when category changes
     }
   }
 
   function setUseArtPlayer(v: boolean) { useArtPlayer = v; }
+  function setUseIframePlayer(v: boolean) { useIframePlayer = v; }
 
   // --- On Mount: Restore Last Watched ---
   onMount(async () => {
@@ -189,7 +189,6 @@
 
     await fetchServers(currentEpisodeId);
 
-    // Always fetch with the currentServer set by fetchServers
     await fetchWatchData(currentEpisodeId, currentServer, category);
 
     loading = false;
@@ -205,10 +204,8 @@
 
   async function handleRefreshSource(videoUrl: string) {
     updatingSources = true;
-    // Delete cache for this episode/server/category
     await fetch(`/api/anime?action=delete-source-cache&animeEpisodeId=${currentEpisodeId}&category=${category}`);
-    // Refetch sources and update videoSrc
-    await fetchWatchData(currentEpisodeId, currentServer, category, false); // don't set loading=true
+    await fetchWatchData(currentEpisodeId, currentServer, category, false);
     updatingSources = false;
   }
 
@@ -225,7 +222,6 @@
     return v === '1' ? true : v === '0' ? false : fallback;
   }
 
-  // Load toggle states from localStorage
   onMount(() => {
     autoPlay = loadToggle(AUTO_PLAY_KEY, false);
     autoSkipIntro = loadToggle(AUTO_SKIP_INTRO_KEY, false);
@@ -260,11 +256,24 @@
               {poster}
               {subtitles}
               {useArtPlayer}
+              {useIframePlayer}
               goToEpisode={goToEpisode}
               onRefreshSource={handleRefreshSource}
               {intro}
               {outro}
               {autoSkipIntro}
+              animeInfo={data.anime?.info}
+              episodeNum={episodes.find(e => e.episodeId === currentEpisodeId)?.number}
+              episodes={episodes}
+              autoNext={autoNext}
+              episodeId={
+                // Always extract the code after ep= if present, else use the whole id
+                (() => {
+                  const match = currentEpisodeId.match(/ep=(\d+)/);
+                  return match ? match[1] : currentEpisodeId;
+                })()
+              }
+              {category}
             />
 
             <!-- Simple text toggles below the player, single line -->
@@ -305,6 +314,8 @@
             <PlayerSelector
               {useArtPlayer}
               setUseArtPlayer={setUseArtPlayer}
+              {useIframePlayer}
+              setUseIframePlayer={setUseIframePlayer}
             />
 
             {#if episodes.length > 1}
