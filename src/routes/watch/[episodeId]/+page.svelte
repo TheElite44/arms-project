@@ -250,7 +250,7 @@
       <div class="max-w-7xl mx-auto flex flex-col gap-10">
         <section class="flex-1 flex flex-col gap-8 mb-12">
           <!-- Player Card -->
-          <div class="flex flex-col gap-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-4 sm:p-8">
+          <div class="flex flex-col gap-2 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-4 sm:p-8">
             <PlayerCard
               {videoSrc}
               {poster}
@@ -267,7 +267,6 @@
               episodes={episodes}
               autoNext={autoNext}
               episodeId={
-                // Always extract the code after ep= if present, else use the whole id
                 (() => {
                   const match = currentEpisodeId.match(/ep=(\d+)/);
                   return match ? match[1] : currentEpisodeId;
@@ -276,8 +275,8 @@
               {category}
             />
 
-            <!-- Simple text toggles below the player, single line -->
-            <div class="flex gap-4 mt-2 mb-4 text-xs font-semibold select-none">
+            <div class="flex gap-3 mt-2 mb-2 text-xs font-semibold select-none">
+              <!-- toggles -->
               <button
                 type="button"
                 class="cursor-pointer bg-transparent border-none p-0 m-0 text-inherit"
@@ -319,7 +318,7 @@
             />
 
             {#if episodes.length > 1}
-              <div class="mb-2 flex flex-col gap-2">
+              <div class="mb-2 flex flex-col gap-1">
                 <div class="flex items-center gap-2">
                   <span class="font-semibold text-orange-400 text-xs">Pages:</span>
                   <select
