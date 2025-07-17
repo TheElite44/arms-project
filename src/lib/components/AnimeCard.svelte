@@ -1,6 +1,7 @@
 <!-- AnimeCard.svelte -->
 <script lang="ts">
   import { writable } from 'svelte/store';
+  import { onMount } from 'svelte';
 
   export let anime: any;
   export let showRank: boolean = false;
@@ -13,11 +14,26 @@
 
   let showTooltip = false;
   let tooltipTimeout: any;
+  let isMobile = false;
 
   // Tooltip data stores
   const qtip = writable<any>(null);
   const qtipLoading = writable(false);
   const qtipError = writable<string | null>(null);
+
+  // Mobile detection
+  onMount(() => {
+    const checkMobile = () => {
+      isMobile = window.innerWidth < 768; // Tailwind's md breakpoint
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  });
 
   async function fetchQtip(id: string) {
     qtipLoading.set(true);
@@ -41,7 +57,8 @@
   }
 
   function handleMouseEnter() {
-    if (showDescription && anime.id) {
+    // Only show tooltip on desktop
+    if (showDescription && anime.id && !isMobile) {
       tooltipTimeout = setTimeout(() => {
         showTooltip = true;
         fetchQtip(anime.id);
@@ -95,8 +112,8 @@
     </div>
   </a>
   
-  <!-- Tooltip for description -->
-  {#if showDescription && showTooltip && anime.id}
+  <!-- Tooltip for description - Hidden on mobile -->
+  {#if showDescription && showTooltip && anime.id && !isMobile}
     <div class="absolute z-50 bg-gray-800/90 backdrop-blur-[10px] border border-gray-700 rounded-xl p-4 shadow-2xl max-w-xs top-0 left-full ml-2 pointer-events-auto w-[320px] flex flex-col gap-y-2">
       {#if $qtipLoading}
         <div class="flex justify-center items-center h-20">
