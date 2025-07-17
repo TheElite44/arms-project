@@ -15,7 +15,7 @@
           <a href={`/info/${anime.id}`} class="flex items-center gap-3 border-b border-gray-700 pb-3 last:border-b-0 last:pb-0 hover:bg-gray-700 transition rounded">
             <img src={anime.poster} alt={anime.name} class="w-12 h-16 rounded-md object-cover" /> <!-- slightly smaller poster -->
             <div class="flex-1">
-              <div class="font-semibold text-white text-[14px] leading-tight">{anime.name}</div> <!-- slightly smaller title -->
+              <div class="font-semibold text-white text-[14px] leading-tight line-clamp-2">{anime.name}</div> <!-- slightly smaller title -->
               <div class="flex items-center gap-2 mt-1">
                 {#if anime.episodes?.sub}
                   <span class="flex items-center bg-green-200 text-black text-xs font-bold px-2 py-0.5 rounded">
@@ -48,7 +48,7 @@
           <a href={`/info/${anime.id}`} class="flex items-center gap-3 border-b border-gray-700 pb-3 last:border-b-0 last:pb-0 hover:bg-gray-700 transition rounded">
             <img src={anime.poster} alt={anime.name} class="w-12 h-16 rounded-md object-cover" /> <!-- slightly smaller poster -->
             <div class="flex-1">
-              <div class="font-semibold text-white text-[14px] leading-tight">{anime.name}</div> <!-- slightly smaller title -->
+              <div class="font-semibold text-white text-[14px] leading-tight line-clamp-2">{anime.name}</div> <!-- slightly smaller title -->
               <div class="flex items-center gap-2 mt-1">
                 {#if anime.episodes?.sub}
                   <span class="flex items-center bg-green-200 text-black text-xs font-bold px-2 py-0.5 rounded">
@@ -82,7 +82,7 @@
           <a href={`/info/${anime.id}`} class="flex items-center gap-3 border-b border-gray-700 pb-3 last:border-b-0 last:pb-0 hover:bg-gray-700 transition rounded">
             <img src={anime.poster} alt={anime.name} class="w-12 h-16 rounded-md object-cover" /> <!-- slightly smaller poster -->
             <div class="flex-1">
-              <div class="font-semibold text-white text-[14px] leading-tight">{anime.name}</div> <!-- slightly smaller title -->
+              <div class="font-semibold text-white text-[14px] leading-tight line-clamp-2">{anime.name}</div> <!-- slightly smaller title -->
               <div class="flex items-center gap-2 mt-1">
                 {#if anime.episodes?.sub}
                   <span class="flex items-center bg-green-200 text-black text-xs font-bold px-2 py-0.5 rounded">
@@ -115,7 +115,7 @@
           <a href={`/info/${anime.id}`} class="flex items-center gap-3 border-b border-gray-700 pb-3 last:border-b-0 last:pb-0 hover:bg-gray-700 transition rounded">
             <img src={anime.poster} alt={anime.name} class="w-12 h-16 rounded-md object-cover" /> <!-- slightly smaller poster -->
             <div class="flex-1">
-              <div class="font-semibold text-white text-[14px] leading-tight">{anime.name}</div> <!-- slightly smaller title -->
+              <div class="font-semibold text-white text-[14px] leading-tight line-clamp-2">{anime.name}</div> <!-- slightly smaller title -->
               <div class="flex items-center gap-2 mt-1">
                 {#if anime.episodes?.sub}
                   <span class="flex items-center bg-green-200 text-black text-xs font-bold px-2 py-0.5 rounded">
