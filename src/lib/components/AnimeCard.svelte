@@ -100,7 +100,11 @@
     <div class="absolute z-50 bg-gray-800/90 backdrop-blur-[10px] border border-gray-700 rounded-xl p-4 shadow-2xl max-w-xs top-0 left-full ml-2 pointer-events-auto w-[320px] flex flex-col gap-y-2">
       {#if $qtipLoading}
         <div class="flex justify-center items-center h-20">
-          <span class="loader"></span>
+          <div class="loading-dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
         </div>
       {:else if $qtipError}
         <div class="text-orange-400 text-xs">{$qtipError}</div>
@@ -182,5 +186,43 @@
     -webkit-line-clamp: 4;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+  
+  .loading-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f97316;
+    animation: bounce 1.4s infinite ease-in-out both;
+  }
+  
+  .dot:nth-child(1) {
+    animation-delay: -0.32s;
+  }
+  
+  .dot:nth-child(2) {
+    animation-delay: -0.16s;
+  }
+  
+  .dot:nth-child(3) {
+    animation-delay: 0s;
+  }
+  
+  @keyframes bounce {
+    0%, 80%, 100% {
+      transform: scale(0);
+      opacity: 0.5;
+    }
+    40% {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
 </style>
