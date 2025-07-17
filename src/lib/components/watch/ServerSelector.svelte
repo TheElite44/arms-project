@@ -11,10 +11,10 @@
   const categories: Array<'sub' | 'dub'> = ['sub', 'dub'];
 </script>
 
-<div class="flex flex-col md:flex-row md:items-center gap-4">
+<div class="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
   {#each categories as cat}
     {#if servers.some(s => s.category === cat)}
-      <div class="flex gap-2 items-center mb-2">
+      <div class="flex gap-2 items-center mb-1 md:mb-2">
         <span class="font-semibold text-orange-400 text-sm flex items-center gap-1">
           {cat === 'sub' ? 'Sub:' : 'Dub:'}
         </span>

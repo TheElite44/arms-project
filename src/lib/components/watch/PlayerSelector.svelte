@@ -1,8 +1,44 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+
   export let useArtPlayer = true;
   export let setUseArtPlayer: (v: boolean) => void;
   export let useIframePlayer: boolean = false;
   export let setUseIframePlayer: (v: boolean) => void;
+
+  // Load last used player from localStorage, default to Plyr
+  onMount(() => {
+    const lastPlayer = localStorage.getItem('lastPlayer');
+    if (lastPlayer === 'artplayer') {
+      setUseArtPlayer(true);
+      setUseIframePlayer(false);
+    } else if (lastPlayer === 'iframe') {
+      setUseArtPlayer(false);
+      setUseIframePlayer(true);
+    } else {
+      // Default to Plyr
+      setUseArtPlayer(false);
+      setUseIframePlayer(false);
+    }
+  });
+
+  function selectArtPlayer() {
+    setUseArtPlayer(true);
+    setUseIframePlayer(false);
+    localStorage.setItem('lastPlayer', 'artplayer');
+  }
+
+  function selectPlyr() {
+    setUseArtPlayer(false);
+    setUseIframePlayer(false);
+    localStorage.setItem('lastPlayer', 'plyr');
+  }
+
+  function selectIframePlayer() {
+    setUseArtPlayer(false);
+    setUseIframePlayer(true);
+    localStorage.setItem('lastPlayer', 'iframe');
+  }
 </script>
 
 <div class="flex items-center gap-2 mb-4 flex-nowrap overflow-x-auto whitespace-nowrap">
@@ -14,7 +50,7 @@
   </span>
   <button
     class={`flex items-center gap-1 px-2 py-1 rounded font-bold text-xs transition min-w-[56px] border border-transparent ${useArtPlayer && !useIframePlayer ? 'bg-orange-400 text-black' : 'bg-gray-700 text-white hover:bg-orange-400 hover:text-black hover:border-orange-400'}`}
-    on:click={() => { setUseArtPlayer(true); setUseIframePlayer(false); }}
+    on:click={selectArtPlayer}
     disabled={useArtPlayer && !useIframePlayer}
     style="justify-content:center; width: auto;"
   >
@@ -25,7 +61,7 @@
   </button>
   <button
     class={`flex items-center gap-1 px-2 py-1 rounded font-bold text-xs transition min-w-[56px] border border-transparent ${!useArtPlayer && !useIframePlayer ? 'bg-orange-400 text-black' : 'bg-gray-700 text-white hover:bg-orange-400 hover:text-black hover:border-orange-400'}`}
-    on:click={() => { setUseArtPlayer(false); setUseIframePlayer(false); }}
+    on:click={selectPlyr}
     disabled={!useArtPlayer && !useIframePlayer}
     style="justify-content:center; width: auto;"
   >
@@ -36,7 +72,7 @@
     Plyr
   </button>
   <button
-    on:click={() => { setUseIframePlayer(true); setUseArtPlayer(false); }}
+    on:click={selectIframePlayer}
     class={`flex items-center gap-1 px-2 py-1 rounded font-bold text-xs transition min-w-[56px] border border-transparent ${useIframePlayer ? 'bg-orange-400 text-black' : 'bg-gray-700 text-white hover:bg-orange-400 hover:text-black hover:border-orange-400'}`}
     disabled={useIframePlayer}
     style="justify-content:center; width: auto;"
