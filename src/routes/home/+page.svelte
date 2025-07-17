@@ -237,15 +237,17 @@
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2">
                   {#each data?.latestEpisodeAnimes.slice(0, 10) as ep (ep.id)}
-                    <AnimeCard 
-                      anime={ep}
-                      showEpisodes={true}
-                      showDescription={true}
-                      description={ep.description ?? ''}
-                      genres={ep.genres ?? []}
-                      duration={ep.duration ?? ''}
-                      type={ep.type ?? ''}
-                    />
+                    <div class="hidden md:block">
+                      <AnimeCard 
+                        anime={ep}
+                        showEpisodes={true}
+                        showDescription={true}
+                        description={ep.description ?? ''}
+                        genres={ep.genres ?? []}
+                        duration={ep.duration ?? ''}
+                        type={ep.type ?? ''}
+                      />
+                    </div>
                   {/each}
                 </div>
               </section>
@@ -271,15 +273,17 @@
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2">
                   {#each data?.latestAddedAnimes?.slice(0, 10) as anime (anime.id)}
-                    <AnimeCard 
-                      anime={anime}
-                      showRank={true}
-                      showDescription={true}
-                      description={anime.description ?? ''}
-                      genres={anime.genres ?? []}
-                      duration={anime.otherInfo?.[1] ?? ''}
-                      type={anime.type ?? ''}
-                    />
+                    <div class="hidden md:block">
+                      <AnimeCard 
+                        anime={anime}
+                        showRank={true}
+                        showDescription={true}
+                        description={anime.description ?? ''}
+                        genres={anime.genres ?? []}
+                        duration={anime.otherInfo?.[1] ?? ''}
+                        type={anime.type ?? ''}
+                      />
+                    </div>
                   {/each}
                 </div>
               </section>
