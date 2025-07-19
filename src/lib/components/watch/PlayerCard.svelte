@@ -1,6 +1,5 @@
 <script lang="ts">
   import Player from './Player.svelte';
-  import Player2 from './Player2.svelte';
   import IframePlayer from './iframe.svelte';
   export let videoSrc: string = '';
   export let poster: string = '';
@@ -41,24 +40,15 @@
     />
   {:else}
     {#key videoSrc}
-      {#if useArtPlayer}
-        <Player 
-          src={videoSrc}
-          poster={poster}
-          subtitles={subtitles}
-          playNext={goToEpisode}
-        />
-      {:else}
-        <Player2 
-          videoUrl={videoSrc}
-          poster={poster}
-          subtitles={subtitles}
-          onRefreshSource={onRefreshSource}
-          {intro}
-          {outro}
-          {autoSkipIntro}
-        />
-      {/if}
+      <Player 
+        videoUrl={videoSrc}
+        poster={poster}
+        subtitles={subtitles}
+        onRefreshSource={onRefreshSource}
+        {intro}
+        {outro}
+        {autoSkipIntro}
+      />
     {/key}
   {/if}
 </div>
