@@ -4,6 +4,8 @@
   import PlayerCard from '$lib/components/watch/PlayerCard.svelte';
   import ServerSelector from '$lib/components/watch/ServerSelector.svelte';
   import PlayerSelector from '$lib/components/watch/PlayerSelector.svelte';
+  import PlayerController from '$lib/components/watch/PlayerController.svelte'; // <-- Add this import
+  import EpisodeSelector from '$lib/components/watch/EpisodeSelector.svelte';
   import type { PageData } from './$types.js';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
@@ -275,33 +277,15 @@
               {category}
             />
 
-            <div class="flex gap-3 mt-2 mb-2 text-xs font-semibold select-none">
-              <!-- toggles -->
-              <button
-                type="button"
-                class="cursor-pointer bg-transparent border-none p-0 m-0 text-inherit"
-                on:click={() => { autoPlay = !autoPlay; saveToggle(AUTO_PLAY_KEY, autoPlay); }}
-                aria-pressed={autoPlay}
-              >
-                Auto Play <span class={autoPlay ? 'text-green-400' : 'text-red-400'}>{autoPlay ? 'On' : 'Off'}</span>
-              </button>
-              <button
-                type="button"
-                class="cursor-pointer bg-transparent border-none p-0 m-0 text-inherit"
-                on:click={() => { autoSkipIntro = !autoSkipIntro; saveToggle(AUTO_SKIP_INTRO_KEY, autoSkipIntro); }}
-                aria-pressed={autoSkipIntro}
-              >
-                Auto Skip Intro <span class={autoSkipIntro ? 'text-green-400' : 'text-red-400'}>{autoSkipIntro ? 'On' : 'Off'}</span>
-              </button>
-              <button
-                type="button"
-                class="cursor-pointer bg-transparent border-none p-0 m-0 text-inherit"
-                on:click={() => { autoNext = !autoNext; saveToggle(AUTO_NEXT_KEY, autoNext); }}
-                aria-pressed={autoNext}
-              >
-                Auto Next <span class={autoNext ? 'text-green-400' : 'text-red-400'}>{autoNext ? 'On' : 'Off'}</span>
-              </button>
-            </div>
+            <!-- Use PlayerController component here -->
+            <PlayerController
+              {autoPlay}
+              {autoSkipIntro}
+              {autoNext}
+              setAutoPlay={v => { autoPlay = v; saveToggle(AUTO_PLAY_KEY, v); }}
+              setAutoSkipIntro={v => { autoSkipIntro = v; saveToggle(AUTO_SKIP_INTRO_KEY, v); }}
+              setAutoNext={v => { autoNext = v; saveToggle(AUTO_NEXT_KEY, v); }}
+            />
 
             <ServerSelector
               {servers}
@@ -311,41 +295,19 @@
             />
 
             <PlayerSelector
-              {useArtPlayer}
-              setUseArtPlayer={setUseArtPlayer}
               {useIframePlayer}
               setUseIframePlayer={setUseIframePlayer}
             />
 
-            {#if episodes.length > 1}
-              <div class="mb-2 flex flex-col gap-1">
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-orange-400 text-xs">Pages:</span>
-                  <select
-                    class="px-2 py-1 rounded bg-gray-800 text-white text-xs focus:outline-none focus:ring-2 focus:ring-orange-400"
-                    on:change={handlePageChange}
-                  >
-                    {#each episodeRanges as range, i}
-                      <option value={i + 1} selected={currentPage === i + 1}>{range}</option>
-                    {/each}
-                  </select>
-                </div>
-                <div class="grid grid-cols-5 sm:grid-cols-10 gap-1">
-                  {#each pagedEpisodes as ep}
-                    <button
-                      class="flex items-center justify-center h-10 w-full rounded bg-gray-800 text-white font-bold text-xs transition
-                        {ep.episodeId === currentEpisodeId
-                          ? 'bg-orange-400 text-gray-900 shadow'
-                          : 'hover:bg-orange-400 hover:text-gray-900'}"
-                      on:click={() => goToEpisode(ep.episodeId)}
-                      disabled={ep.episodeId === currentEpisodeId}
-                    >
-                      {ep.number}
-                    </button>
-                  {/each}
-                </div>
-              </div>
-            {/if}
+            <EpisodeSelector
+              {episodes}
+              {pagedEpisodes}
+              {episodeRanges}
+              {currentPage}
+              {currentEpisodeId}
+              {handlePageChange}
+              {goToEpisode}
+            />
           </div>
 
           <!-- Anime Info Card -->
@@ -548,6 +510,12 @@
     .flex-shrink-0 {
       margin-left: auto;
       margin-right: auto;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .player-controller-center {
+      justify-content: center !important;
     }
   }
 
