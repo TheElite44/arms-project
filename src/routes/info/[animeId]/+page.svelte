@@ -24,7 +24,7 @@
   $: seasons = Array.isArray(data?.seasons) ? data.seasons : [];
 
   let firstEpisodeId: string | null = null;
-  let sidebarTab: 'today' | 'week' | 'month' = 'today';
+  let sidebarTab: 'airing' | 'upcoming' = 'airing';
   let topAiringAnimes: any[] = [];
   let topUpcomingAnimes: any[] = [];
   let loading = true;
@@ -647,12 +647,11 @@
 
           <!-- Sidebar -->
           <Sidebar
-    sidebarTab={sidebarTab}
-    setSidebarTab={(tab) => sidebarTab = tab}
-    top10Today={topAiringAnimes}
-    top10Week={topUpcomingAnimes}
-    top10Month={data?.top10Animes?.month ?? []}
-/>
+            {sidebarTab}
+            setSidebarTab={(tab) => sidebarTab = tab}
+            {topAiringAnimes}
+            {topUpcomingAnimes}
+          />
         </div>
       </div>
     </div>
