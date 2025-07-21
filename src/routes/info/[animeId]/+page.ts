@@ -30,7 +30,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
       const homeResp = await fetch('/api/home');
       const homeJson = await homeResp.json();
       top10Animes = {
-        today: homeJson?.top10Animes?.today ?? [],
+        today: homeJson?.data?.top10Animes?.today ?? [],
         week: homeJson?.data?.top10Animes?.week ?? [],
         month: homeJson?.data?.top10Animes?.month ?? []
       };
