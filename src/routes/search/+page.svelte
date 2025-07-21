@@ -14,7 +14,8 @@
   let totalPagesManga = 1;
   let topAiringAnimes: any[] = [];
   let topUpcomingAnimes: any[] = [];
-  let sidebarTab: 'airing' | 'upcoming' = 'airing';
+  let top10Animes: { today?: any[]; week?: any[]; month?: any[] } = {};
+  let sidebarTab: 'today' | 'week' | 'month' = 'today';
 
   onMount(async () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -57,8 +58,7 @@
       const json = await resp.json();
 
       if (json.success) {
-        topAiringAnimes = json.data.topAiringAnimes || [];
-        topUpcomingAnimes = json.data.topUpcomingAnimes || [];
+        top10Animes = json.data.top10Animes || {};
       } else {
         error = json.error || 'Failed to fetch sidebar data';
       }
@@ -75,7 +75,7 @@
     }
   }
 
-  function setSidebarTab(tab: 'airing' | 'upcoming') {
+  function setSidebarTab(tab: 'today' | 'week' | 'month') {
     sidebarTab = tab;
   }
 </script>
@@ -207,11 +207,12 @@
           </div>
           <!-- Sidebar Section -->
           <Sidebar
-            {sidebarTab}
-            setSidebarTab={(tab) => sidebarTab = tab}
-            topAiringAnimes={topAiringAnimes}
-            topUpcomingAnimes={topUpcomingAnimes}
-          />
+  sidebarTab={sidebarTab}
+  setSidebarTab={(tab) => sidebarTab = tab}
+  top10Today={top10Animes.today ?? []}
+  top10Week={top10Animes.week ?? []}
+  top10Month={top10Animes.month ?? []}
+/>
         </div>
       {/if}
     </div>

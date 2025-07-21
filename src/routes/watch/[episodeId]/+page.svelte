@@ -4,6 +4,8 @@
   import PlayerCard from '$lib/components/watch/PlayerCard.svelte';
   import ServerSelector from '$lib/components/watch/ServerSelector.svelte';
   import PlayerSelector from '$lib/components/watch/PlayerSelector.svelte';
+  import PlayerController from '$lib/components/watch/PlayerController.svelte'; // <-- Add this import
+  import EpisodeSelector from '$lib/components/watch/EpisodeSelector.svelte';
   import type { PageData } from './$types.js';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
@@ -28,6 +30,7 @@
   let intro: { start: number; end: number } | null = null;
   let outro: { start: number; end: number } | null = null;
   let useArtPlayer = false;
+  let useIframePlayer = false;
   let loading = true;
   let thumbnailsVtt = '';
   let updatingSources = false;
@@ -87,9 +90,6 @@
           srclang: track.srclang || track.lang || 'en'
         }));
 
-      // After mapping subtitles
-      console.log('Subtitles mapped for PlayerCard:', subtitles);
-
       intro = json.data.intro || null;
       outro = json.data.outro || null;
     } catch {
@@ -125,7 +125,6 @@
         servers = servers.filter((server) => server.serverName);
 
         // --- Default server logic ---
-        // Try to set hd-2 as default, else hd-1, else first available
         let preferred = servers.find(s => s.serverName.toLowerCase() === 'hd-2');
         if (!preferred) preferred = servers.find(s => s.serverName.toLowerCase() === 'hd-1');
         if (!preferred) preferred = servers[0];
@@ -162,16 +161,19 @@
     currentServer = serverName;
     category = cat;
     fetchWatchData(currentEpisodeId, currentServer, category, false);
+    useIframePlayer = false; // Reset iframe player when server changes
   }
 
   function changeCategoryManual(cat: 'sub' | 'dub' | 'raw') {
     if (category !== cat) {
       category = cat;
       fetchWatchData(currentEpisodeId, currentServer, category);
+      useIframePlayer = false; // Reset iframe player when category changes
     }
   }
 
   function setUseArtPlayer(v: boolean) { useArtPlayer = v; }
+  function setUseIframePlayer(v: boolean) { useIframePlayer = v; }
 
   // --- On Mount: Restore Last Watched ---
   onMount(async () => {
@@ -189,7 +191,6 @@
 
     await fetchServers(currentEpisodeId);
 
-    // Always fetch with the currentServer set by fetchServers
     await fetchWatchData(currentEpisodeId, currentServer, category);
 
     loading = false;
@@ -205,10 +206,8 @@
 
   async function handleRefreshSource(videoUrl: string) {
     updatingSources = true;
-    // Delete cache for this episode/server/category
     await fetch(`/api/anime?action=delete-source-cache&animeEpisodeId=${currentEpisodeId}&category=${category}`);
-    // Refetch sources and update videoSrc
-    await fetchWatchData(currentEpisodeId, currentServer, category, false); // don't set loading=true
+    await fetchWatchData(currentEpisodeId, currentServer, category, false);
     updatingSources = false;
   }
 
@@ -225,7 +224,6 @@
     return v === '1' ? true : v === '0' ? false : fallback;
   }
 
-  // Load toggle states from localStorage
   onMount(() => {
     autoPlay = loadToggle(AUTO_PLAY_KEY, false);
     autoSkipIntro = loadToggle(AUTO_SKIP_INTRO_KEY, false);
@@ -252,48 +250,42 @@
       </div>
     {:else}
       <div class="max-w-7xl mx-auto flex flex-col gap-10">
-        <section class="flex-1 flex flex-col gap-8 mb-12">
+        <section class="flex-1 flex flex-col gap-8 mb-6"> <!-- was mb-12 -->
           <!-- Player Card -->
-          <div class="flex flex-col gap-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-4 sm:p-8">
+          <div class="flex flex-col gap-2 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-4 sm:p-8">
             <PlayerCard
               {videoSrc}
               {poster}
               {subtitles}
               {useArtPlayer}
+              {useIframePlayer}
               goToEpisode={goToEpisode}
               onRefreshSource={handleRefreshSource}
               {intro}
               {outro}
               {autoSkipIntro}
+              animeInfo={data.anime?.info}
+              episodeNum={episodes.find(e => e.episodeId === currentEpisodeId)?.number}
+              episodes={episodes}
+              autoNext={autoNext}
+              episodeId={
+                (() => {
+                  const match = currentEpisodeId.match(/ep=(\d+)/);
+                  return match ? match[1] : currentEpisodeId;
+                })()
+              }
+              {category}
             />
 
-            <!-- Simple text toggles below the player, single line -->
-            <div class="flex gap-4 mt-2 mb-4 text-xs font-semibold select-none">
-              <button
-                type="button"
-                class="cursor-pointer bg-transparent border-none p-0 m-0 text-inherit"
-                on:click={() => { autoPlay = !autoPlay; saveToggle(AUTO_PLAY_KEY, autoPlay); }}
-                aria-pressed={autoPlay}
-              >
-                Auto Play <span class={autoPlay ? 'text-green-400' : 'text-red-400'}>{autoPlay ? 'On' : 'Off'}</span>
-              </button>
-              <button
-                type="button"
-                class="cursor-pointer bg-transparent border-none p-0 m-0 text-inherit"
-                on:click={() => { autoSkipIntro = !autoSkipIntro; saveToggle(AUTO_SKIP_INTRO_KEY, autoSkipIntro); }}
-                aria-pressed={autoSkipIntro}
-              >
-                Auto Skip Intro <span class={autoSkipIntro ? 'text-green-400' : 'text-red-400'}>{autoSkipIntro ? 'On' : 'Off'}</span>
-              </button>
-              <button
-                type="button"
-                class="cursor-pointer bg-transparent border-none p-0 m-0 text-inherit"
-                on:click={() => { autoNext = !autoNext; saveToggle(AUTO_NEXT_KEY, autoNext); }}
-                aria-pressed={autoNext}
-              >
-                Auto Next <span class={autoNext ? 'text-green-400' : 'text-red-400'}>{autoNext ? 'On' : 'Off'}</span>
-              </button>
-            </div>
+            <!-- Use PlayerController component here -->
+            <PlayerController
+              {autoPlay}
+              {autoSkipIntro}
+              {autoNext}
+              setAutoPlay={v => { autoPlay = v; saveToggle(AUTO_PLAY_KEY, v); }}
+              setAutoSkipIntro={v => { autoSkipIntro = v; saveToggle(AUTO_SKIP_INTRO_KEY, v); }}
+              setAutoNext={v => { autoNext = v; saveToggle(AUTO_NEXT_KEY, v); }}
+            />
 
             <ServerSelector
               {servers}
@@ -303,39 +295,19 @@
             />
 
             <PlayerSelector
-              {useArtPlayer}
-              setUseArtPlayer={setUseArtPlayer}
+              {useIframePlayer}
+              setUseIframePlayer={setUseIframePlayer}
             />
 
-            {#if episodes.length > 1}
-              <div class="mb-2 flex flex-col gap-2">
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-orange-400 text-xs">Pages:</span>
-                  <select
-                    class="px-2 py-1 rounded bg-gray-800 text-white text-xs focus:outline-none focus:ring-2 focus:ring-orange-400"
-                    on:change={handlePageChange}
-                  >
-                    {#each episodeRanges as range, i}
-                      <option value={i + 1} selected={currentPage === i + 1}>{range}</option>
-                    {/each}
-                  </select>
-                </div>
-                <div class="grid grid-cols-5 sm:grid-cols-10 gap-1">
-                  {#each pagedEpisodes as ep}
-                    <button
-                      class="flex items-center justify-center h-10 w-full rounded bg-gray-800 text-white font-bold text-xs transition
-                        {ep.episodeId === currentEpisodeId
-                          ? 'bg-orange-400 text-gray-900 shadow'
-                          : 'hover:bg-orange-400 hover:text-gray-900'}"
-                      on:click={() => goToEpisode(ep.episodeId)}
-                      disabled={ep.episodeId === currentEpisodeId}
-                    >
-                      {ep.number}
-                    </button>
-                  {/each}
-                </div>
-              </div>
-            {/if}
+            <EpisodeSelector
+              {episodes}
+              {pagedEpisodes}
+              {episodeRanges}
+              {currentPage}
+              {currentEpisodeId}
+              {handlePageChange}
+              {goToEpisode}
+            />
           </div>
 
           <!-- Anime Info Card -->
@@ -443,26 +415,12 @@
               </div>
             </div>
           {/if}
-
-          <!-- Next Episode Button -->
-          {#if episodes.length > 0}
-            {#each episodes as ep, i}
-              {#if ep.episodeId === currentEpisodeId && episodes[i + 1]}
-                <button
-                  class="mt-4 px-6 py-2 bg-orange-400 text-gray-900 font-bold rounded-lg shadow hover:bg-orange-500 transition"
-                  on:click={() => goToEpisode(episodes[i + 1].episodeId)}
-                >
-                  ▶ Next Episode: Ep {episodes[i + 1].number}{episodes[i + 1].title ? `: ${episodes[i + 1].title}` : ''}
-                </button>
-              {/if}
-            {/each}
-          {/if}
         </section>
       </div>
 
       <!-- Recommended and Related Animes Sections -->
       {#if data.recommendedAnimes && data.recommendedAnimes.length}
-        <section class="max-w-7xl mx-auto mt-12">
+        <section class="max-w-7xl mx-auto mt-6"> <!-- was mt-12 -->
           <h2 class="text-xl font-bold text-orange-400 mb-4">Recommended Anime</h2>
           <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
             {#each data.recommendedAnimes as rec}
@@ -496,7 +454,7 @@
       {/if}
 
       {#if data.relatedAnimes && data.relatedAnimes.length}
-        <section class="max-w-7xl mx-auto mt-10">
+        <section class="max-w-7xl mx-auto mt-5"> <!-- was mt-10 -->
           <h2 class="text-xl font-bold text-orange-400 mb-4">Related Anime</h2>
           <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
             {#each data.relatedAnimes as rel}
@@ -538,6 +496,12 @@
     .flex-shrink-0 {
       margin-left: auto;
       margin-right: auto;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .player-controller-center {
+      justify-content: center !important;
     }
   }
 

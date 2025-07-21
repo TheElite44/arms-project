@@ -24,19 +24,26 @@ export const load: PageLoad = async ({ params, fetch }) => {
 
     const json = await resp.json();
 
-    if (!json.success) {
-      // Handle API-level errors
-      throw error(404, json.error || 'Anime not found');
+    let top10Animes = json.data.top10Animes;
+    // Fallback: fetch from /api/home if not present or missing 'month'
+    if (!top10Animes || !Array.isArray(top10Animes.month)) {
+      const homeResp = await fetch('/api/home');
+      const homeJson = await homeResp.json();
+      top10Animes = {
+        today: homeJson?.top10Animes?.today ?? [],
+        week: homeJson?.data?.top10Animes?.week ?? [],
+        month: homeJson?.data?.top10Animes?.month ?? []
+      };
     }
 
-    // Return the data directly - no status properties needed
     return {
       anime: json.data.anime,
       moreInfo: json.data.moreInfo,
       mostPopularAnimes: json.data.mostPopularAnimes || [],
       recommendedAnimes: json.data.recommendedAnimes || [],
       relatedAnimes: json.data.relatedAnimes || [],
-      seasons: json.data.seasons || []
+      seasons: json.data.seasons || [],
+      top10Animes
     };
     
   } catch (err) {

@@ -24,7 +24,7 @@
   $: seasons = Array.isArray(data?.seasons) ? data.seasons : [];
 
   let firstEpisodeId: string | null = null;
-  let sidebarTab: 'airing' | 'upcoming' = 'airing';
+  let sidebarTab: 'today' | 'week' | 'month' = 'today';
   let topAiringAnimes: any[] = [];
   let topUpcomingAnimes: any[] = [];
   let loading = true;
@@ -371,7 +371,7 @@
           <!-- Main content -->
           <div class="flex-1 flex flex-col gap-6 sm:gap-10">
             <!-- Main Info Card -->
-            <section class="flex-1 flex flex-col gap-8 mb-12">
+            <section class="flex-1 flex flex-col gap-8 mb-5">
               <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-6 md:p-10">
                 <!-- Poster -->
                 <div class="flex-shrink-0 mx-auto md:mx-0">
@@ -533,7 +533,7 @@
 
               <!-- Characters & Voice Actors -->
               {#if Array.isArray(anime?.charactersVoiceActors) && anime.charactersVoiceActors.length > 0}
-                <section class="mb-8">
+                <section class="mb-4"> <!-- Changed from mb-8 to mb-4 -->
                   <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-bold text-orange-400">Characters & Voice Actors</h2>
                     {#if anime.charactersVoiceActors.length > 2}
@@ -560,7 +560,7 @@
 
               <!-- Recommended Anime -->
               {#if recommended.length > 0}
-                <section class="mb-12">
+                <section class="mb-6"> <!-- Changed from mb-12 to mb-6 -->
                   <h2 class="text-2xl font-bold text-orange-400 mb-4">Recommended Anime</h2>
                   <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                     {#each recommended.filter(rec => rec && rec.id && rec.name) as rec}
@@ -604,7 +604,7 @@
               <!-- Related Anime -->
               {#if related.length > 0}
                 <section>
-                  <h2 class="text-2z font-bold text-orange-400 mb-4">Related Anime</h2>
+                  <h2 class="text-2xl font-bold text-orange-400 mb-4">Related Anime</h2>
                   <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                     {#each related.filter(rel => rel && rel.id && rel.name) as rel}
                       <a 
@@ -647,11 +647,12 @@
 
           <!-- Sidebar -->
           <Sidebar
-            {sidebarTab}
-            setSidebarTab={(tab) => sidebarTab = tab}
-            {topAiringAnimes}
-            {topUpcomingAnimes}
-          />
+    sidebarTab={sidebarTab}
+    setSidebarTab={(tab) => sidebarTab = tab}
+    top10Today={data?.top10Animes?.today ?? []}
+    top10Week={data?.top10Animes?.week ?? []}
+    top10Month={data?.top10Animes?.month ?? []}
+/>
         </div>
       </div>
     </div>
