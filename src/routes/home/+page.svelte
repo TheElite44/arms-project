@@ -273,11 +273,11 @@
                   {#each data?.latestAddedAnimes?.slice(0, 10) as anime (anime.id)}
                     <AnimeCard 
                       anime={anime}
-                      showRank={true}
+                      showEpisodes={true}
                       showDescription={true}
                       description={anime.description ?? ''}
                       genres={anime.genres ?? []}
-                      duration={anime.otherInfo?.[1] ?? ''}
+                      duration={anime.duration ?? ''}
                       type={anime.type ?? ''}
                     />
                   {/each}
