@@ -7,10 +7,10 @@
   export let showRank: boolean = false;
   export let showEpisodes: boolean = false;
   export let showDescription: boolean = false;
-  export let description: string = '';
-  export let genres: string[] = [];
-  export let duration: string = '';
-  export let type: string = '';
+  export const description: string = '';
+  export const genres: string[] = [];
+  export const duration: string = '';
+  export const type: string = '';
 
   let showTooltip = false;
   let tooltipTimeout: any;
@@ -184,26 +184,15 @@
 </div>
 
 <style>
-  .line-clamp-1 {
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
   
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
   
-  .line-clamp-4 {
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
   
   .loading-dots {
     display: flex;
