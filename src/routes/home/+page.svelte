@@ -32,33 +32,6 @@
   async function fetchAnimeDetailsBatch(animeIds: string[]) {
     const uncachedIds = animeIds.filter(id => !detailsCache.has(id));
     if (uncachedIds.length === 0) return;
-
-    // Process in batches to avoid overwhelming the API
-    for (let i = 0; i < uncachedIds.length; i += CONCURRENT_REQUESTS) {
-      const batch = uncachedIds.slice(i, i + CONCURRENT_REQUESTS);
-      const promises = batch.map(async (animeId) => {
-        try {
-          const resp = await fetch(`/api/info?animeId=${animeId}`);
-          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-          const json = await resp.json();
-          if (json.success && json.data?.anime?.info) {
-            const details = json.data.anime.info;
-            detailsCache.set(animeId, details);
-            trendingAnimeDetails[animeId] = details;
-          }
-        } catch (e) {
-          console.warn(`Failed to fetch details for animeId: ${animeId}`, e);
-          // Set empty object to prevent retry
-          detailsCache.set(animeId, {});
-        }
-      });
-
-      await Promise.allSettled(promises);
-      // Small delay between batches to be API-friendly
-      if (i + CONCURRENT_REQUESTS < uncachedIds.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-    }
   }
 
   // Performance: Debounced reactive statement
