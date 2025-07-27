@@ -3,7 +3,8 @@ import { Redis } from '@upstash/redis';
 
 const API_URL = import.meta.env.VITE_ANIME_API || '';
 const REFERERS = [
-  'https://megacloud.club/',
+  //'megacloud.clouf.tv/'
+  'https://megaplay.buzz/',
   'https://hianime.to/'
 
 ];

@@ -24,7 +24,7 @@ export const GET: RequestHandler = async ({ url }) => {
   }
 
   // Always use the proxy base from .env
-  const proxyUrl = `${M3U8_PROXY}/m3u8-proxy?url=${encodeURIComponent(m3u8Url)}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
+  const proxyUrl = `${M3U8_PROXY}/streamingProxy?url=${encodeURIComponent(m3u8Url)}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
 
   try {
     const resp = await fetch(proxyUrl);
