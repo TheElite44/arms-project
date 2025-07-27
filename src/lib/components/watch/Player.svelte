@@ -127,6 +127,11 @@
   }
 
   function processSubtitleUrl(url: string): string {
+    if (!url) return url;
+    // Proxy .vtt files to add Referer
+    if (url.endsWith('.vtt')) {
+      return `/api/proxy/vtt?url=${encodeURIComponent(url)}`;
+    }
     return url;
   }
 
