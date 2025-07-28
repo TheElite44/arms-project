@@ -211,7 +211,7 @@ export const GET: RequestHandler = async ({ url }) => {
                     : M3U8_PROXY.replace(/\/$/, '');
                 return {
                   ...source,
-                  url: `${proxyBase}/m3u8-proxy?url=${encodeURIComponent(source.url)}&headers=${encodeURIComponent(proxyHeaders)}`
+                  url: `${proxyBase}/api/v1/streamingProxy?url=${encodeURIComponent(source.url)}&headers=${encodeURIComponent(proxyHeaders)}`
                 };
               }
               return source;
