@@ -24,9 +24,10 @@
 
 {#if episodes.length > 1}
   <div class="mb-2 flex flex-col gap-1">
-    <div class="flex items-center gap-2 relative">
+    <div class="flex items-center gap-2 relative pb-1">
       <span class="font-semibold text-orange-400 text-xs">Pages:</span>
-      <div class="relative w-40">
+      <div class="relative w-32
+      ">
         <button
           class="w-full px-2 py-1 rounded bg-gray-800 text-white text-xs flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-orange-400"
           on:click={() => open = !open}

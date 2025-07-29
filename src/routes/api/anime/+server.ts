@@ -205,13 +205,23 @@ export const GET: RequestHandler = async ({ url }) => {
                   Referer: referer,
                   Origin: 'https://hianime.to',
                 });
-                const proxyBase =
-                  s === 'hd-1' && M3U8_PROXY_HD1
+                
+                let proxyUrl;
+                if (s === 'hd-1') {
+                  // hd-1 uses /api/v1/streamingProxy endpoint
+                  const proxyBase = M3U8_PROXY_HD1 
                     ? M3U8_PROXY_HD1.replace(/\/$/, '')
                     : M3U8_PROXY.replace(/\/$/, '');
+                  proxyUrl = `${proxyBase}/api/v1/streamingProxy?url=${encodeURIComponent(source.url)}&headers=${encodeURIComponent(proxyHeaders)}`;
+                } else {
+                  // hd-2 uses /m3u8-proxy endpoint
+                  const proxyBase = M3U8_PROXY.replace(/\/$/, '');
+                  proxyUrl = `${proxyBase}/m3u8-proxy?url=${encodeURIComponent(source.url)}&headers=${encodeURIComponent(proxyHeaders)}`;
+                }
+                
                 return {
                   ...source,
-                  url: `${proxyBase}/api/v1/streamingProxy?url=${encodeURIComponent(source.url)}&headers=${encodeURIComponent(proxyHeaders)}`
+                  url: proxyUrl
                 };
               }
               return source;
