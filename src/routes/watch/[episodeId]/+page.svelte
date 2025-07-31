@@ -361,7 +361,7 @@
                   <!-- Description: more left on mobile -->
                   <p
                     class="text-gray-200 text-sm leading-relaxed md:ml-0 ml-[-8px] 
-                      line-clamp-3 sm:line-clamp-15"
+                      line-clamp-3 sm:line-clamp-5"
                     style="overflow: hidden;"
                   >
                     {data.anime.info.description}
@@ -524,7 +524,7 @@
   /* Add to your <style> block if not using Tailwind line-clamp */
 .line-clamp-3 {
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 15;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
