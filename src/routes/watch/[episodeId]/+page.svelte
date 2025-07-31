@@ -359,7 +359,13 @@
                   {/if}
                   
                   <!-- Description: more left on mobile -->
-                  <p class="text-gray-200 text-sm leading-relaxed md:ml-0 ml-[-8px]">{data.anime.info.description}</p>
+                  <p
+                    class="text-gray-200 text-sm leading-relaxed md:ml-0 ml-[-8px] 
+                      line-clamp-3 sm:line-clamp-5"
+                    style="overflow: hidden;"
+                  >
+                    {data.anime.info.description}
+                  </p>
                   
                   <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs">
                     <div class="bg-gray-800 p-2 rounded">
@@ -515,13 +521,16 @@
     }
   }
 
-  @media (max-width: 640px) {
-    .player-controller-center {
-      justify-content: center !important;
-    }
+  /* Add to your <style> block if not using Tailwind line-clamp */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+@media (min-width: 640px) {
+  .line-clamp-3 {
+    -webkit-line-clamp: 5;
   }
-
-  .nowrap {
-    white-space: nowrap;
-  }
+}
 </style>
