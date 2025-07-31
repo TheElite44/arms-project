@@ -313,105 +313,121 @@
           <!-- Anime Info Card -->
           {#if data.anime && data.anime.info && data.anime.moreInfo}
             <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-6 md:p-10">
-              <div class="flex-shrink-0 mx-auto md:mx-0">
+              <!-- Move icon to the left column -->
+              <div class="flex flex-col items-center md:items-start flex-shrink-0 mx-auto md:mx-0">
                 <img
                   src={data.anime.info.poster}
                   alt={data.anime.info.name}
                   class="rounded-lg shadow-2xl w-64 h-auto object-cover border-4 border-gray-800"
                 />
               </div>
-              <div class="flex-1 flex flex-col gap-4">
-                <h1 class="text-3xl sm:text-4xl font-extrabold text-orange-400 mb-1">{data.anime.info.name}</h1>
-                {#if data.anime.moreInfo.genres}
-                  <div class="flex flex-wrap gap-2 mb-2">
-                    {#each data.anime.moreInfo.genres as genre}
-                      <a
-                        href={`/genre/${genre.replace(/\s+/g, '-').toLowerCase()}`}
-                        class="bg-gray-800 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold hover:underline transition"
-                        >{genre}</a
-                      >
-                    {/each}
+              <div class="flex-1 space-y-3">
+                <!-- Anime Title (no icon here) -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                  <h1 class="text-2xl sm:text-3xl font-bold text-orange-400">{data.anime.info.name}</h1>
+                </div>
+                
+                <!-- Episode Info -->
+                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                  <span class="bg-orange-400 text-gray-900 px-2 py-1 rounded font-semibold">
+                    Episode {episodes.find(e => e.episodeId === currentEpisodeId)?.number || 'N/A'}
+                  </span>
+                  <span class="bg-gray-800 text-orange-300 px-2 py-1 rounded">
+                    {data.anime.info.stats.type}
+                  </span>
+                  <span class="bg-gray-800 text-orange-300 px-2 py-1 rounded">
+                    {category?.toUpperCase()}
+                  </span>
+                  <span class="bg-gray-800 text-orange-300 px-2 py-1 rounded">
+                    ⭐ {data.anime.info.stats.rating}
+                  </span>
+                </div>
+
+                <!-- Detailed Info - Always Visible -->
+                <div class="space-y-3">
+                  {#if data.anime.moreInfo.genres}
+                    <div class="flex flex-wrap gap-1.5">
+                      {#each data.anime.moreInfo.genres as genre}
+                        <a
+                          href={`/genre/${genre.replace(/\s+/g, '-').toLowerCase()}`}
+                          class="bg-gray-800 text-orange-300 px-2 py-1 rounded text-xs font-medium hover:bg-gray-700 transition"
+                        >
+                          {genre}
+                        </a>
+                      {/each}
+                    </div>
+                  {/if}
+                  
+                  <!-- Description: more left on mobile -->
+                  <p class="text-gray-200 text-sm leading-relaxed md:ml-0 ml-[-8px]">{data.anime.info.description}</p>
+                  
+                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs">
+                    <div class="bg-gray-800 p-2 rounded">
+                      <span class="text-orange-300 font-medium">Episodes:</span>
+                      <div class="text-white">{data.anime.info.stats.episodes.sub} Sub / {data.anime.info.stats.episodes.dub} Dub</div>
+                    </div>
+                    <div class="bg-gray-800 p-2 rounded">
+                      <span class="text-orange-300 font-medium">Status:</span>
+                      <div class="text-white">{data.anime.moreInfo.status}</div>
+                    </div>
+                    <div class="bg-gray-800 p-2 rounded col-span-2 sm:col-span-1">
+                      <span class="text-orange-300 font-medium">Aired:</span>
+                      <div class="text-white">{data.anime.moreInfo.aired}</div>
+                    </div>
                   </div>
-                {/if}
-                <p class="text-gray-200 text-base mb-2">{data.anime.info.description}</p>
-                <div class="flex flex-wrap gap-2 mb-2">
-                  <span class="bg-orange-400 text-gray-900 px-3 py-1 rounded-full text-xs font-bold shadow">Type: {data.anime.info.stats.type}</span>
-                  <span class="bg-gray-900 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold">Episodes: {data.anime.info.stats.episodes.sub} Sub / {data.anime.info.stats.episodes.dub} Dub</span>
-                  <span class="bg-gray-900 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold">Rating: {data.anime.info.stats.rating}</span>
-                  <span class="bg-gray-900 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold">Quality: {data.anime.info.stats.quality}</span>
-                  <span class="bg-gray-900 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold">Status: {data.anime.moreInfo.status}</span>
+
                   {#if data.anime.moreInfo.studios && (
                     (Array.isArray(data.anime.moreInfo.studios) && data.anime.moreInfo.studios.filter((s: string) => s && s.trim()).length > 0) ||
                     (typeof data.anime.moreInfo.studios === 'string' && data.anime.moreInfo.studios.split(',').filter((s: string) => s.trim()).length > 0)
                   )}
-                    <div class="w-full flex flex-wrap items-center gap-x-2 gap-y-1 mb-1 text-sm">
-                      <span class="font-semibold text-orange-300">
-                        Studio{Array.isArray(data.anime.moreInfo.studios) && data.anime.moreInfo.studios.length > 1 ? 's' : ''}:
-                      </span>
-                      {#each (
-                        Array.isArray(data.anime.moreInfo.studios)
-                          ? data.anime.moreInfo.studios
-                          : typeof data.anime.moreInfo.studios === 'string'
-                            ? data.anime.moreInfo.studios.split(',').map((s: string) => s.trim())
-                            : []
-                      ).filter((s: string) => s) as studio, i (studio)}
-                        <span class="nowrap">
+                    <div class="text-sm">
+                      <span class="text-orange-300 font-medium">Studio{Array.isArray(data.anime.moreInfo.studios) && data.anime.moreInfo.studios.length > 1 ? 's' : ''}:</span>
+                      <div class="flex flex-wrap gap-1 mt-1">
+                        {#each (
+                          Array.isArray(data.anime.moreInfo.studios)
+                            ? data.anime.moreInfo.studios
+                            : data.anime.moreInfo.studios.split(',').map((s: string) => s.trim())
+                        ).filter((s: string) => s) as studio}
                           <span
                             role="link"
                             tabindex="0"
-                            class="cursor-pointer hover:underline hover:text-orange-400 transition"
+                            class="cursor-pointer hover:underline hover:text-orange-400 transition bg-gray-800 px-2 py-1 rounded text-xs"
                             on:click={() => goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
                             on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
                           >
                             {studio}
-                          </span>{#if i < (
-                            Array.isArray(data.anime.moreInfo.studios)
-                              ? data.anime.moreInfo.studios.length
-                              : typeof data.anime.moreInfo.studios === 'string'
-                                ? data.anime.moreInfo.studios.split(',').filter((s: string) => s.trim()).length
-                                : 0
-                          ) - 1}, {/if}
-                        </span>
-                      {/each}
+                          </span>
+                        {/each}
+                      </div>
                     </div>
                   {/if}
+
                   {#if data.anime.moreInfo.producers && (
                     (Array.isArray(data.anime.moreInfo.producers) && data.anime.moreInfo.producers.filter((s: string) => s && s.trim()).length > 0) ||
                     (typeof data.anime.moreInfo.producers === 'string' && data.anime.moreInfo.producers.split(',').filter((s: string) => s.trim()).length > 0)
                   )}
-                    <div class="w-full flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-                      <span class="font-semibold text-orange-300">
-                        Producer{Array.isArray(data.anime.moreInfo.producers) && data.anime.moreInfo.producers.length > 1 ? 's' : ''}:
-                      </span>
-                      {#each (
-                        Array.isArray(data.anime.moreInfo.producers)
-                          ? data.anime.moreInfo.producers
-                          : typeof data.anime.moreInfo.producers === 'string'
-                            ? data.anime.moreInfo.producers.split(',').map((s: string) => s.trim())
-                            : []
-                      ).filter((s: string) => s) as producer, i (producer)}
-                        <span class="nowrap">
+                    <div class="text-sm">
+                      <span class="text-orange-300 font-medium">Producer{Array.isArray(data.anime.moreInfo.producers) && data.anime.moreInfo.producers.length > 1 ? 's' : ''}:</span>
+                      <div class="flex flex-wrap gap-1 mt-1">
+                        {#each (
+                          Array.isArray(data.anime.moreInfo.producers)
+                            ? data.anime.moreInfo.producers
+                            : data.anime.moreInfo.producers.split(',').map((s: string) => s.trim())
+                        ).filter((s: string) => s) as producer}
                           <span
                             role="link"
                             tabindex="0"
-                            class="cursor-pointer hover:underline hover:text-orange-400 transition"
+                            class="cursor-pointer hover:underline hover:text-orange-400 transition bg-gray-800 px-2 py-1 rounded text-xs"
                             on:click={() => goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
                             on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
                           >
                             {producer}
-                          </span>{#if i < (
-                            Array.isArray(data.anime.moreInfo.producers)
-                              ? data.anime.moreInfo.producers.length
-                              : typeof data.anime.moreInfo.producers === 'string'
-                                ? data.anime.moreInfo.producers.split(',').filter((s: string) => s.trim()).length
-                                : 0
-                          ) - 1}, {/if}
-                        </span>
-                      {/each}
+                          </span>
+                        {/each}
+                      </div>
                     </div>
                   {/if}
                 </div>
-                <div class="text-gray-400 text-sm mb-2">Aired: {data.anime.moreInfo.aired}</div>
               </div>
             </div>
           {/if}
