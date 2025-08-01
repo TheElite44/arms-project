@@ -16,9 +16,9 @@
   let retryAttempts = 0;
   const MAX_RETRY_ATTEMPTS = 3;
 
-  // Defensive reactive assignments with fallbacks
-  $: anime = data?.anime?.info || null;
-  $: moreInfo = data?.anime?.moreInfo || null;
+  // Defensive reactive assignments with fallbacks - UPDATED for new structure
+  $: anime = data?.anime || null;
+  $: moreInfo = data?.moreInfo || null;
   $: recommended = Array.isArray(data?.recommendedAnimes) ? data.recommendedAnimes : [];
   $: related = Array.isArray(data?.relatedAnimes) ? data.relatedAnimes : [];
   $: seasons = Array.isArray(data?.seasons) ? data.seasons : [];
@@ -108,9 +108,9 @@
     });
   }
 
-  // Handle anime data initialization with comprehensive error handling
+  // Handle anime data initialization with comprehensive error handling - UPDATED
   $: {
-    const id = data?.anime?.info?.id;
+    const id = data?.anime?.id;
     if (id && typeof id === 'string' && id !== initializedAnimeId && mounted) {
       initializedAnimeId = id;
       (async () => {
@@ -154,7 +154,7 @@
   }
 
   async function initializeData(signal?: AbortSignal) {
-    const animeId = data?.anime?.info?.id;
+    const animeId = data?.anime?.id;
     if (!animeId || typeof animeId !== 'string') {
       throw new Error('Invalid anime ID');
     }
@@ -258,8 +258,8 @@
       error = null;
       initializedAnimeId = null; // Force re-initialization
       // Trigger reactive statement
-      if (data?.anime?.info?.id) {
-        initializedAnimeId = data.anime.info.id;
+      if (data?.anime?.id) {
+        initializedAnimeId = data.anime.id;
       }
     }
   }
@@ -320,6 +320,7 @@
     voiceActor: { poster: string; name: string; cast?: string };
   };
 </script>
+
 <svelte:head>
   <title>{anime?.name ? `${anime.name} | ARMS Anime` : 'Anime Info | ARMS Anime'}</title>
 </svelte:head>
@@ -367,127 +368,129 @@
   {:else}
     <div class="flex-1 w-full">
       <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-2 sm:px-6">
-        <div class="flex flex-col xl:flex-row gap-6 sm:gap-10 w-full">
+        <div class="flex flex-col xl:flex-row gap-2 sm:gap-4 w-full"> <!-- Reduced gap from 6/10 to 4/6 -->
           <!-- Main content -->
           <div class="flex-1 flex flex-col gap-6 sm:gap-10">
             <!-- Main Info Card -->
             <section class="flex-1 flex flex-col gap-8 mb-5">
               <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-6 md:p-10">
                 <!-- Poster -->
-                <div class="flex-shrink-0 mx-auto md:mx-0">
-                  <img 
-                    src={anime.poster || '/assets/placeholder-anime.jpg'} 
-                    alt={safeTruncate(anime.name, 50)} 
-                    class="rounded-lg shadow-2xl w-64 h-auto object-cover border-4 border-gray-800" 
+                <div class="flex flex-col items-center md:items-start flex-shrink-0 mx-auto md:mx-0">
+                  <img
+                    src={anime.poster || '/assets/placeholder-anime.jpg'}
+                    alt={safeTruncate(anime.name, 50)}
+                    class="rounded-lg shadow-2xl w-64 h-auto object-cover border-4 border-gray-800"
                     on:error={handleImageError}
                   />
                 </div>
                 <!-- Details -->
-                <div class="flex-1 flex flex-col gap-4">
-                  <h1 class="text-3xl sm:text-4xl font-extrabold text-orange-400 mb-1">
-                    {anime.name || 'Unknown Anime'}
-                  </h1>
-                  {#if moreInfo.genres && Array.isArray(moreInfo.genres)}
-                    <div class="flex flex-wrap gap-2 mb-2">
-                      {#each moreInfo.genres.filter((g: unknown) => g && typeof g === 'string') as genre}
-                        <a
-                          href={`/genre/${encodeURIComponent(genre.toLowerCase())}`}
-                          class="bg-gray-800 text-orange-300 px-3 py-1 rounded-full text-xs font-semibold hover:underline transition"
-                          title={`View more ${genre} anime`}
-                        >
-                          {safeTruncate(genre, 20)}
-                        </a>
-                      {/each}
-                      {#if moreInfo.studios || moreInfo.producers}
-                        <div class="w-full mt-2 text-sm text-gray-300 flex flex-col gap-1">
-                          {#if moreInfo.studios && (Array.isArray(moreInfo.studios) ? moreInfo.studios.filter((s: string) => s && s.trim()).length > 0 : typeof moreInfo.studios === 'string' && moreInfo.studios.split(',').filter((s: string) => s.trim()).length > 0)}
-                            <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                              <span class="font-semibold text-orange-300">
-                                Studio{Array.isArray(moreInfo.studios) && moreInfo.studios.length > 1 ? 's' : ''}:
-                              </span>
-                              {#each (
-                                Array.isArray(moreInfo.studios)
-                                  ? moreInfo.studios
-                                  : typeof moreInfo.studios === 'string'
-                                    ? moreInfo.studios.split(',').map((s: string) => s.trim())
-                                    : []
-                              ).filter((s: string) => s) as studio, i (studio)}
-                                <span class="nowrap">
-                                  <span
-                                    role="link"
-                                    tabindex="0"
-                                    class="cursor-pointer hover:underline hover:text-orange-400 transition"
-                                    on:click={() => goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
-                                    on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
-                                  >
-                                    {safeTruncate(studio, 25)}
-                                  </span>{#if i < (
-                                    Array.isArray(moreInfo.studios)
-                                      ? moreInfo.studios.length
-                                      : typeof moreInfo.studios === 'string'
-                                        ? moreInfo.studios.split(',').filter((s: string) => s.trim()).length
-                                        : 0
-                                  ) - 1}, {/if}
-                                </span>
-                              {/each}
-                            </div>
-                          {/if}
-                          {#if moreInfo.producers && (Array.isArray(moreInfo.producers) ? moreInfo.producers.filter((s: string) => s && s.trim()).length > 0 : typeof moreInfo.producers === 'string' && moreInfo.producers.split(',').filter((s: string) => s.trim()).length > 0)}
-                            <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                              <span class="font-semibold text-orange-300">
-                                Producer{Array.isArray(moreInfo.producers) && moreInfo.producers.length > 1 ? 's' : ''}:
-                              </span>
-                              {#each (
-                                Array.isArray(moreInfo.producers)
-                                  ? moreInfo.producers
-                                  : typeof moreInfo.producers === 'string'
-                                    ? moreInfo.producers.split(',').map((s: string) => s.trim())
-                                    : []
-                              ).filter((s: string) => s) as producer, i (producer)}
-                                <span class="nowrap">
-                                  <span
-                                    role="link"
-                                    tabindex="0"
-                                    class="cursor-pointer hover:underline hover:text-orange-400 transition"
-                                    on:click={() => goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
-                                    on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
-                                  >
-                                    {safeTruncate(producer, 25)}
-                                  </span>{#if i < (
-                                    Array.isArray(moreInfo.producers)
-                                      ? moreInfo.producers.length
-                                      : typeof moreInfo.producers === 'string'
-                                        ? moreInfo.producers.split(',').filter((s: string) => s.trim()).length
-                                        : 0
-                                  ) - 1}, {/if}
-                                </span>
-                              {/each}
-                            </div>
-                          {/if}
-                        </div>
-                      {/if}
-                    </div>
-                  {/if}
-                  <p class="text-gray-200 text-base mb-2">
-                    {safeTruncate(anime.description, 500) || 'No description available.'}
-                  </p>
-                  <div class="flex flex-wrap gap-2 mb-2">
-                    {#if firstEpisodeId && typeof firstEpisodeId === 'string'}
+                <div class="flex-1 space-y-3">
+                  <!-- Move type and rating to the top, then title below -->
+                  <div class="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
+                    <span class="bg-gray-800 text-orange-300 px-2 py-1 rounded">
+                      {anime.stats?.type || moreInfo?.type}
+                    </span>
+                    <span class="bg-gray-800 text-orange-300 px-2 py-1 rounded">
+                      ⭐ {anime.stats?.rating || moreInfo?.malscore || 'N/A'}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2 sm:gap-3">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-orange-400">{anime.name || 'Unknown Anime'}</h1>
+                  </div>
+                  <div class="space-y-3">
+                    <!-- Watch Button (restored) -->
+                    {#if firstEpisodeId}
                       <a
                         href={`/watch/${encodeURIComponent(firstEpisodeId)}`}
-                        class="inline-flex items-center gap-2 mt-2 bg-orange-400 hover:bg-orange-500 text-gray-900 font-bold px-4 py-2 rounded-lg shadow transition text-sm"
+                        class="inline-flex items-center gap-2 bg-orange-400 hover:bg-orange-500 text-gray-900 font-bold px-5 py-2 rounded-lg shadow transition text-sm"
+                        style="margin-bottom: 0.5rem;"
                       >
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4l12 6-12 6V4z"/></svg>
+                        <!-- Watch Icon SVG -->
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+                          <polygon points="10,8 16,12 10,16" fill="currentColor"/>
+                        </svg>
                         Watch
                       </a>
-                    {:else}
-                      <button
-                        class="inline-flex items-center gap-2 mt-2 bg-gray-700 text-gray-400 font-bold px-4 py-2 rounded-lg cursor-not-allowed text-sm"
-                        disabled
-                      >
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4l12 6-12 6V4z"/></svg>
-                        Watch
-                      </button>
+                    {/if}
+                    {#if moreInfo.genres}
+                      <div class="flex flex-wrap gap-1.5">
+                        {#each moreInfo.genres as genre}
+                          <a
+                            href={`/genre/${encodeURIComponent(genre.toLowerCase())}`}
+                            class="bg-gray-800 text-orange-300 px-2 py-1 rounded text-xs font-medium hover:bg-gray-700 transition"
+                          >
+                            {genre}
+                          </a>
+                        {/each}
+                      </div>
+                    {/if}
+                    <p class="text-gray-200 text-sm leading-relaxed md:ml-0 ml-[-8px]" style="overflow: hidden;">
+                      {anime.description || 'No description available.'}
+                    </p>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs">
+                      <div class="bg-gray-800 p-2 rounded">
+                        <span class="text-orange-300 font-medium">Episodes:</span>
+                        <div class="text-white">{anime.stats?.episodes?.sub || 0} Sub / {anime.stats?.episodes?.dub || 0} Dub</div>
+                      </div>
+                      <div class="bg-gray-800 p-2 rounded">
+                        <span class="text-orange-300 font-medium">Status:</span>
+                        <div class="text-white">{moreInfo.status}</div>
+                      </div>
+                      <div class="bg-gray-800 p-2 rounded col-span-2 sm:col-span-1">
+                        <span class="text-orange-300 font-medium">Aired:</span>
+                        <div class="text-white">{moreInfo.aired}</div>
+                      </div>
+                    </div>
+                    {#if moreInfo.studios && (
+                      (Array.isArray(moreInfo.studios) && moreInfo.studios.filter((s: string) => s && s.trim()).length > 0) ||
+                      (typeof moreInfo.studios === 'string' && moreInfo.studios.split(',').filter((s: string) => s.trim()).length > 0)
+                    )}
+                      <div class="text-sm">
+                        <span class="text-orange-300 font-medium">Studio{Array.isArray(moreInfo.studios) && moreInfo.studios.length > 1 ? 's' : ''}:</span>
+                        <div class="flex flex-wrap gap-1 mt-1">
+                          {#each (
+                            Array.isArray(moreInfo.studios)
+                              ? moreInfo.studios
+                              : moreInfo.studios.split(',').map((s: string) => s.trim())
+                          ).filter((s: string) => s) as studio}
+                            <span
+                              role="link"
+                              tabindex="0"
+                              class="cursor-pointer hover:underline hover:text-orange-400 transition bg-gray-800 px-2 py-1 rounded text-xs"
+                              on:click={() => goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
+                              on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
+                            >
+                              {studio}
+                            </span>
+                          {/each}
+                        </div>
+                      </div>
+                    {/if}
+                    {#if moreInfo.producers && (
+                      (Array.isArray(moreInfo.producers) && moreInfo.producers.filter((s: string) => s && s.trim()).length > 0) ||
+                      (typeof moreInfo.producers === 'string' && moreInfo.producers.split(',').filter((s: string) => s.trim()).length > 0)
+                    )}
+                      <div class="text-sm">
+                        <span class="text-orange-300 font-medium">Producer{Array.isArray(moreInfo.producers) && moreInfo.producers.length > 1 ? 's' : ''}:</span>
+                        <div class="flex flex-wrap gap-1 mt-1">
+                          {#each (
+                            Array.isArray(moreInfo.producers)
+                              ? moreInfo.producers
+                              : moreInfo.producers.split(',').map((s: string) => s.trim())
+                          ).filter((s: string) => s) as producer}
+                            <span
+                              role="link"
+                              tabindex="0"
+                              class="cursor-pointer hover:underline hover:text-orange-400 transition bg-gray-800 px-2 py-1 rounded text-xs"
+                              on:click={() => goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
+                              on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
+                            >
+                              {producer}
+                            </span>
+                          {/each}
+                        </div>
+                      </div>
                     {/if}
                   </div>
                 </div>
@@ -604,7 +607,7 @@
               <!-- Related Anime -->
               {#if related.length > 0}
                 <section>
-                  <h2 class="text-2xl font-bold text-orange-400 mb-4">Related Anime</h2>
+                  <h2 class="text-2z font-bold text-orange-400 mb-4">Related Anime</h2>
                   <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                     {#each related.filter(rel => rel && rel.id && rel.name) as rel}
                       <a 
@@ -647,12 +650,12 @@
 
           <!-- Sidebar -->
           <Sidebar
-    sidebarTab={sidebarTab}
-    setSidebarTab={(tab) => sidebarTab = tab}
-    top10Today={data?.top10Animes?.today ?? []}
-    top10Week={data?.top10Animes?.week ?? []}
-    top10Month={data?.top10Animes?.month ?? []}
-/>
+            sidebarTab={sidebarTab}
+            setSidebarTab={(tab) => sidebarTab = tab}
+            top10Today={data?.top10Animes?.today ?? []}
+            top10Week={data?.top10Animes?.week ?? []}
+            top10Month={data?.top10Animes?.month ?? []}
+          />
         </div>
       </div>
     </div>
