@@ -446,50 +446,54 @@
                       (Array.isArray(moreInfo.studios) && moreInfo.studios.filter((s: string) => s && s.trim()).length > 0) ||
                       (typeof moreInfo.studios === 'string' && moreInfo.studios.split(',').filter((s: string) => s.trim()).length > 0)
                     )}
-                      <div class="text-sm">
+                      <div class="text-sm flex flex-wrap items-center gap-2">
                         <span class="text-orange-300 font-medium">Studio{Array.isArray(moreInfo.studios) && moreInfo.studios.length > 1 ? 's' : ''}:</span>
-                        <div class="flex flex-wrap gap-1 mt-1">
-                          {#each (
-                            Array.isArray(moreInfo.studios)
-                              ? moreInfo.studios
-                              : moreInfo.studios.split(',').map((s: string) => s.trim())
-                          ).filter((s: string) => s) as studio}
-                            <span
-                              role="link"
-                              tabindex="0"
-                              class="cursor-pointer hover:underline hover:text-orange-400 transition bg-gray-800 px-2 py-1 rounded text-xs"
-                              on:click={() => goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
-                              on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
-                            >
-                              {studio}
-                            </span>
-                          {/each}
-                        </div>
+                        {#each (
+                          Array.isArray(moreInfo.studios)
+                            ? moreInfo.studios
+                            : moreInfo.studios.split(',').map((s: string) => s.trim())
+                        ).filter((s: string) => s) as studio, i}
+                          <span
+                            role="link"
+                            tabindex="0"
+                            class="cursor-pointer hover:underline hover:text-orange-400 transition bg-gray-800 px-2 py-1 rounded text-xs"
+                            on:click={() => goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
+                            on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
+                          >
+                            {studio}{i < (
+                              Array.isArray(moreInfo.studios)
+                                ? moreInfo.studios.filter((s: string) => s)
+                                : moreInfo.studios.split(',').map((s: string) => s.trim()).filter((s: string) => s)
+                            ).length - 1 ? ',' : ''}
+                          </span>
+                        {/each}
                       </div>
                     {/if}
                     {#if moreInfo.producers && (
                       (Array.isArray(moreInfo.producers) && moreInfo.producers.filter((s: string) => s && s.trim()).length > 0) ||
                       (typeof moreInfo.producers === 'string' && moreInfo.producers.split(',').filter((s: string) => s.trim()).length > 0)
                     )}
-                      <div class="text-sm">
+                      <div class="text-sm flex flex-wrap items-center gap-2">
                         <span class="text-orange-300 font-medium">Producer{Array.isArray(moreInfo.producers) && moreInfo.producers.length > 1 ? 's' : ''}:</span>
-                        <div class="flex flex-wrap gap-1 mt-1">
-                          {#each (
-                            Array.isArray(moreInfo.producers)
-                              ? moreInfo.producers
-                              : moreInfo.producers.split(',').map((s: string) => s.trim())
-                          ).filter((s: string) => s) as producer}
-                            <span
-                              role="link"
-                              tabindex="0"
-                              class="cursor-pointer hover:underline hover:text-orange-400 transition bg-gray-800 px-2 py-1 rounded text-xs"
-                              on:click={() => goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
-                              on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
-                            >
-                              {producer}
-                            </span>
-                          {/each}
-                        </div>
+                        {#each (
+                          Array.isArray(moreInfo.producers)
+                            ? moreInfo.producers
+                            : moreInfo.producers.split(',').map((s: string) => s.trim())
+                        ).filter((s: string) => s) as producer, i}
+                          <span
+                            role="link"
+                            tabindex="0"
+                            class="cursor-pointer hover:underline hover:text-orange-400 transition bg-gray-800 px-2 py-1 rounded text-xs"
+                            on:click={() => goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
+                            on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
+                          >
+                            {producer}{i < (
+                              Array.isArray(moreInfo.producers)
+                                ? moreInfo.producers.filter((s: string) => s)
+                                : moreInfo.producers.split(',').map((s: string) => s.trim()).filter((s: string) => s)
+                            ).length - 1 ? ',' : ''}
+                          </span>
+                        {/each}
                       </div>
                     {/if}
                   </div>
