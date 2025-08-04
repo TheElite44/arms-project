@@ -319,6 +319,35 @@
     character: { poster: string; name: string; cast?: string };
     voiceActor: { poster: string; name: string; cast?: string };
   };
+
+  // Add these new variables for description expand/collapse
+  let showFullDescription = false;
+  let isLongDescription = false;
+  let descriptionRef: HTMLDivElement | null = null;
+  const DESCRIPTION_LIMIT = 450; // character limit for desktop
+  let isMobile = false;
+
+  function updateIsMobile() {
+    if (browser) {
+      isMobile = window.innerWidth <= 768;
+    }
+  }
+
+  onMount(() => {
+    if (browser) {
+      updateIsMobile();
+      window.addEventListener('resize', updateIsMobile);
+      if (anime?.description && anime.description.length > DESCRIPTION_LIMIT) {
+        isLongDescription = true;
+      }
+    }
+  });
+
+  onDestroy(() => {
+    if (browser) {
+      window.removeEventListener('resize', updateIsMobile);
+    }
+  });
 </script>
 
 <svelte:head>
@@ -386,35 +415,17 @@
                 <!-- Details -->
                 <div class="flex-1 space-y-3">
                   <!-- Move type and rating to the top, then title below -->
-                  <div class="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
-                    <span class="bg-gray-800 text-orange-300 px-2 py-1 rounded">
-                      {anime.stats?.type || moreInfo?.type}
-                    </span>
-                    <span class="bg-gray-800 text-orange-300 px-2 py-1 rounded">
-                      ⭐ {anime.stats?.rating || moreInfo?.malscore || 'N/A'}
-                    </span>
-                  </div>
-                  <div class="flex items-center gap-2 sm:gap-3">
-                    <h1 class="text-2xl sm:text-3xl font-bold text-orange-400">{anime.name || 'Unknown Anime'}</h1>
+
+                  <div class="flex items-center gap-2 sm:gap-3 md:ml-0 ml-[-8px]">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-orange-400 
+                      {isMobile ? 'w-full text-center' : ''}">
+                    {anime.name || 'Unknown Anime'}
+                    </h1>
                   </div>
                   <div class="space-y-3">
-                    <!-- Watch Button (restored) -->
-                    {#if firstEpisodeId}
-                      <a
-                        href={`/watch/${encodeURIComponent(firstEpisodeId)}`}
-                        class="inline-flex items-center gap-2 bg-orange-400 hover:bg-orange-500 text-gray-900 font-bold px-5 py-2 rounded-lg shadow transition text-sm"
-                        style="margin-bottom: 0.5rem;"
-                      >
-                        <!-- Watch Icon SVG -->
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
-                          <polygon points="10,8 16,12 10,16" fill="currentColor"/>
-                        </svg>
-                        Watch
-                      </a>
-                    {/if}
+                    <!-- Genres at the top -->
                     {#if moreInfo.genres}
-                      <div class="flex flex-wrap gap-1.5">
+                      <div class="flex flex-wrap gap-1.5 md:ml-0 ml-[-8px]">
                         {#each moreInfo.genres as genre}
                           <a
                             href={`/genre/${encodeURIComponent(genre.toLowerCase())}`}
@@ -425,9 +436,131 @@
                         {/each}
                       </div>
                     {/if}
-                    <p class="text-gray-200 text-sm leading-relaxed md:ml-0 ml-[-8px]" style="overflow: hidden;">
-                      {anime.description || 'No description available.'}
-                    </p>
+
+                    <!-- Studios below genres (simplified, no box/background) -->
+                    {#if moreInfo.studios && (
+                      (Array.isArray(moreInfo.studios) && moreInfo.studios.filter((s: string) => s && s.trim()).length > 0) ||
+                      (typeof moreInfo.studios === 'string' && moreInfo.studios.split(',').filter((s: string) => s.trim()).length > 0)
+                    )}
+                      <div class="text-sm flex flex-wrap items-center gap-2 md:ml-0 ml-[-8px]">
+                        <span class="text-orange-300 font-medium">Studio{Array.isArray(moreInfo.studios) && moreInfo.studios.length > 1 ? 's' : ''}:</span>
+                        {#each (
+                          Array.isArray(moreInfo.studios)
+                            ? moreInfo.studios
+                            : moreInfo.studios.split(',').map((s: string) => s.trim())
+                        ).filter((s: string) => s) as studio, i}
+                          <span
+                            role="link"
+                            tabindex="0"
+                            class="cursor-pointer hover:underline hover:text-orange-400 transition text-xs"
+                            on:click={() => goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
+                            on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
+                          >
+                            {studio}{i < (
+                              Array.isArray(moreInfo.studios)
+                                ? moreInfo.studios.filter((s: string) => s)
+                                : moreInfo.studios.split(',').map((s: string) => s.trim()).filter((s: string) => s)
+                            ).length - 1 ? ',' : ''}
+                          </span>
+                        {/each}
+                      </div>
+                    {/if}
+
+                    <!-- Producers below studios (simplified, no box/background) -->
+                    {#if moreInfo.producers && (
+                      (Array.isArray(moreInfo.producers) && moreInfo.producers.filter((s: string) => s && s.trim()).length > 0) ||
+                      (typeof moreInfo.producers === 'string' && moreInfo.producers.split(',').filter((s: string) => s.trim()).length > 0)
+                    )}
+                      <div class="text-sm flex flex-wrap items-center gap-2 md:ml-0 ml-[-8px]">
+                        <span class="text-orange-300 font-medium">Producer{Array.isArray(moreInfo.producers) && moreInfo.producers.length > 1 ? 's' : ''}:</span>
+                        {#each (
+                          Array.isArray(moreInfo.producers)
+                            ? moreInfo.producers
+                            : moreInfo.producers.split(',').map((s: string) => s.trim())
+                        ).filter((s: string) => s) as producer, i}
+                          <span
+                            role="link"
+                            tabindex="0"
+                            class="cursor-pointer hover:underline hover:text-orange-400 transition text-xs"
+                            on:click={() => goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
+                            on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
+                          >
+                            {producer}{i < (
+                              Array.isArray(moreInfo.producers)
+                                ? moreInfo.producers.filter((s: string) => s)
+                                : moreInfo.producers.split(',').map((s: string) => s.trim()).filter((s: string) => s)
+                            ).length - 1 ? ',' : ''}
+                          </span>
+                        {/each}
+                      </div>
+                    {/if}
+
+                    <!-- Description (font size and spacing matches your reference) -->
+                    <!-- Description label outside the scrollable/overflow area -->
+                    <span class="text-orange-300 font-semibold block mb-1 md:ml-0 ml-[-8px]">Overview:</span>
+                    {#if isMobile}
+                      <div
+                        class="text-gray-200 text-sm leading-tight md:ml-0 ml-[-8px]"
+                        style="max-height: 220px; overflow-y: auto; line-height: 1.4;"
+                      >
+                        {anime.description || 'No description available.'}
+                      </div>
+                    {:else if isLongDescription && !showFullDescription}
+                      <div
+                        class="text-gray-200 text-sm leading-tight md:ml-0 ml-[-8px]"
+                        style="line-height: 1.4; position: relative;"
+                      >
+                        <span>
+                          {anime.description?.slice(0, DESCRIPTION_LIMIT) || 'No description available.'}...
+                        </span>
+                        <button
+                          class="text-orange-300 hover:text-orange-400 text-xs font-semibold mt-1"
+                          on:click={() => showFullDescription = true}
+                          style="background: none; border: none; cursor: pointer; padding: 0; margin: 0;"
+                        >
+                          + More
+                        </button>
+                      </div>
+                    {:else if isLongDescription && showFullDescription}
+                      <div
+                        class="text-gray-200 text-sm leading-tight md:ml-0 ml-[-8px]"
+                        style="line-height: 1.4;"
+                      >
+                        <span>
+                          {anime.description}
+                        </span>
+                        <button
+                          class="text-orange-300 hover:text-orange-400 text-xs font-semibold mt-1"
+                          on:click={() => showFullDescription = false}
+                          style="background: none; border: none; cursor: pointer; padding: 0; margin: 0;"
+                        >
+                          - Less
+                        </button>
+                      </div>
+                    {:else}
+                      <div
+                        class="text-gray-200 text-sm leading-tight md:ml-0 ml-[-8px]"
+                        style="line-height: 1.4;"
+                      >
+                        {anime.description || 'No description available.'}
+                      </div>
+                    {/if}
+
+                    <!-- Watch Button below description -->
+                    {#if firstEpisodeId}
+                      <a
+                        href={`/watch/${encodeURIComponent(firstEpisodeId)}`}
+                        class="inline-flex items-center gap-2 bg-orange-400 hover:bg-orange-500 text-gray-900 font-bold px-5 py-2 rounded-lg shadow transition text-sm md:ml-0 ml-[-8px]"
+                        style="margin-bottom: 0.5rem;"
+                      >
+                        <!-- Watch Icon SVG -->
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+                          <polygon points="10,8 16,12 10,16" fill="currentColor"/>
+                        </svg>
+                        Watch
+                      </a>
+                    {/if}
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs">
                       <div class="bg-gray-800 p-2 rounded">
                         <span class="text-orange-300 font-medium">Episodes:</span>
@@ -442,60 +575,6 @@
                         <div class="text-white">{moreInfo.aired}</div>
                       </div>
                     </div>
-                    {#if moreInfo.studios && (
-                      (Array.isArray(moreInfo.studios) && moreInfo.studios.filter((s: string) => s && s.trim()).length > 0) ||
-                      (typeof moreInfo.studios === 'string' && moreInfo.studios.split(',').filter((s: string) => s.trim()).length > 0)
-                    )}
-                      <div class="text-sm flex flex-wrap items-center gap-2">
-                        <span class="text-orange-300 font-medium">Studio{Array.isArray(moreInfo.studios) && moreInfo.studios.length > 1 ? 's' : ''}:</span>
-                        {#each (
-                          Array.isArray(moreInfo.studios)
-                            ? moreInfo.studios
-                            : moreInfo.studios.split(',').map((s: string) => s.trim())
-                        ).filter((s: string) => s) as studio, i}
-                          <span
-                            role="link"
-                            tabindex="0"
-                            class="cursor-pointer hover:underline hover:text-orange-400 transition bg-gray-800 px-2 py-1 rounded text-xs"
-                            on:click={() => goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
-                            on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
-                          >
-                            {studio}{i < (
-                              Array.isArray(moreInfo.studios)
-                                ? moreInfo.studios.filter((s: string) => s)
-                                : moreInfo.studios.split(',').map((s: string) => s.trim()).filter((s: string) => s)
-                            ).length - 1 ? ',' : ''}
-                          </span>
-                        {/each}
-                      </div>
-                    {/if}
-                    {#if moreInfo.producers && (
-                      (Array.isArray(moreInfo.producers) && moreInfo.producers.filter((s: string) => s && s.trim()).length > 0) ||
-                      (typeof moreInfo.producers === 'string' && moreInfo.producers.split(',').filter((s: string) => s.trim()).length > 0)
-                    )}
-                      <div class="text-sm flex flex-wrap items-center gap-2">
-                        <span class="text-orange-300 font-medium">Producer{Array.isArray(moreInfo.producers) && moreInfo.producers.length > 1 ? 's' : ''}:</span>
-                        {#each (
-                          Array.isArray(moreInfo.producers)
-                            ? moreInfo.producers
-                            : moreInfo.producers.split(',').map((s: string) => s.trim())
-                        ).filter((s: string) => s) as producer, i}
-                          <span
-                            role="link"
-                            tabindex="0"
-                            class="cursor-pointer hover:underline hover:text-orange-400 transition bg-gray-800 px-2 py-1 rounded text-xs"
-                            on:click={() => goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
-                            on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
-                          >
-                            {producer}{i < (
-                              Array.isArray(moreInfo.producers)
-                                ? moreInfo.producers.filter((s: string) => s)
-                                : moreInfo.producers.split(',').map((s: string) => s.trim()).filter((s: string) => s)
-                            ).length - 1 ? ',' : ''}
-                          </span>
-                        {/each}
-                      </div>
-                    {/if}
                   </div>
                 </div>
               </div>
@@ -611,7 +690,7 @@
               <!-- Related Anime -->
               {#if related.length > 0}
                 <section>
-                  <h2 class="text-2z font-bold text-orange-400 mb-4">Related Anime</h2>
+                  <h2 class="text-2xl font-bold text-orange-400 mb-4">Related Anime</h2>
                   <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                     {#each related.filter(rel => rel && rel.id && rel.name) as rel}
                       <a 
@@ -683,9 +762,5 @@
       margin-left: auto;
       margin-right: auto;
     }
-  }
-
-  .nowrap {
-    white-space: nowrap;
   }
 </style>

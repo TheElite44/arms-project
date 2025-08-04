@@ -9,6 +9,7 @@
   import type { PageData } from './$types.js';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
+  import { browser } from '$app/environment';
 
   export let data;
 
@@ -229,6 +230,24 @@
     autoSkipIntro = loadToggle(AUTO_SKIP_INTRO_KEY, false);
     autoNext = loadToggle(AUTO_NEXT_KEY, false);
   });
+
+  let showFullDescription = false;
+  let isLongDescription = false;
+  let isMobile = false;
+  const DESCRIPTION_LIMIT = 620;
+
+  $: isLongDescription = !!data.anime?.info?.description && data.anime.info.description.length > DESCRIPTION_LIMIT;
+
+  function updateIsMobile() {
+    if (browser) {
+      isMobile = window.innerWidth <= 768;
+    }
+  }
+
+  if (browser) {
+    updateIsMobile();
+    window.addEventListener('resize', updateIsMobile);
+  }
 </script>
 
 <svelte:head>
@@ -323,12 +342,14 @@
               </div>
               <div class="flex-1 space-y-3">
                 <!-- Anime Title (no icon here) -->
-                <div class="flex items-center gap-2 sm:gap-3">
-                  <h1 class="text-2xl sm:text-3xl font-bold text-orange-400">{data.anime.info.name}</h1>
+                <div class="flex items-center gap-2 sm:gap-3 leading-relaxed md:ml-0 ml-[-8px]">
+                  <h1 class="text-2xl sm:text-3xl font-bold text-orange-400 {isMobile ? 'w-full text-center' : ''}">
+                    {data.anime.info.name}
+                  </h1>
                 </div>
                 
                 <!-- Episode Info -->
-                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm leading-relaxed md:ml-0 ml-[-8px]">
                   <span class="bg-orange-400 text-gray-900 px-2 py-1 rounded font-semibold">
                     Episode {episodes.find(e => e.episodeId === currentEpisodeId)?.number || 'N/A'}
                   </span>
@@ -346,7 +367,7 @@
                 <!-- Detailed Info - Always Visible -->
                 <div class="space-y-3">
                   {#if data.anime.moreInfo.genres}
-                    <div class="flex flex-wrap gap-1.5">
+                    <div class="flex flex-wrap gap-1.5 leading-relaxed md:ml-0 ml-[-8px]">
                       {#each data.anime.moreInfo.genres as genre}
                         <a
                           href={`/genre/${genre.replace(/\s+/g, '-').toLowerCase()}`}
@@ -358,15 +379,114 @@
                     </div>
                   {/if}
                   
-                  <!-- Description: more left on mobile -->
-                  <p
-                    class="text-gray-200 text-sm leading-relaxed md:ml-0 ml-[-8px] 
-                      line-clamp-3 sm:line-clamp-5"
-                    style="overflow: hidden;"
-                  >
-                    {data.anime.info.description}
-                  </p>
+                  <!-- Overview label above description -->
+                  <span class="text-orange-300 font-semibold block md:ml-0 ml-[-8px] mt-1">Overview:</span>
+                  {#if isMobile}
+                    <div
+                      class="text-gray-200 text-sm leading-relaxed md:ml-0 ml-[-8px]"
+                      style="max-height: 220px; overflow-y: auto;"
+                    >
+                      {data.anime.info.description}
+                    </div>
+                  {:else if isLongDescription && !showFullDescription}
+                    <div
+                      class="text-gray-200 text-sm leading-relaxed md:ml-0 ml-[-8px] line-clamp-3 sm:line-clamp-5"
+                      style="overflow: hidden; position: relative;"
+                    >
+                      {data.anime.info.description.slice(0, DESCRIPTION_LIMIT) + '...'}
+                      <button
+                        class="text-orange-300 hover:text-orange-400 text-xs font-semibold ml-1"
+                        on:click={() => showFullDescription = true}
+                        style="background: none; border: none; cursor: pointer;"
+                      >
+                        + More
+                      </button>
+                    </div>
+                  {:else if isLongDescription && showFullDescription}
+                    <div
+                      class="text-gray-200 text-sm leading-relaxed md:ml-0 ml-[-8px]"
+                      style="overflow: hidden;"
+                    >
+                      {data.anime.info.description}
+                      <button
+                        class="text-orange-300 hover:text-orange-400 text-xs font-semibold ml-1"
+                        on:click={() => showFullDescription = false}
+                        style="background: none; border: none; cursor: pointer;"
+                      >
+                        Less
+                      </button>
+                    </div>
+                  {:else}
+                    <div
+                      class="text-gray-200 text-sm leading-relaxed md:ml-0 ml-[-8px]"
+                      style="overflow: hidden;"
+                    >
+                      {data.anime.info.description}
+                    </div>
+                  {/if}
                   
+                  <!-- Studios (inline, comma-separated, no box) -->
+                  {#if data.anime.moreInfo.studios && (
+                    (Array.isArray(data.anime.moreInfo.studios) && data.anime.moreInfo.studios.filter((s: string) => s && s.trim()).length > 0) ||
+                    (typeof data.anime.moreInfo.studios === 'string' && data.anime.moreInfo.studios.split(',').filter((s: string) => s.trim()).length > 0)
+                  )}
+                    <div class="text-sm flex flex-wrap items-center gap-2 md:ml-0 ml-[-8px] mt-2">
+                      <span class="text-orange-300 font-medium">
+                        Studio{Array.isArray(data.anime.moreInfo.studios) && data.anime.moreInfo.studios.length > 1 ? 's' : ''}:
+                      </span>
+                      {#each (
+                        Array.isArray(data.anime.moreInfo.studios)
+                          ? data.anime.moreInfo.studios
+                          : data.anime.moreInfo.studios.split(',').map((s: string) => s.trim())
+                      ).filter((s: string) => s) as studio, i}
+                        <span
+                          role="link"
+                          tabindex="0"
+                          class="cursor-pointer hover:underline hover:text-orange-400 transition text-xs"
+                          on:click={() => goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
+                          on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
+                        >
+                          {studio}{i < (
+                            Array.isArray(data.anime.moreInfo.studios)
+                              ? data.anime.moreInfo.studios.filter((s: string) => s)
+                              : data.anime.moreInfo.studios.split(',').map((s: string) => s.trim()).filter((s: string) => s)
+                          ).length - 1 ? ',' : ''}
+                        </span>
+                      {/each}
+                    </div>
+                  {/if}
+
+                  <!-- Producers (inline, comma-separated, no box) -->
+                  {#if data.anime.moreInfo.producers && (
+                    (Array.isArray(data.anime.moreInfo.producers) && data.anime.moreInfo.producers.filter((s: string) => s && s.trim()).length > 0) ||
+                    (typeof data.anime.moreInfo.producers === 'string' && data.anime.moreInfo.producers.split(',').filter((s: string) => s.trim()).length > 0)
+                  )}
+                    <div class="text-sm flex flex-wrap items-center gap-2 md:ml-0 ml-[-8px] mt-1">
+                      <span class="text-orange-300 font-medium">
+                        Producer{Array.isArray(data.anime.moreInfo.producers) && data.anime.moreInfo.producers.length > 1 ? 's' : ''}:
+                      </span>
+                      {#each (
+                        Array.isArray(data.anime.moreInfo.producers)
+                          ? data.anime.moreInfo.producers
+                          : data.anime.moreInfo.producers.split(',').map((s: string) => s.trim())
+                      ).filter((s: string) => s) as producer, i}
+                        <span
+                          role="link"
+                          tabindex="0"
+                          class="cursor-pointer hover:underline hover:text-orange-400 transition text-xs"
+                          on:click={() => goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
+                          on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
+                        >
+                          {producer}{i < (
+                            Array.isArray(data.anime.moreInfo.producers)
+                              ? data.anime.moreInfo.producers.filter((s: string) => s)
+                              : data.anime.moreInfo.producers.split(',').map((s: string) => s.trim()).filter((s: string) => s)
+                          ).length - 1 ? ',' : ''}
+                        </span>
+                      {/each}
+                    </div>
+                  {/if}
+
                   <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs">
                     <div class="bg-gray-800 p-2 rounded">
                       <span class="text-orange-300 font-medium">Episodes:</span>
@@ -381,58 +501,6 @@
                       <div class="text-white">{data.anime.moreInfo.aired}</div>
                     </div>
                   </div>
-
-                  {#if data.anime.moreInfo.studios && (
-                    (Array.isArray(data.anime.moreInfo.studios) && data.anime.moreInfo.studios.filter((s: string) => s && s.trim()).length > 0) ||
-                    (typeof data.anime.moreInfo.studios === 'string' && data.anime.moreInfo.studios.split(',').filter((s: string) => s.trim()).length > 0)
-                  )}
-                    <div class="text-sm">
-                      <span class="text-orange-300 font-medium">Studio{Array.isArray(data.anime.moreInfo.studios) && data.anime.moreInfo.studios.length > 1 ? 's' : ''}:</span>
-                      <div class="flex flex-wrap gap-1 mt-1">
-                        {#each (
-                          Array.isArray(data.anime.moreInfo.studios)
-                            ? data.anime.moreInfo.studios
-                            : data.anime.moreInfo.studios.split(',').map((s: string) => s.trim())
-                        ).filter((s: string) => s) as studio}
-                          <span
-                            role="link"
-                            tabindex="0"
-                            class="cursor-pointer hover:underline hover:text-orange-400 transition bg-gray-800 px-2 py-1 rounded text-xs"
-                            on:click={() => goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
-                            on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
-                          >
-                            {studio}
-                          </span>
-                        {/each}
-                      </div>
-                    </div>
-                  {/if}
-
-                  {#if data.anime.moreInfo.producers && (
-                    (Array.isArray(data.anime.moreInfo.producers) && data.anime.moreInfo.producers.filter((s: string) => s && s.trim()).length > 0) ||
-                    (typeof data.anime.moreInfo.producers === 'string' && data.anime.moreInfo.producers.split(',').filter((s: string) => s.trim()).length > 0)
-                  )}
-                    <div class="text-sm">
-                      <span class="text-orange-300 font-medium">Producer{Array.isArray(data.anime.moreInfo.producers) && data.anime.moreInfo.producers.length > 1 ? 's' : ''}:</span>
-                      <div class="flex flex-wrap gap-1 mt-1">
-                        {#each (
-                          Array.isArray(data.anime.moreInfo.producers)
-                            ? data.anime.moreInfo.producers
-                            : data.anime.moreInfo.producers.split(',').map((s: string) => s.trim())
-                        ).filter((s: string) => s) as producer}
-                          <span
-                            role="link"
-                            tabindex="0"
-                            class="cursor-pointer hover:underline hover:text-orange-400 transition bg-gray-800 px-2 py-1 rounded text-xs"
-                            on:click={() => goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
-                            on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
-                          >
-                            {producer}
-                          </span>
-                        {/each}
-                      </div>
-                    </div>
-                  {/if}
                 </div>
               </div>
             </div>
@@ -524,13 +592,15 @@
   /* Add to your <style> block if not using Tailwind line-clamp */
 .line-clamp-3 {
   display: -webkit-box;
-  -webkit-line-clamp: 15;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 @media (min-width: 640px) {
   .line-clamp-3 {
     -webkit-line-clamp: 5;
+    line-clamp: 5;
   }
 }
 </style>
