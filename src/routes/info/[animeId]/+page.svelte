@@ -547,7 +547,7 @@
                     {/if}
 
                     <!-- Watch Button below description -->
-                    {#if firstEpisodeId}
+                    {#if firstEpisodeId !== null}
                       <a
                         href={`/watch/${encodeURIComponent(firstEpisodeId)}`}
                         class="inline-flex items-center gap-2 bg-orange-400 hover:bg-orange-500 text-gray-900 font-bold px-5 py-2 rounded-lg shadow transition text-sm md:ml-0 ml-[-8px]"
@@ -560,6 +560,19 @@
                         </svg>
                         Watch
                       </a>
+                    {:else}
+                      <button
+                        class="inline-flex items-center gap-2 bg-gray-700 text-gray-400 font-bold px-5 py-2 rounded-lg shadow transition text-sm cursor-not-allowed opacity-60 md:ml-0 ml-[-8px]"
+                        style="margin-bottom: 0.5rem;"
+                        disabled
+                        aria-disabled="true"
+                      >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+                          <polygon points="10,8 16,12 10,16" fill="currentColor"/>
+                        </svg>
+                        Watch
+                      </button>
                     {/if}
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs">
                       <div class="bg-gray-800 p-2 rounded">
