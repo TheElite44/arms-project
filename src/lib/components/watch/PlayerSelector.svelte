@@ -3,26 +3,46 @@
 
   export let useIframePlayer: boolean = false;
   export let setUseIframePlayer: (v: boolean) => void;
+  export let animeId: string = '';
+  export let serverName: string = '';
 
-  // Use iframe as default
+  function getPlayerKey() {
+    return animeId && serverName ? `lastPlayer:${animeId}:${serverName}` : 'lastPlayer';
+  }
+
+  // Use iframe as default, but check per-anime+server
   onMount(() => {
-    const lastPlayer = localStorage.getItem('lastPlayer');
+    const key = getPlayerKey();
+    const lastPlayer = localStorage.getItem(key);
     if (lastPlayer === 'plyr') {
       setUseIframePlayer(false);
+    } else if (lastPlayer === 'iframe') {
+      setUseIframePlayer(true);
     } else {
       // Default to Iframe
       setUseIframePlayer(true);
     }
   });
 
+  $: {
+    // When serverName or animeId changes, update player from storage
+    const key = getPlayerKey();
+    const lastPlayer = localStorage.getItem(key);
+    if (lastPlayer === 'plyr') {
+      setUseIframePlayer(false);
+    } else if (lastPlayer === 'iframe') {
+      setUseIframePlayer(true);
+    }
+  }
+
   function selectPlyr() {
     setUseIframePlayer(false);
-    localStorage.setItem('lastPlayer', 'plyr');
+    localStorage.setItem(getPlayerKey(), 'plyr');
   }
 
   function selectIframePlayer() {
     setUseIframePlayer(true);
-    localStorage.setItem('lastPlayer', 'iframe');
+    localStorage.setItem(getPlayerKey(), 'iframe');
   }
 </script>
 
