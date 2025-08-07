@@ -125,8 +125,13 @@
           .sort((a, b) => a.serverName.localeCompare(b.serverName));
         servers = servers.filter((server) => server.serverName);
 
-        // --- Default server logic ---
-        let preferred = servers.find(s => s.serverName.toLowerCase() === 'hd-2');
+        // --- Default server logic with localStorage ---
+        const animeId = data.anime?.info?.id;
+        let lastServerKey = animeId ? `lastServer:${animeId}` : null;
+        let lastServer = lastServerKey ? localStorage.getItem(lastServerKey) : null;
+        let preferred = servers.find(s => s.serverName === lastServer);
+
+        if (!preferred) preferred = servers.find(s => s.serverName.toLowerCase() === 'hd-2');
         if (!preferred) preferred = servers.find(s => s.serverName.toLowerCase() === 'hd-1');
         if (!preferred) preferred = servers[0];
 
@@ -161,8 +166,12 @@
   function changeServerManual(serverName: string, cat: 'sub' | 'dub' | 'raw') {
     currentServer = serverName;
     category = cat;
+    // Save last server per anime
+    const animeId = data.anime?.info?.id;
+    if (animeId) {
+      localStorage.setItem(`lastServer:${animeId}`, serverName);
+    }
     fetchWatchData(currentEpisodeId, currentServer, category, false);
-    useIframePlayer = false; // Reset iframe player when server changes
   }
 
   function changeCategoryManual(cat: 'sub' | 'dub' | 'raw') {
@@ -316,6 +325,8 @@
             <PlayerSelector
               {useIframePlayer}
               setUseIframePlayer={setUseIframePlayer}
+              animeId={data.anime?.info?.id}
+              serverName={currentServer}
             />
 
             <EpisodeSelector
