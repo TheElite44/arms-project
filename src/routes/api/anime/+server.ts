@@ -4,7 +4,7 @@ import { Redis } from '@upstash/redis';
 const API_URL = import.meta.env.VITE_ANIME_API || '';
 const REFERERS = [
   //'megacloud.clouf.tv/'
-  'https://megaplay.buzz/',
+  'https://vidwish.live/',
   'https://hianime.to/'
 
 ];
@@ -266,3 +266,4 @@ export const GET: RequestHandler = async ({ url }) => {
     return createErrorResponse(message, 500);
   }
 };
+
