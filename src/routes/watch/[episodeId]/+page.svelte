@@ -257,6 +257,33 @@
     updateIsMobile();
     window.addEventListener('resize', updateIsMobile);
   }
+
+  let showPageDropdown = false;
+
+  // Helper to format ranges as "EPS: 1-50"
+  function formatRange(range: string, i: number) {
+    const [start, end] = range.split('-');
+    return `EPS: ${start}-${end}`;
+  }
+
+  // Optional: Close dropdown on click outside
+  function handleClickOutside(event: MouseEvent) {
+    const dropdown = document.getElementById('page-dropdown');
+    if (dropdown && !dropdown.contains(event.target as Node)) {
+      showPageDropdown = false;
+    }
+  }
+
+  if (browser) {
+    // Add/remove event listener for click outside
+    $: {
+      if (showPageDropdown) {
+        window.addEventListener('mousedown', handleClickOutside);
+      } else {
+        window.removeEventListener('mousedown', handleClickOutside);
+      }
+    }
+  }
 </script>
 
 <svelte:head>
@@ -306,14 +333,16 @@
             />
 
             <!-- Use PlayerController component here -->
-            <PlayerController
-              {autoPlay}
-              {autoSkipIntro}
-              {autoNext}
-              setAutoPlay={v => { autoPlay = v; saveToggle(AUTO_PLAY_KEY, v); }}
-              setAutoSkipIntro={v => { autoSkipIntro = v; saveToggle(AUTO_SKIP_INTRO_KEY, v); }}
-              setAutoNext={v => { autoNext = v; saveToggle(AUTO_NEXT_KEY, v); }}
-            />
+            <div class="sm:block flex justify-center"> <!-- Center on mobile, block on desktop -->
+              <PlayerController
+                {autoPlay}
+                {autoSkipIntro}
+                {autoNext}
+                setAutoPlay={v => { autoPlay = v; saveToggle(AUTO_PLAY_KEY, v); }}
+                setAutoSkipIntro={v => { autoSkipIntro = v; saveToggle(AUTO_SKIP_INTRO_KEY, v); }}
+                setAutoNext={v => { autoNext = v; saveToggle(AUTO_NEXT_KEY, v); }}
+              />
+            </div>
 
             <ServerSelector
               {servers}
@@ -329,15 +358,61 @@
               serverName={currentServer}
             />
 
-            <EpisodeSelector
-              {episodes}
-              {pagedEpisodes}
-              {episodeRanges}
-              {currentPage}
-              {currentEpisodeId}
-              {handlePageChange}
-              {goToEpisode}
-            />
+            <!-- Paging dropdown OUTSIDE the scroll area -->
+            {#if episodes.length > 1 && totalPages > 1}
+              <div class="flex items-center gap-2 mb-2 relative z-10">
+                <span class="font-semibold text-orange-400 text-xs">Pages:</span>
+                <div class="relative w-32" id="page-dropdown">
+                  <button
+                    class="w-full px-2 py-1 rounded bg-gray-800 text-white text-xs flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-orange-400 font-bold"
+                    on:click={() => showPageDropdown = !showPageDropdown}
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded={showPageDropdown}
+                  >
+                    {formatRange(episodeRanges[currentPage - 1], currentPage - 1)}
+                    <svg class="w-3 h-3 ml-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </button>
+                  {#if showPageDropdown}
+                    <ul
+                      class="absolute z-20 mt-1 w-full bg-gray-900 border border-gray-700 rounded shadow max-h-48 overflow-y-auto"
+                    >
+                      {#each episodeRanges as range, i}
+                        <button
+                          type="button"
+                          class="w-full text-left px-3 py-2 cursor-pointer flex items-center hover:bg-orange-400 hover:text-gray-900 text-xs
+                            {currentPage === i + 1 ? 'bg-gray-800 font-bold' : ''}"
+                          on:click={() => { goToPage(i + 1); showPageDropdown = false; }}
+                          aria-current={currentPage === i + 1 ? "page" : undefined}
+                        >
+                          {formatRange(range, i)}
+                          {#if currentPage === i + 1}
+                            <svg class="w-4 h-4 ml-auto text-orange-400" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                            </svg>
+                          {/if}
+                        </button>
+                      {/each}
+                    </ul>
+                  {/if}
+                </div>
+              </div>
+            {/if}
+
+            <!-- EpisodeSelector with mobile scroll -->
+            <div class="episode-selector-scroll">
+              <EpisodeSelector
+                {episodes}
+                {pagedEpisodes}
+                {episodeRanges}
+                {currentPage}
+                {currentEpisodeId}
+                {handlePageChange}
+                {goToEpisode}
+              />
+            </div>
           </div>
 
           <!-- Anime Info Card -->
@@ -614,4 +689,23 @@
     line-clamp: 5;
   }
 }
+
+  /* Mobile scroll for EpisodeSelector */
+  .episode-selector-scroll {
+    /* Only apply on mobile */
+    max-height: none;
+    overflow: visible;
+  }
+  @media (max-width: 768px) {
+    .episode-selector-scroll {
+      max-height: 220px;
+      overflow-y: auto;
+      margin-bottom: 0.5rem;
+      /* Optional: smooth scroll on iOS */
+      -webkit-overflow-scrolling: touch;
+      /* Optional: add a subtle border or shadow for clarity */
+      border-radius: 0.5rem;
+      background: rgba(31, 41, 55, 0.7);
+    }
+  }
 </style>
