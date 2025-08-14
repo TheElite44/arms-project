@@ -1,6 +1,6 @@
 import type { RequestHandler } from '@sveltejs/kit';
 
-const REFERER = 'https://megaplay.buzz/';
+const REFERER = 'https://vidwish.live/';
 
 export const GET: RequestHandler = async ({ url }) => {
   const vttUrl = url.searchParams.get('url');
@@ -26,4 +26,5 @@ export const GET: RequestHandler = async ({ url }) => {
   } catch (e) {
     return new Response('Error fetching VTT', { status: 500 });
   }
+
 };
