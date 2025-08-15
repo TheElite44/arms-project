@@ -38,6 +38,12 @@
   let isMobile = false;
   const DESCRIPTION_LIMIT = 620;
 
+  // Player selection state
+  let useArtPlayer = true;
+  function setUseArtPlayer(v: boolean) {
+    useArtPlayer = v;
+  }
+
   // Reactive statement for description length
   $: isLongDescription = !!description && description.length > DESCRIPTION_LIMIT;
 
@@ -148,8 +154,12 @@
         {#if info && watch}
           <section class="flex-1 flex flex-col gap-8 mb-6">
             <!-- Player Card -->
-            <div class="flex flex-col gap-6 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl border border-[#ff003c]/20 p-4 sm:p-8">
-              <PlayerCard videoSrc={videoSrc} poster={poster} {srtUrl} />
+            <div class="flex flex-col gap-6 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl border border-[#ff003c]/20 p-3 sm:p-8">
+              <PlayerCard
+                videoSrc={videoSrc}
+                poster={poster}
+                srtUrl={srtUrl}
+              />
 
               {#if subSource || rawSource}
                 <div class="mt-4 flex items-center gap-3 justify-start">
@@ -328,7 +338,7 @@
 
         <!-- Related List -->
         <section class="flex flex-col gap-4 mt-2">
-          <h2 class="text-xl font-bold text-[#ff003c] mb-2">Related</h2>
+          <h2 class="text-xl font-bold text-[#ff003c] mb-2">Related Hentai</h2>
           {#if searchLoading}
             <div class="text-[#ffb3c6]">Loading related...</div>
           {:else if searchResults.length}
