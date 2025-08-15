@@ -32,6 +32,22 @@
   // Loading state
   let loading = true;
 
+  // Description handling variables
+  let showFullDescription = false;
+  let isLongDescription = false;
+  let isMobile = false;
+  const DESCRIPTION_LIMIT = 620;
+
+  // Reactive statement for description length
+  $: isLongDescription = !!description && description.length > DESCRIPTION_LIMIT;
+
+  // Mobile detection function
+  function updateIsMobile() {
+    if (typeof window !== 'undefined') {
+      isMobile = window.innerWidth <= 768;
+    }
+  }
+
   // Cookie helpers
   function getCookie(name: string) {
     const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
@@ -68,17 +84,32 @@
   let searchLoading = true;
 
   // Fetch search results for episodes
-  onMount(async () => {
-    if (data?.search) {
-      searchLoading = true;
-      const res = await fetch(`/api/hanime/search?query=${encodeURIComponent(data.search)}`);
-      const json = await res.json();
-      searchResults = json?.data?.results ?? [];
-      searchLoading = false;
-    }
-    // Data is ready, stop loading
-    loading = false;
-  });
+  onMount(() => {
+      // Mobile detection setup
+      if (typeof window !== 'undefined') {
+        updateIsMobile();
+        window.addEventListener('resize', updateIsMobile);
+      }
+  
+      (async () => {
+        if (data?.search) {
+          searchLoading = true;
+          const res = await fetch(`/api/hanime/search?query=${encodeURIComponent(data.search)}`);
+          const json = await res.json();
+          searchResults = json?.data?.results ?? [];
+          searchLoading = false;
+        }
+        // Data is ready, stop loading
+        loading = false;
+      })();
+  
+      // Cleanup function
+      return () => {
+        if (typeof window !== 'undefined') {
+          window.removeEventListener('resize', updateIsMobile);
+        }
+      };
+    });
 
   function goToEpisode(id: string) {
     window.location.href = `/hanime/watch/${id}`;
@@ -89,7 +120,6 @@
   <title>Watch {title} | ARMS Hentai</title>
   <meta name="description" content={description} />
 </svelte:head>
-
 
 <Navbar />
 
@@ -148,46 +178,134 @@
               {/if}
             </div>
 
-            <!-- Info Card -->
-            <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl p-6 md:p-10">
-              <div class="flex-shrink-0 mx-auto md:mx-0">
+            <!-- Enhanced Info Card -->
+            <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl p-6 md:p-10 border border-[#ff003c]/20">
+              <!-- Move icon to the left column -->
+              <div class="flex flex-col items-center md:items-start flex-shrink-0 mx-auto md:mx-0">
                 <img
                   src={poster}
                   alt={title}
                   class="rounded-lg shadow-2xl w-64 h-auto object-cover border-4 border-[#2a0008]"
                 />
               </div>
-              <div class="flex-1 flex flex-col gap-4">
-                <h1 class="text-3xl sm:text-4xl font-extrabold text-[#ff003c] mb-1">{title}</h1>
+              <div class="flex-1 space-y-3">
+                <!-- Title -->
+                <div class="flex items-center gap-2 sm:gap-3 leading-relaxed md:ml-0 ml-[-8px]">
+                  <h1 class="text-2xl sm:text-3xl font-bold text-[#ff003c] {isMobile ? 'w-full text-center' : ''}">
+                    {title}
+                  </h1>
+                </div>
+                
+                <!-- Alt Title if exists -->
                 {#if altTitle}
-                  <div class="text-[#ffb3c6]/80 text-lg font-medium mb-2 italic">{altTitle}</div>
-                {/if}
-                {#if genres.length}
-                  <div class="flex flex-wrap gap-1 mb-2">
-                    {#each genres as genre}
-                      <a
-                        href={`/hanime/genre/${genre.replace(/\s+/g, '-').toLowerCase()}`}
-                        class="bg-[#3a0d16] text-[#ffb3c6] px-2 py-0.5 rounded-full text-xs font-semibold hover:bg-[#ff003c] hover:text-black transition-colors max-w-full truncate"
-                        style="max-width: 100px;"
-                        >{genre}</a
-                      >
-                    {/each}
+                  <div class="text-[#ffb3c6]/80 text-lg font-medium mb-2 italic w-full text-center md:text-left">
+                    {altTitle}
                   </div>
                 {/if}
-                <p class="text-[#ffb3c6] text-base mb-2">{description}</p>
-                <div class="flex flex-wrap gap-2 mb-2">
-                  {#if releaseDate}
-                    <span class="bg-[#ff003c] text-black px-3 py-1 rounded-full text-xs font-bold shadow">Release: {releaseDate}</span>
+                
+                <!-- Content Info -->
+                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm leading-relaxed md:ml-0 ml-[-8px]">
+                  <span class="bg-[#ff003c] text-black px-2 py-1 rounded font-semibold">
+                    18+
+                  </span>
+                  {#if type}
+                    <span class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded">
+                      {type}
+                    </span>
                   {/if}
                   {#if brand}
-                    <span class="bg-[#2a0008] text-[#ffb3c6] px-3 py-1 rounded-full text-xs font-semibold">Brand: {brand}</span>
-                  {/if}
-                  {#if type}
-                    <span class="bg-[#2a0008] text-[#ffb3c6] px-3 py-1 rounded-full text-xs font-semibold">Type: {type}</span>
+                    <span class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded">
+                      {brand}
+                    </span>
                   {/if}
                   {#if views}
-                    <span class="bg-[#2a0008] text-[#ffb3c6] px-3 py-1 rounded-full text-xs font-semibold">{views}</span>
+                    <span class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded">
+                      ⭐ {views}
+                    </span>
                   {/if}
+                </div>
+
+                <!-- Detailed Info - Always Visible -->
+                <div class="space-y-3">
+                  {#if genres.length}
+                    <div class="flex flex-wrap gap-1.5 leading-relaxed md:ml-0 ml-[-8px]">
+                      {#each genres as genre}
+                        <a
+                          href={`/hanime/genre/${genre.replace(/\s+/g, '-').toLowerCase()}`}
+                          class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded text-xs font-medium hover:bg-[#ff003c] hover:text-black transition"
+                        >
+                          {genre}
+                        </a>
+                      {/each}
+                    </div>
+                  {/if}
+                  
+                  <!-- Overview label above description -->
+                  <span class="text-[#ff003c] font-semibold block md:ml-0 ml-[-8px] mt-1">Overview:</span>
+                  {#if isMobile}
+                    <div
+                      class="text-[#ffb3c6] text-sm leading-relaxed md:ml-0 ml-[-8px]"
+                      style="max-height: 220px; overflow-y: auto;"
+                    >
+                      {description}
+                    </div>
+                  {:else if isLongDescription && !showFullDescription}
+                    <div
+                      class="text-[#ffb3c6] text-sm leading-relaxed md:ml-0 ml-[-8px] line-clamp-3 sm:line-clamp-5"
+                      style="overflow: hidden; position: relative;"
+                    >
+                      {description.slice(0, DESCRIPTION_LIMIT) + '...'}
+                      <button
+                        class="text-[#ff003c] hover:text-[#ff4d79] text-xs font-semibold ml-1"
+                        on:click={() => showFullDescription = true}
+                        style="background: none; border: none; cursor: pointer;"
+                      >
+                        + More
+                      </button>
+                    </div>
+                  {:else if isLongDescription && showFullDescription}
+                    <div
+                      class="text-[#ffb3c6] text-sm leading-relaxed md:ml-0 ml-[-8px]"
+                      style="overflow: hidden;"
+                    >
+                      {description}
+                      <button
+                        class="text-[#ff003c] hover:text-[#ff4d79] text-xs font-semibold ml-1"
+                        on:click={() => showFullDescription = false}
+                        style="background: none; border: none; cursor: pointer;"
+                      >
+                        Less
+                      </button>
+                    </div>
+                  {:else}
+                    <div
+                      class="text-[#ffb3c6] text-sm leading-relaxed md:ml-0 ml-[-8px]"
+                      style="overflow: hidden;"
+                    >
+                      {description}
+                    </div>
+                  {/if}
+
+                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs">
+                    {#if releaseDate}
+                      <div class="bg-[#2a0008] p-2 rounded">
+                        <span class="text-[#ff003c] font-medium">Released:</span>
+                        <div class="text-[#ffb3c6]">{releaseDate}</div>
+                      </div>
+                    {/if}
+                    {#if brand}
+                      <div class="bg-[#2a0008] p-2 rounded">
+                        <span class="text-[#ff003c] font-medium">Brand:</span>
+                        <div class="text-[#ffb3c6]">{brand}</div>
+                      </div>
+                    {/if}
+                    {#if type}
+                      <div class="bg-[#2a0008] p-2 rounded col-span-2 sm:col-span-1">
+                        <span class="text-[#ff003c] font-medium">Type:</span>
+                        <div class="text-[#ffb3c6]">{type}</div>
+                      </div>
+                    {/if}
+                  </div>
                 </div>
               </div>
             </div>
@@ -274,11 +392,28 @@
       margin-right: auto;
     }
   }
+  
+  /* Add to your <style> block if not using Tailwind line-clamp */
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+  
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  @media (min-width: 640px) {
+    .line-clamp-3 {
+      -webkit-line-clamp: 5;
+      line-clamp: 5;
+    }
   }
 </style>
