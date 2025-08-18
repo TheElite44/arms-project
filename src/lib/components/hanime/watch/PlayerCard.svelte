@@ -20,7 +20,8 @@
   ];
 </script>
 
-<div class="w-full aspect-video rounded-lg overflow-hidden shadow-lg bg-black">
+<!-- Reduced from rounded-lg to rounded-sm for minimal corners -->
+<div class="w-full aspect-video rounded-sm overflow-hidden shadow-lg bg-black">
   <Player 
     src={videoSrc} 
     poster={poster} 
