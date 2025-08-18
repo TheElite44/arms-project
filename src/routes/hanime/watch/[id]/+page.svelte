@@ -153,8 +153,8 @@
       {:else}
         {#if info && watch}
           <section class="flex-1 flex flex-col gap-8 mb-6">
-            <!-- Player Card -->
-            <div class="flex flex-col gap-6 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl border border-[#ff003c]/20 p-3 sm:p-8">
+            <!-- Player Card - Reduced from rounded-lg to rounded-sm -->
+            <div class="flex flex-col gap-6 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-sm shadow-2xl border border-[#ff003c]/20 p-3 sm:p-8">
               <PlayerCard
                 videoSrc={videoSrc}
                 poster={poster}
@@ -166,7 +166,7 @@
                   <span class="font-semibold text-[#ff003c] text-sm">Source:</span>
                   {#if subSource}
                     <button
-                      class="px-3 py-1 rounded text-sm font-semibold transition-colors
+                      class="px-3 py-1 rounded-sm text-sm font-semibold transition-colors
                              {videoSrc === subSource.src ? 'bg-[#ff003c] text-black' : 'bg-[#2a0008] text-[#ffb3c6] hover:bg-[#ff003c]/80 hover:text-black'}"
                       on:click={() => videoSrc = subSource.src}
                       disabled={videoSrc === subSource.src}
@@ -176,7 +176,7 @@
                   {/if}
                   {#if rawSource}
                     <button
-                      class="px-3 py-1 rounded text-sm font-semibold transition-colors
+                      class="px-3 py-1 rounded-sm text-sm font-semibold transition-colors
                              {videoSrc === rawSource.src ? 'bg-[#ff003c] text-black' : 'bg-[#2a0008] text-[#ffb3c6] hover:bg-[#ff003c]/80 hover:text-black'}"
                       on:click={() => videoSrc = rawSource.src}
                       disabled={videoSrc === rawSource.src}
@@ -188,14 +188,14 @@
               {/if}
             </div>
 
-            <!-- Enhanced Info Card -->
-            <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl p-6 md:p-10 border border-[#ff003c]/20">
+            <!-- Enhanced Info Card - Reduced from rounded-lg to rounded-sm -->
+            <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-sm shadow-2xl p-6 md:p-10 border border-[#ff003c]/20">
               <!-- Move icon to the left column -->
               <div class="flex flex-col items-center md:items-start flex-shrink-0 mx-auto md:mx-0">
                 <img
                   src={poster}
                   alt={title}
-                  class="rounded-lg shadow-2xl w-64 h-auto object-cover border-4 border-[#2a0008]"
+                  class="rounded-sm shadow-2xl w-64 h-auto object-cover border-4 border-[#2a0008]"
                 />
               </div>
               <div class="flex-1 space-y-3">
@@ -215,21 +215,21 @@
                 
                 <!-- Content Info -->
                 <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm leading-relaxed md:ml-0 ml-[-8px]">
-                  <span class="bg-[#ff003c] text-black px-2 py-1 rounded font-semibold">
+                  <span class="bg-[#ff003c] text-black px-2 py-1 rounded-sm font-semibold">
                     18+
                   </span>
                   {#if type}
-                    <span class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded">
+                    <span class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded-sm">
                       {type}
                     </span>
                   {/if}
                   {#if brand}
-                    <span class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded">
+                    <span class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded-sm">
                       {brand}
                     </span>
                   {/if}
                   {#if views}
-                    <span class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded">
+                    <span class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded-sm">
                       ⭐ {views}
                     </span>
                   {/if}
@@ -242,7 +242,7 @@
                       {#each genres as genre}
                         <a
                           href={`/hanime/genre/${genre.replace(/\s+/g, '-').toLowerCase()}`}
-                          class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded text-xs font-medium hover:bg-[#ff003c] hover:text-black transition"
+                          class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded-sm text-xs font-medium hover:bg-[#ff003c] hover:text-black transition"
                         >
                           {genre}
                         </a>
@@ -298,19 +298,19 @@
 
                   <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs">
                     {#if releaseDate}
-                      <div class="bg-[#2a0008] p-2 rounded">
+                      <div class="bg-[#2a0008] p-2 rounded-sm">
                         <span class="text-[#ff003c] font-medium">Released:</span>
                         <div class="text-[#ffb3c6]">{releaseDate}</div>
                       </div>
                     {/if}
                     {#if brand}
-                      <div class="bg-[#2a0008] p-2 rounded">
+                      <div class="bg-[#2a0008] p-2 rounded-sm">
                         <span class="text-[#ff003c] font-medium">Brand:</span>
                         <div class="text-[#ffb3c6]">{brand}</div>
                       </div>
                     {/if}
                     {#if type}
-                      <div class="bg-[#2a0008] p-2 rounded col-span-2 sm:col-span-1">
+                      <div class="bg-[#2a0008] p-2 rounded-sm col-span-2 sm:col-span-1">
                         <span class="text-[#ff003c] font-medium">Type:</span>
                         <div class="text-[#ffb3c6]">{type}</div>
                       </div>
@@ -347,7 +347,7 @@
                 <button
                   type="button"
                   on:click={() => goToEpisode(ep.id)}
-                  class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer"
+                  class="group relative bg-[#1a0106] rounded-sm overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer"
                   style="display: block;"
                   aria-label={`Go to episode ${ep.title}`}
                 >
@@ -361,10 +361,10 @@
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                     <!-- Make Related and Views on the same line -->
                     <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
-                      <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow">
+                      <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded-sm text-[10px] font-semibold shadow">
                         Related
                       </span>
-                      <span class="bg-black/70 backdrop-blur-sm text-[#ffb3c6] px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
+                      <span class="bg-black/70 backdrop-blur-sm text-[#ffb3c6] px-2 py-0.5 rounded-sm text-[10px] flex items-center gap-1">
                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.657l-6.828-6.829a4 4 0 010-5.656z"/>
                         </svg>
@@ -376,7 +376,7 @@
                         {ep.title}
                       </h3>
                       <div class="flex items-center justify-between">
-                        <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded text-[10px] font-bold">18+</span>
+                        <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded-sm text-[10px] font-bold">18+</span>
                         <span class="text-[#ffb3c6] text-[10px]">{ep.duration || '--:--'}</span>
                       </div>
                     </div>
