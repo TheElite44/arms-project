@@ -302,6 +302,51 @@
               }
             }
           });
+
+          // Hide scrollbars in iframe content
+          try {
+            const iframeBody = iframeDoc.body;
+            const iframeHtml = iframeDoc.documentElement;
+            if (iframeBody) {
+              iframeBody.style.overflow = 'hidden';
+              iframeBody.style.scrollbarWidth = 'none';
+              (iframeBody.style as any)['msOverflowStyle'] = 'none';
+            }
+            if (iframeHtml) {
+              iframeHtml.style.overflow = 'hidden';
+              iframeHtml.style.scrollbarWidth = 'none';
+              (iframeHtml.style as any)['msOverflowStyle'] = 'none';
+            }
+            
+            // Inject CSS to hide scrollbars
+            const hideScrollbarCSS = `
+              <style>
+                * {
+                  scrollbar-width: none !important;
+                  -ms-overflow-style: none !important;
+                }
+                *::-webkit-scrollbar {
+                  display: none !important;
+                  width: 0 !important;
+                  height: 0 !important;
+                }
+                html, body {
+                  overflow: hidden !important;
+                  scrollbar-width: none !important;
+                  -ms-overflow-style: none !important;
+                }
+              </style>
+            `;
+            
+            if (iframeDoc.head && !iframeDoc.head.querySelector('#hide-scrollbar-style')) {
+              const style = iframeDoc.createElement('style');
+              style.id = 'hide-scrollbar-style';
+              style.innerHTML = hideScrollbarCSS.replace(/<\/?style>/g, '');
+              iframeDoc.head.appendChild(style);
+            }
+          } catch (e) {
+            // Cross-origin restrictions
+          }
         }
       } catch (e) {
         // Cross-origin restrictions prevent access
@@ -332,7 +377,7 @@
     }
   }
 
-  // CSS injection for additional ad blocking
+  // CSS injection for additional ad blocking and scrollbar hiding
   function injectAdBlockCSS() {
     if (typeof document === 'undefined') return;
     
@@ -372,6 +417,24 @@
       iframe[src*="ads"], iframe[src*="doubleclick"], iframe[src*="googleadservices"],
       iframe[src*="googlesyndication"], iframe[src*="amazon-adsystem"] {
         display: none !important;
+      }
+      
+      /* Hide scrollbars globally */
+      * {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+      }
+      
+      *::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        background: transparent !important;
+      }
+      
+      /* Hide scrollbars on iframe */
+      iframe {
+        scrolling: no !important;
       }
       
       /* Enable screen rotation in fullscreen */
@@ -450,10 +513,8 @@
   }
 
   onMount(() => {
-    // Setup all ad blocking measures
     setupAntiDetection();
     setupRequestInterceptor();
-    injectAdBlockCSS();
     
     // Start monitoring for ads
     const adCheckInterval = setInterval(() => {
@@ -503,36 +564,78 @@
   });
 </script>
 
-<div class="relative w-full h-full overflow-hidden">
+<!-- Add a isolation wrapper to prevent iframe from affecting other CSS effects -->
+<div class="iframe-isolation-wrapper">
+  <div class="relative w-full h-full overflow-hidden iframe-container">
+    <!-- Loader Overlay -->
+    {#if $loading}
+      <div class="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 z-10 transition-opacity duration-500 opacity-100 pointer-events-auto">
+        <span class="loader"></span>
+      </div>
+    {/if}
 
-  
-  <!-- Loader Overlay -->
-  {#if $loading}
-    <div class="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 z-10 transition-opacity duration-500 opacity-100 pointer-events-auto">
-      <span class="loader"></span>
-    </div>
-  {/if}
-
-  <iframe
-    bind:this={iframeRef}
-    src={iframeSrc}
-    allowfullscreen
-    allow="fullscreen; autoplay; encrypted-media; gyroscope; accelerometer; picture-in-picture; screen-wake-lock"
-    title="Video Player"
-    sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
-    class="w-full h-full transition-opacity duration-500"
-    style="opacity: {$iframeLoaded ? 1 : 0};"
-    on:load={() => {
-      iframeLoaded.set(true);
-      setTimeout(() => {
-        loading.set(false);
-        setupIframeProtection();
-      }, 200);
-    }}
-  ></iframe>
+    <iframe
+      bind:this={iframeRef}
+      src={iframeSrc}
+      allowfullscreen
+      allow="fullscreen; autoplay; encrypted-media; gyroscope; accelerometer; picture-in-picture; screen-wake-lock"
+      title="Video Player"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+      scrolling="no"
+      class="w-full h-full transition-opacity duration-500 no-scrollbar iframe-isolated"
+      style="opacity: {$iframeLoaded ? 1 : 0}; overflow: hidden;"
+      on:load={() => {
+        iframeLoaded.set(true);
+        setTimeout(() => {
+          loading.set(false);
+          setupIframeProtection();
+        }, 200);
+      }}
+    ></iframe>
+  </div>
 </div>
 
 <style>
+  /* Only keep styles scoped to the iframe wrapper/component */
+  .iframe-isolation-wrapper {
+    position: relative;
+    z-index: 1;
+    isolation: isolate;
+    contain: layout style paint;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    transform: translateZ(0);
+    will-change: transform;
+    /* Remove backdrop-filter here to avoid interfering with global effects */
+  }
+
+  .iframe-container {
+    overflow: hidden !important;
+    position: relative;
+    z-index: 0;
+  }
+
+  .iframe-isolated {
+    position: relative;
+    z-index: 0;
+    transform: translate3d(0, 0, 0);
+    contain: strict;
+    /* Remove backdrop-filter and filter here */
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    overflow: hidden !important;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
   .loader {
     width: 2rem;
     height: 2rem;
@@ -542,8 +645,11 @@
     animation: spin 1s linear infinite;
     display: block;
   }
+
   @keyframes spin {
     0% { transform: rotate(0deg);}
     100% { transform: rotate(360deg);}
   }
+
+  /* Remove all :global rules from this file! Move them to your global stylesheet. */
 </style>
