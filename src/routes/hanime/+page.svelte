@@ -9,6 +9,7 @@
   let loading = true;
   let error: string | null = null;
   let showWarning = true;
+  let isMobile = false;
 
   // Helper to get cookie value
   function getCookie(name: string) {
@@ -21,6 +22,30 @@
     const expires = new Date(Date.now() + days * 864e5).toUTCString();
     document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
   }
+
+  // Mobile detection
+  function checkMobile() {
+    if (typeof window !== 'undefined') {
+      isMobile = window.innerWidth < 768;
+    }
+  }
+
+  onMount(() => {
+    checkMobile();
+
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    const handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        checkMobile();
+      }, 150);
+    };
+    window.addEventListener('resize', handleResize, { passive: true });
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  });
 
   onMount(async () => {
     // Check cookie or localStorage for 18+ confirmation
@@ -39,10 +64,12 @@
       const recentJson = await recentRes.json();
 
       if (trendingJson.status === 'success') {
-        trending = trendingJson.data.results;
+        // Limit items on mobile for better performance
+        trending = isMobile ? trendingJson.data.results.slice(0, 12) : trendingJson.data.results;
       }
       if (recentJson.status === 'success') {
-        recent = recentJson.data.results;
+        // Limit items on mobile for better performance
+        recent = isMobile ? recentJson.data.results.slice(0, 12) : recentJson.data.results;
       }
     } catch (e) {
       error = 'Failed to load content. Please try again later.';
@@ -60,6 +87,7 @@
       setCookie('arms18plus', 'yes', 365);
     }
   }
+  
   function rejectWarning() {
     window.location.href = '/';
   }
@@ -68,6 +96,10 @@
 <svelte:head>
   <title>Home | ARMS Hentai</title>
   <meta name="description" content="Explore premium adult anime for mature audiences. Trending & new series, updated daily." />
+  {#if isMobile}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="preconnect" href="https://i.imgur.com">
+  {/if}
 </svelte:head>
 
 <Navbar />
@@ -87,8 +119,10 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Professional Hero Section -->
         <section class="relative mb-10">
-          <div class="relative bg-gradient-to-r from-[#2a0008] via-[#3a0d16] to-[#2a0008] rounded-2xl overflow-hidden shadow-xl border border-[#ff003c]/20 px-4 py-8 sm:px-8 sm:py-10">
-            <div class="absolute inset-0 bg-[url('https://i.imgur.com/4M7IWwP.jpg')] bg-cover bg-center opacity-10"></div>
+          <div class="relative {isMobile ? 'bg-[#2a0008]' : 'bg-gradient-to-r from-[#2a0008] via-[#3a0d16] to-[#2a0008]'} rounded-2xl overflow-hidden shadow-xl border border-[#ff003c]/20 px-4 py-8 sm:px-8 sm:py-10">
+            {#if !isMobile}
+              <div class="absolute inset-0 bg-[url('https://i.imgur.com/4M7IWwP.jpg')] bg-cover bg-center opacity-10"></div>
+            {/if}
             <div class="relative z-10 flex flex-col items-center text-center gap-3">
               <div class="flex items-center justify-center mb-2">
                 <div class="bg-[#ff003c]/10 p-2 rounded-xl border border-[#ff003c]/30">
@@ -111,9 +145,13 @@
                   See Trending
                 </a>
                 <a href="#recent"
-                   class="bg-[#ff003c] hover:bg-[#c2002e] text-black font-bold px-4 py-2 rounded-lg shadow ring-2 ring-[#ff003c]/40 text-xs sm:text-base w-full sm:w-auto transition">
-                  Browse Recent
-                </a>
+                   class={isMobile
+    ? 'bg-[#ff003c] text-black font-bold px-4 py-2 rounded-lg shadow border border-[#ff003c] text-xs sm:text-base w-full sm:w-auto'
+    : 'bg-[#ff003c] hover:bg-[#c2002e] text-black font-bold px-4 py-2 rounded-lg shadow ring-2 ring-[#ff003c]/40 text-xs sm:text-base w-full sm:w-auto transition'
+  }
+>
+  Browse Recent
+</a>
               </div>
             </div>
           </div>
@@ -135,21 +173,22 @@
             {#each trending as item, index}
               <a
                 href={`/hanime/info/${item.id}`}
-                class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block hover:scale-[1.03]"
+                class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow {isMobile ? 'border border-transparent' : 'transition-transform duration-200 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 hover:scale-[1.03]'} cursor-pointer block"
               >
                 <div class="relative aspect-[3/4]">
                   <img
                     src={item.image}
                     alt={item.title}
                     class="w-full h-full object-cover"
-                    loading={index < 12 ? 'eager' : 'lazy'}
+                    loading={index < (isMobile ? 6 : 12) ? 'eager' : 'lazy'}
+                    decoding="async"
                   />
                   <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                   <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
                     <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow">
                       Trending
                     </span>
-                    <span class="bg-black/70 backdrop-blur-sm text-[#ffb3c6] px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
+                    <span class="bg-black/70 {isMobile ? '' : 'backdrop-blur-sm'} text-[#ffb3c6] px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
                       <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.657l-6.828-6.829a4 4 0 010-5.656z"/>
                       </svg>
@@ -157,7 +196,7 @@
                     </span>
                   </div>
                   <div class="absolute bottom-0 left-0 right-0 p-2">
-                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-[#ffb3c6] transition-colors" title={item.title}>
+                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 {isMobile ? '' : 'group-hover:text-[#ffb3c6] transition-colors'}" title={item.title}>
                       {item.title}
                     </h3>
                     <div class="flex items-center justify-between">
@@ -174,7 +213,7 @@
         <!-- Recent Section -->
         <section id="recent" class="mb-16">
           <div class="flex items-center justify-between mb-8">
-            <div class="flex items-center gap-">
+            <div class="flex items-center gap-3">
               <div class="w-1 h-8 bg-[#ff003c] rounded-full"></div>
               <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">Recently Added</h2>
               <span class="bg-[#ff003c]/20 text-[#ff003c] px-3 py-1 rounded-full text-sm font-medium">
@@ -187,21 +226,22 @@
             {#each recent as item, index}
               <a
                 href={`/hanime/info/${item.id}`}
-                class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block"
+                class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow {isMobile ? 'border border-transparent' : 'transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40'} cursor-pointer block"
               >
                 <div class="relative aspect-[3/4]">
                   <img
                     src={item.image}
                     alt={item.title}
                     class="w-full h-full object-cover"
-                    loading={index < 12 ? 'eager' : 'lazy'}
+                    loading={index < (isMobile ? 6 : 12) ? 'eager' : 'lazy'}
+                    decoding="async"
                   />
                   <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                   <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
                     <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow">
                       New
                     </span>
-                    <span class="bg-black/70 backdrop-blur-sm text-[#ffb3c6] px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
+                    <span class="bg-black/70 {isMobile ? '' : 'backdrop-blur-sm'} text-[#ffb3c6] px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
                       <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.657l-6.828-6.829a4 4 0 010-5.656z"/>
                       </svg>
@@ -209,7 +249,7 @@
                     </span>
                   </div>
                   <div class="absolute bottom-0 left-0 right-0 p-2">
-                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-[#ffb3c6] transition-colors" title={item.title}>
+                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 {isMobile ? '' : 'group-hover:text-[#ffb3c6] transition-colors'}" title={item.title}>
                       {item.title}
                     </h3>
                     <div class="flex items-center justify-between">
@@ -224,7 +264,7 @@
         </section>
 
         {#if error}
-          <div class="bg-[#ff003c]/10 border border-[#ff003c]/30 text-[#ff003c] p-6 rounded-xl mb-8 backdrop-blur-sm">
+          <div class="bg-[#ff003c]/10 border border-[#ff003c]/30 text-[#ff003c] p-6 rounded-xl mb-8 {isMobile ? '' : 'backdrop-blur-sm'}">
             <div class="flex items-center gap-3">
               <svg class="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
@@ -248,7 +288,6 @@
 {/if}
 
 <style>
-  
   @keyframes fade-in {
     from { 
       opacity: 0; 
@@ -260,7 +299,6 @@
     }
   }
   
-
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -271,23 +309,24 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    line-clamp: 2; /* Add this line for compatibility */
+    line-clamp: 2;
   }
   
-  /* Home-style border animation on hover */
-  .group {
-    border: 2px solid transparent;
-    transition: border-color 0.3s, box-shadow 0.3s;
-  }
-  .group:hover {
-    border-color: #ff003c;
-    box-shadow: 0 0 0 2px #ff003c44, 0 4px 24px #ff003c22;
-  }
-  
-  /* Backdrop blur support */
-  @supports (backdrop-filter: blur(10px)) {
-    .backdrop-blur-sm {
-      backdrop-filter: blur(4px);
+  /* Desktop-only styles */
+  @media (min-width: 768px) {
+    .group {
+      border: 2px solid transparent;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .group:hover {
+      border-color: #ff003c;
+      box-shadow: 0 0 0 2px #ff003c44, 0 4px 24px #ff003c22;
+    }
+    
+    @supports (backdrop-filter: blur(10px)) {
+      .backdrop-blur-sm {
+        backdrop-filter: blur(4px);
+      }
     }
   }
 </style>
