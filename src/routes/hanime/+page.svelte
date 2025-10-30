@@ -116,7 +116,7 @@
     </div>
   {:else}
     <div class="flex-1 w-full pt-16">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="container-custom">
         <!-- Professional Hero Section -->
         <section class="relative mb-10">
           <div class="relative {isMobile ? 'bg-[#2a0008]' : 'bg-gradient-to-r from-[#2a0008] via-[#3a0d16] to-[#2a0008]'} rounded-2xl overflow-hidden shadow-xl border border-[#ff003c]/20 px-4 py-8 sm:px-8 sm:py-10">
@@ -146,12 +146,12 @@
                 </a>
                 <a href="#recent"
                    class={isMobile
-    ? 'bg-[#ff003c] text-black font-bold px-4 py-2 rounded-lg shadow border border-[#ff003c] text-xs sm:text-base w-full sm:w-auto'
-    : 'bg-[#ff003c] hover:bg-[#c2002e] text-black font-bold px-4 py-2 rounded-lg shadow ring-2 ring-[#ff003c]/40 text-xs sm:text-base w-full sm:w-auto transition'
-  }
->
-  Browse Recent
-</a>
+                     ? 'bg-[#ff003c] text-black font-bold px-4 py-2 rounded-lg shadow border border-[#ff003c] text-xs sm:text-base w-full sm:w-auto'
+                     : 'bg-[#ff003c] hover:bg-[#c2002e] text-black font-bold px-4 py-2 rounded-lg shadow ring-2 ring-[#ff003c]/40 text-xs sm:text-base w-full sm:w-auto transition'
+                   }
+                >
+                  Browse Recent
+                </a>
               </div>
             </div>
           </div>
@@ -169,7 +169,7 @@
             </div>
           </div>
           
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-6 gap-2 lg:gap-2">
+          <div class="grid-responsive">
             {#each trending as item, index}
               <a
                 href={`/hanime/info/${item.id}`}
@@ -222,7 +222,7 @@
             </div>
           </div>
           
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-6 gap-2 lg:gap-2">
+          <div class="grid-responsive">
             {#each recent as item, index}
               <a
                 href={`/hanime/info/${item.id}`}
@@ -288,6 +288,93 @@
 {/if}
 
 <style>
+  /* Responsive container with proper max-width scaling */
+  .container-custom {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .container-custom {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container-custom {
+      max-width: 1280px;
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .container-custom {
+      max-width: 1536px;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .container-custom {
+      max-width: 1792px;
+    }
+  }
+
+  @media (min-width: 1920px) {
+    .container-custom {
+      max-width: 1920px;
+    }
+  }
+
+  /* Responsive grid that adapts to screen size */
+  .grid-responsive {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (min-width: 640px) {
+    .grid-responsive {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 768px) {
+    .grid-responsive {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .grid-responsive {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 1rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .grid-responsive {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .grid-responsive {
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1920px) {
+    .grid-responsive {
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+    }
+  }
+
   @keyframes fade-in {
     from { 
       opacity: 0; 
