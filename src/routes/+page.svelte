@@ -54,7 +54,7 @@
 
   <!-- Features Row (bottom, always visible) -->
   <section class="max-w-6xl mx-auto px-2 sm:px-4 py-10">
-    <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
+    <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
       <div class="flex flex-col items-center text-center gap-2 bg-gray-800 rounded-lg p-3 sm:p-6 shadow">
         <span class="inline-flex items-center justify-center rounded-full bg-orange-400/20 p-2 sm:p-4">
           <svg class="w-8 h-8 sm:w-10 sm:h-10 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -100,7 +100,7 @@
   <!-- Redesigned How It Works Section -->
   <section class="max-w-6xl mx-auto px-4 py-10">
     <h2 class="text-2xl sm:text-3xl font-bold text-orange-400 mb-8 text-center">How It Works</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-4 gap-8">
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
       <div class="flex flex-col items-center text-center gap-4 bg-gray-800 rounded-xl p-6 shadow">
         <span class="inline-flex items-center justify-center rounded-full bg-orange-400/20 p-4">
           <svg class="w-10 h-10 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
