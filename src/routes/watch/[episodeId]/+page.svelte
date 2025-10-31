@@ -304,7 +304,7 @@
         {safe(data.error, 'An unknown error occurred.')}
       </div>
     {:else}
-      <div class="max-w-7xl mx-auto flex flex-col gap-10">
+      <div class="max-w-[1920px] w-full mx-auto flex flex-col gap-10">
         <section class="flex-1 flex flex-col gap-8 mb-6"> <!-- was mb-12 -->
           <!-- Player Card -->
           <div class="flex flex-col gap-2 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-3 sm:p-8">
@@ -417,7 +417,7 @@
 
           <!-- Anime Info Card -->
           {#if data.anime && data.anime.info && data.anime.moreInfo}
-            <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-6 md:p-10">
+            <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-6 md:p-10 w-full">
               <!-- Move icon to the left column -->
               <div class="flex flex-col items-center md:items-start flex-shrink-0 mx-auto md:mx-0">
                 <img
@@ -596,9 +596,9 @@
 
       <!-- Recommended and Related Animes Sections -->
       {#if data.recommendedAnimes && data.recommendedAnimes.length}
-        <section class="max-w-7xl mx-auto mt-6"> <!-- was mt-12 -->
+        <section class="max-w-[1920px] w-full mx-auto mt-6"> <!-- Updated from max-w-7xl -->
           <h2 class="text-xl font-bold text-orange-400 mb-4">Recommended Anime</h2>
-          <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2">
             {#each data.recommendedAnimes as rec}
               <a 
                 href={`/info/${rec.id}`}
@@ -630,9 +630,9 @@
       {/if}
 
       {#if data.relatedAnimes && data.relatedAnimes.length}
-        <section class="max-w-7xl mx-auto mt-5"> <!-- was mt-10 -->
+        <section class="max-w-[1920px] w-full mx-auto mt-5"> <!-- Updated from max-w-7xl -->
           <h2 class="text-xl font-bold text-orange-400 mb-4">Related Anime</h2>
-          <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2">
             {#each data.relatedAnimes as rel}
               <a 
                 href={`/info/${rel.id}`}
@@ -667,6 +667,7 @@
   <Footer/>
 </div>
 
+<!-- Add responsive styles -->
 <style>
   @media (max-width: 768px) {
     .flex-shrink-0 {
@@ -706,6 +707,22 @@
       /* Optional: add a subtle border or shadow for clarity */
       border-radius: 0.5rem;
       background: rgba(31, 41, 55, 0.7);
+    }
+  }
+
+  /* Add responsive container widths */
+  @media (min-width: 1920px) {
+    .max-w-\[1920px\] {
+      max-width: 90vw;
+    }
+  }
+
+  /* Adjust player aspect ratio for wider screens */
+  @media (min-width: 1440px) {
+    .aspect-video {
+      max-height: 80vh;
+      width: auto;
+      margin: 0 auto;
     }
   }
 </style>
