@@ -9,6 +9,7 @@
   import Carousel from '$lib/components/Carousel.svelte';
   import AnimeCard from '$lib/components/AnimeCard.svelte';
   import HomeAnimeColumns from '$lib/components/HomeAnimeColumns.svelte';
+  import Genre from '$lib/components/genre.svelte';
 
   // Performance optimizations
   let loading = true;
@@ -146,8 +147,8 @@
 
   // Performance: Memoize sliced arrays to prevent unnecessary re-renders
   $: trendingAnimeSlice = data?.trendingAnimes?.slice(0, 10) || [];
-  $: latestEpisodeSlice = data?.latestEpisodeAnimes?.slice(0, 10) || [];
-  $: latestAddedSlice = data?.latestAddedAnimes?.slice(0, 10) || [];
+  $: latestEpisodeSlice = data?.latestEpisodeAnimes?.slice(0, 12) || [];
+  $: latestAddedSlice = data?.latestAddedAnimes?.slice(0, 12) || [];
   $: spotlightAnimes = data?.spotlightAnimes || [];
 
   // Performance: Visibility observer for lazy loading (if supported)
@@ -229,7 +230,7 @@
                     Trending Anime
                   </h2>
                 </div>
-                <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2">
+                <div class="trending-anime-grid">
                   {#each trendingAnimeSlice as anime (anime.id)}
                     <AnimeCard 
                       {anime}
@@ -264,7 +265,7 @@
           </div>
 
           <!-- Main content and sidebar layout -->
-          <div class="flex flex-col xl:flex-row gap-6 sm:gap-10 w-full mt-6 sm:mt-10">
+          <div class="flex flex-col xl:flex-row gap-2 w-full mt-6 sm:mt-10">
             <!-- Main content -->
             <div class="flex-1 flex flex-col gap-6 sm:gap-10">
 
@@ -280,7 +281,7 @@
                         Trending Anime
                       </h2>
                     </div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2">
+                    <div class="trending-anime-grid">
                       {#each trendingAnimeSlice as anime (anime.id)}
                         <AnimeCard 
                           {anime}
@@ -316,7 +317,7 @@
                       </a>
                     </div>
                   </div>
-                  <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2">
+                  <div class="responsive-anime-grid">
                     {#each latestEpisodeSlice as ep (ep.id)}
                       <AnimeCard 
                         anime={ep}
@@ -351,7 +352,7 @@
                       </a>
                     </div>
                   </div>
-                  <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2">
+                  <div class="responsive-anime-grid">
                     {#each latestAddedSlice as anime (anime.id)}
                       <AnimeCard 
                         anime={anime}
@@ -369,15 +370,18 @@
             </div>
             
             <!-- Sidebar as a component -->
-            {#if data}
-              <Sidebar
-                sidebarTab={sidebarTab}
-                setSidebarTab={(tab) => sidebarTab = tab}
-                top10Today={data.top10Animes?.today ?? []}
-                top10Week={data.top10Animes?.week ?? []}
-                top10Month={data.top10Animes?.month ?? []}
-              />
-            {/if}
+            <div class="hidden xl:flex flex-col gap-2">
+              {#if data}
+                <Sidebar
+                  sidebarTab={sidebarTab}
+                  setSidebarTab={(tab) => sidebarTab = tab}
+                  top10Today={data.top10Animes?.today ?? []}
+                  top10Week={data.top10Animes?.week ?? []}
+                  top10Month={data.top10Animes?.month ?? []}
+                />
+                <Genre data={data.genres ?? []} />
+              {/if}
+            </div>
           </div>
         {/if}
       </div>
@@ -396,5 +400,100 @@
 </div>
 
 <style>
-  /* Add any component-specific styles here */
+  /* Responsive Grid System for Anime Cards */
+  .responsive-anime-grid {
+    display: grid;
+    gap: 0.5rem;
+    
+    /* Mobile: 2 columns */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Small tablets and larger phones (640px+) */
+  @media (min-width: 640px) {
+    .responsive-anime-grid {
+      gap: 0.5rem;
+    }
+  }
+
+  /* Tablets (768px+) */
+  @media (min-width: 768px) {
+    .responsive-anime-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+  }
+
+  /* Large tablets (1024px+) */
+  @media (min-width: 1024px) {
+    .responsive-anime-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /* HD screens (1280px+) */
+  @media (min-width: 1280px) {
+    .responsive-anime-grid {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+
+  /* Full HD screens (1378px+) */
+  @media (min-width: 1378px) {
+    .responsive-anime-grid {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+
+  /* Large Full HD screens (1536px+) */
+  @media (min-width: 1536px) {
+    .responsive-anime-grid {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+
+  /* 2K screens and above (1800px+) */
+  @media (min-width: 1800px) {
+    .responsive-anime-grid {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+
+  /* Trending Anime Grid - Maximum 5 columns */
+  .trending-anime-grid {
+    display: grid;
+    gap: 0.5rem;
+    
+    /* Mobile: 2 columns */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Small tablets and larger phones (640px+) */
+  @media (min-width: 640px) {
+    .trending-anime-grid {
+      gap: 0.5rem;
+    }
+  }
+
+  /* Tablets (768px+) */
+  @media (min-width: 768px) {
+    .trending-anime-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+  }
+
+  /* Large tablets (1024px+) */
+  @media (min-width: 1024px) {
+    .trending-anime-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /* HD screens and above (1280px+) */
+  @media (min-width: 1280px) {
+    .trending-anime-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
 </style>

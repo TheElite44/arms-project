@@ -1,604 +1,609 @@
 <script lang="ts">
-  import { onMount, onDestroy, afterUpdate } from 'svelte';
-  import Artplayer from 'artplayer';
+  import { onMount, onDestroy } from 'svelte';
   import { browser } from '$app/environment';
 
   export let src: string = '';
   export let poster: string = '';
-  export let subtitles: Array<{ url: string; label: string; kind: string; default?: boolean }> = [];
+  export let subtitles: Array<{ url: string; label: string; lang?: string }> = [];
 
-  // Subtitle style settings (Netflix-like)
-  export let subtitleSettings = {
-    color: '#fff',
-    fontSize: { desktop: '24px', mobile: '12px' }, // Responsive default
-    fontFamily: '"Arial Narrow", "Roboto Condensed", Arial, sans-serif',
-    fontWeight: 400, // Regular or 300 for thinner
-    // Thinner black outline using smaller shadow offsets
-    textShadow: `
-      -1px -1px 0 #000,
-      1px -1px 0 #000,
-      -1px 1px 0 #000,
-      1px 1px 0 #000,
-      0 1px 2px rgba(0,0,0,0.7)
-    `,
-    marginBottom: { desktop: '24px', mobile: '60px' }, // <-- set mobile lower
-    padding: '0.2em 0.6em',
-    borderRadius: '0.5em',
-    display: 'inline',
-    boxShadow: 'none',
-    letterSpacing: '0.02em'
-  };
+  let videoRef: HTMLVideoElement | null = null;
+  let plyr: any = null;
+  let hls: any = null;
+  let Plyr: any = null;
+  let Hls: any = null;
+  let lastSrc = '';
+  let lastSubs = '';
 
-  let art: any = null;
-  let container: HTMLDivElement | null = null;
-  let previousSrc: string | null = null;
-  let isLoading: boolean = false;
-  let error: string | null = null;
+  // Convert hanime subtitle format to Plyr's
+  $: plyrSubtitles = subtitles.map((sub, index) => ({
+    src: sub.url,
+    label: sub.label,
+    srclang: sub.lang || 'en', // Default to 'en' if not specified
+    default: index === 0 // Make first subtitle default
+  }));
 
-  async function fetchWatchData(episodeId: string, server: string = 'hd-1', category: string = 'sub') {
-    // This function is now a no-op since episode/server/category logic is removed
-    return;
-  }
-
-  function isValidUrl(url: string): boolean {
+  async function loadLibraries() {
+    if (!browser) return;
     try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
+      const [PlyrModule, HlsModule] = await Promise.all([
+        import('plyr'),
+        import('hls.js')
+      ]);
+      Plyr = PlyrModule.default;
+      Hls = HlsModule.default;
+      // Load Plyr CSS
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://cdnjs.cloudflare.com/ajax/libs/plyr/3.7.8/plyr.css';
+      document.head.appendChild(link);
+    } catch (error) {
+      console.error('Failed to load video player libraries:', error);
     }
   }
 
-  // Screen orientation functions
-  function isMobileDevice(): boolean {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-           window.matchMedia('(max-width: 768px)').matches;
+  function cleanup() {
+    if (plyr) {
+      try {
+        plyr.destroy();
+      } catch (e) {
+        console.warn('Error destroying Plyr instance:', e);
+      }
+      plyr = null;
+    }
+    if (hls) {
+      try {
+        hls.destroy();
+      } catch (e) {
+        console.warn('Error destroying HLS instance:', e);
+      }
+      hls = null;
+    }
+  }
+
+  // Function to detect subtitle format based on content
+  function detectSubtitleFormat(content: string): 'srt' | 'vtt' | 'unknown' {
+    // Check for VTT header
+    if (content.trim().startsWith('WEBVTT')) {
+      return 'vtt';
+    }
+    
+    // Check for SRT format (numeric cue followed by timestamp)
+    const srtPattern = /^\d+\s*\r?\n\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}/m;
+    if (srtPattern.test(content)) {
+      return 'srt';
+    }
+    
+    return 'unknown';
+  }
+
+  // Function to convert SRT timestamp to VTT format
+  function convertSrtTimestamp(srtTime: string): string {
+    // Convert "00:00:17,460" to "00:00:17.460"
+    return srtTime.replace(',', '.');
+  }
+
+  // Function to convert SRT content to VTT format
+  function convertSrtToVtt(srtContent: string): string {
+    const lines = srtContent.trim().split(/\r?\n/);
+    let vttContent = 'WEBVTT\n\n';
+    
+    let i = 0;
+    while (i < lines.length) {
+      // Skip empty lines
+      if (!lines[i] || lines[i].trim() === '') {
+        i++;
+        continue;
+      }
+      
+      // Skip sequence number (SRT format starts with number)
+      if (/^\d+$/.test(lines[i].trim())) {
+        i++;
+        continue;
+      }
+      
+      // Look for timestamp line
+      const timestampMatch = lines[i].match(/(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})/);
+      if (timestampMatch) {
+        const startTime = convertSrtTimestamp(timestampMatch[1]);
+        const endTime = convertSrtTimestamp(timestampMatch[2]);
+        vttContent += `${startTime} --> ${endTime}\n`;
+        i++;
+        
+        // Collect subtitle text until next sequence number or end
+        const subtitleLines = [];
+        while (i < lines.length && 
+               lines[i].trim() !== '' && 
+               !/^\d+$/.test(lines[i].trim()) &&
+               !lines[i].match(/\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}/)) {
+          subtitleLines.push(lines[i]);
+          i++;
+        }
+        
+        vttContent += subtitleLines.join('\n') + '\n\n';
+      } else {
+        i++;
+      }
+    }
+    
+    return vttContent;
+  }
+
+  async function fetchAndCreateSubtitleBlob(url: string): Promise<string> {
+    try {
+      const response = await fetch(`/api/hanime/subtitles?url=${encodeURIComponent(url)}`);
+      if (!response.ok) throw new Error('Failed to fetch subtitle');
+      
+      const content = await response.text();
+      const format = detectSubtitleFormat(content);
+      
+      let vttContent: string;
+      
+      switch (format) {
+        case 'srt':
+          console.log('Converting SRT to VTT format');
+          vttContent = convertSrtToVtt(content);
+          break;
+        case 'vtt':
+          console.log('Using VTT format as-is');
+          vttContent = content;
+          break;
+        default:
+          console.warn('Unknown subtitle format, attempting to use as VTT');
+          // Try to use as VTT, prepend header if missing
+          vttContent = content.trim().startsWith('WEBVTT') ? content : `WEBVTT\n\n${content}`;
+          break;
+      }
+      
+      const blob = new Blob([vttContent], { type: 'text/vtt' });
+      return URL.createObjectURL(blob);
+    } catch (error) {
+      console.warn('Failed to proxy subtitle:', error);
+      return url; // Fallback to original URL
+    }
+  }
+
+  async function addSubtitleTracks() {
+    if (!videoRef || !browser) return;
+    
+    // Remove existing tracks
+    const existingTracks = videoRef.querySelectorAll('track');
+    existingTracks.forEach(track => track.remove());
+
+    // Never set crossorigin - let subtitles fail rather than breaking video
+    videoRef.removeAttribute('crossorigin');
+
+    // Add new tracks with proxied URLs for external subtitles
+    for (const [index, subtitle] of plyrSubtitles.entries()) {
+      const track = document.createElement('track');
+      track.kind = 'captions';
+      track.srclang = subtitle.srclang;
+      track.label = subtitle.label;
+      track.default = subtitle.default;
+      
+      // Check if it's an external URL
+      if (subtitle.src.startsWith('http') && !subtitle.src.startsWith(window.location.origin)) {
+        // Try to proxy the subtitle and convert format if needed
+        track.src = await fetchAndCreateSubtitleBlob(subtitle.src);
+      } else {
+        // For local files, we might still need format conversion
+        try {
+          const response = await fetch(subtitle.src);
+          if (response.ok) {
+            const content = await response.text();
+            const format = detectSubtitleFormat(content);
+            
+            if (format === 'srt') {
+              console.log('Converting local SRT file to VTT');
+              const vttContent = convertSrtToVtt(content);
+              const blob = new Blob([vttContent], { type: 'text/vtt' });
+              track.src = URL.createObjectURL(blob);
+            } else {
+              track.src = subtitle.src;
+            }
+          } else {
+            track.src = subtitle.src;
+          }
+        } catch (error) {
+          console.warn('Failed to process local subtitle file:', error);
+          track.src = subtitle.src;
+        }
+      }
+      
+      videoRef.appendChild(track);
+    }
+  }
+
+  // --- Orientation helpers for mobile fullscreen ---
+  function isMobileDevice() {
+    if (!browser) return false;
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      || window.matchMedia('(max-width: 768px)').matches;
   }
 
   async function lockToLandscape() {
-    if (!isMobileDevice()) return;
-    
+    if (!isMobileDevice() || !browser) return;
     try {
-      // Modern Screen Orientation API
       if ((screen.orientation as any)?.lock) {
         await (screen.orientation as any).lock('landscape');
-        console.log('Screen locked to landscape');
       }
-      // Fallback for older browsers
-      else if (screen.lockOrientation) {
-        screen.lockOrientation('landscape');
-      }
-      // Alternative fallback
-      else if (screen.mozLockOrientation) {
-        screen.mozLockOrientation('landscape');
-      }
-      else if (screen.msLockOrientation) {
-        screen.msLockOrientation('landscape');
-      }
-    } catch (error) {
-      console.warn('Could not lock screen orientation:', error);
+    } catch (e) {
+      // fallback: do nothing
     }
   }
 
   async function unlockOrientation() {
-    if (!isMobileDevice()) return;
-    
+    if (!isMobileDevice() || !browser) return;
     try {
-      // Modern Screen Orientation API
-      if ((screen.orientation as any)?.unlock) {
-        (screen.orientation as any).unlock();
-        console.log('Screen orientation unlocked');
+      if (screen.orientation?.unlock) {
+        screen.orientation.unlock();
       }
-      // Fallback for older browsers
-      else if (screen.unlockOrientation) {
-        screen.unlockOrientation();
-      }
-      else if (screen.mozUnlockOrientation) {
-        screen.mozUnlockOrientation();
-      }
-      else if (screen.msUnlockOrientation) {
-        screen.msUnlockOrientation();
-      }
-    } catch (error) {
-      console.warn('Could not unlock screen orientation:', error);
-    }
+    } catch (e) {}
   }
 
-  async function createPlayer() {
-    if (!container || !src) return;
+  // Store handler references
+  let enterFullscreenHandler: (() => void) | null = null;
+  let exitFullscreenHandler: (() => void) | null = null;
 
-    if (art && previousSrc === src) return;
+  function setupOrientationHandling() {
+    if (!plyr || !browser) return;
 
-    // Destroy existing player
-    if (art) {
-      try {
-        art.destroy();
-      } catch (e) {
-        console.warn('Error destroying player:', e);
-      }
-      art = null;
+    // Remove previous listeners if any
+    if (enterFullscreenHandler) {
+      plyr.off('enterfullscreen', enterFullscreenHandler);
+    }
+    if (exitFullscreenHandler) {
+      plyr.off('exitfullscreen', exitFullscreenHandler);
     }
 
-    const options: any = {
-      container,
-      url: src,
-      poster,
-      volume: 0.5,
-      autoplay: false,
-      pip: true,
-      screenshot: true,
-      setting: true,
-      fullscreen: true,
-      miniProgressBar: true,
-      hotkey: true,
-      lock: true,
-      playbackRate: true,
-      aspectRatio: true,
-      // Add subtitle settings panel
-      settings: [
-        {
-          html: 'Subtitle Style',
-          selector: [
-            {
-              html: 'Font Size',
-              selector: [
-                { html: 'Small (14px / 12px mobile)', value: { desktop: '14px', mobile: '12px' } },
-                { html: 'Medium (24px / 14px mobile)', value: { desktop: '24px', mobile: '14px' } }, // Default
-                { html: 'Large (34px / 24px mobile)', value: { desktop: '34px', mobile: '24px' } }
-              ],
-              onSelect: function (item: any) {
-                subtitleSettings.fontSize = item.value;
-                updateSubtitleStyle();
-                return item.html;
-              },
-            },
-            {
-              html: 'Font Color',
-              selector: [
-                { html: 'White', value: '#ffffff' },
-                { html: 'Yellow', value: '#ffff00' },
-                { html: 'Green', value: '#00ff00' },
-                { html: 'Cyan', value: '#00ffff' },
-                { html: 'Red', value: '#ff0000' },
-              ],
-              onSelect: function (item: any) {
-                subtitleSettings.color = item.value;
-                updateSubtitleStyle();
-                return item.html;
-              },
-            },
-            {
-              html: 'Outline',
-              selector: [
-                { html: 'None', value: 'none' },
-                { html: 'Thin', value: `
-                  -1px -1px 0 #000,
-                  1px -1px 0 #000,
-                  -1px 1px 0 #000,
-                  1px 1px 0 #000
-                ` },
-                { html: 'Medium', value: `
-                  -2px -2px 0 #000,
-                  2px -2px 0 #000,
-                  -2px 2px 0 #000,
-                  2px 2px 0 #000
-                ` },
-                { html: 'Thick', value: `
-                  -3px -3px 0 #000,
-                  3px -3px 0 #000,
-                  -3px 3px 0 #000,
-                  3px 3px 0 #000
-                ` }
-              ],
-              onSelect: function (item: any) {
-                if (item.value === 'none') {
-                  subtitleSettings.textShadow = 'none';
-                } else {
-                  subtitleSettings.textShadow = item.value;
-                }
-                updateSubtitleStyle();
-                return item.html;
-              },
-            },
-            // Removed Background selector
-          ],
-        },
-      ],
+    enterFullscreenHandler = async () => {
+      if (!isMobileDevice()) return;
+      if (screen.orientation?.lock) {
+        try {
+          await screen.orientation.lock('landscape');
+        } catch {}
+      }
     };
 
-    // Add subtitles if available
-    if (subtitles?.length > 0) {
-      const defaultSubtitle = subtitles.find((sub) => sub.default) || subtitles[0];
-      const subType = defaultSubtitle.url.endsWith('.srt') ? 'srt' : 'vtt';
+    exitFullscreenHandler = async () => {
+      if (!isMobileDevice()) return;
+      if (screen.orientation?.unlock) {
+        try {
+          screen.orientation.unlock();
+        } catch {}
+      }
+    };
 
-      options.subtitle = {
-        url: defaultSubtitle.url,
-        type: subType,
-        style: {
-          color: subtitleSettings.color,
-          fontSize: getResponsiveFontSize(subtitleSettings.fontSize),
-          fontFamily: subtitleSettings.fontFamily,
-          // backgroundColor: subtitleSettings.backgroundColor, // Removed background
-          textShadow: subtitleSettings.textShadow,
-          marginBottom: getResponsiveMarginBottom(subtitleSettings.marginBottom),
-          padding: subtitleSettings.padding,
-          borderRadius: subtitleSettings.borderRadius,
-          display: subtitleSettings.display,
-          boxShadow: subtitleSettings.boxShadow,
-          fontWeight: subtitleSettings.fontWeight,
-          letterSpacing: subtitleSettings.letterSpacing,
-          textAlign: 'center',
-          lineHeight: '1.35',
-          whiteSpace: 'pre-line',
-          wordBreak: 'break-word',
-        },
-        encoding: 'utf-8',
+    plyr.on('enterfullscreen', enterFullscreenHandler);
+    plyr.on('exitfullscreen', exitFullscreenHandler);
+  }
+
+  function createPlyrInstance() {
+    if (!videoRef || plyr) return;
+
+    plyr = new Plyr(videoRef, {
+      controls: [
+        'play-large', 'play', 'progress', 'current-time', 'mute', 'volume',
+        'captions', 'settings', 'quality', 'fullscreen'
+      ],
+      captions: { 
+        active: false, // Start with captions off, let user enable
+        language: 'auto', 
+        update: true 
+      },
+      settings: ['captions', 'quality', 'speed'],
+      tooltips: { controls: true, seek: true },
+      keyboard: { focused: true, global: false }
+    });
+
+    // Wait for all tracks to load properly
+    plyr.on('ready', () => {
+      console.log('Plyr ready');
+
+      // Wait for text tracks to be available
+      setTimeout(() => {
+        const textTracks = videoRef?.textTracks;
+        console.log('Text tracks available:', textTracks?.length ?? 0);
+
+        if (textTracks && textTracks.length > 0) {
+          // Enable the first track
+          for (let i = 0; i < textTracks.length; i++) {
+            textTracks[i].mode = i === 0 ? 'showing' : 'disabled';
+          }
+
+          // Force Plyr to recognize the active track
+          plyr.captions.active = true;
+          console.log('First subtitle track activated');
+        }
+      }, 500);
+    });
+
+    // Orientation handling for mobile fullscreen
+    setupOrientationHandling();
+
+    // Additional events for debugging
+    plyr.on('loadedmetadata', () => {
+      console.log('Video metadata loaded');
+    });
+
+    plyr.on('captionsenabled', () => {
+      console.log('Captions enabled by user');
+    });
+
+    plyr.on('captionsdisabled', () => {
+      console.log('Captions disabled by user');
+    });
+  }
+
+  async function initializePlayer() {
+    if (!videoRef || !browser || !Plyr || !Hls) return;
+    
+    cleanup();
+    
+    // First add subtitle tracks
+    await addSubtitleTracks();
+    
+    // Wait for tracks to be properly added
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    if (Hls.isSupported() && src.includes('.m3u8')) {
+      hls = new Hls({
+        enableWorker: false,
+        lowLatencyMode: true,
+        xhrSetup: function (xhr: any) {
+          xhr.withCredentials = false;
+        }
+      });
+      
+      hls.loadSource(src);
+      hls.attachMedia(videoRef);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        // Wait a bit more for HLS to settle
+        setTimeout(() => {
+          createPlyrInstance();
+        }, 100);
+      });
+
+      hls.on(Hls.Events.ERROR, function (event: any, data: any) {
+        console.error('HLS Error:', data);
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              console.log('Network error - trying to recover');
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              console.log('Media error - trying to recover');
+              hls.recoverMediaError();
+              break;
+            default:
+              hls.destroy();
+              break;
+          }
+        }
+      });
+    } else {
+      // Regular MP4 or other formats
+      videoRef.src = src;
+      
+      const handleCanPlay = () => {
+        createPlyrInstance();
+        if (videoRef) {
+          videoRef.removeEventListener('canplay', handleCanPlay);
+        }
       };
-    }
-
-    try {
-      art = new Artplayer(options);
-      previousSrc = src;
-
-      art.on('ready', () => {
-        console.log('Player ready');
-      });
-
-      art.on('video:error', (error: any) => {
-        console.error('Video error:', error);
-      });
-
-      // Add fullscreen event listeners for landscape rotation
-      art.on('fullscreen', (isFullscreen: boolean) => {
-        console.log('Fullscreen changed:', isFullscreen);
-        if (isFullscreen && isMobileDevice()) {
-          lockToLandscape();
-        } else if (!isFullscreen && isMobileDevice()) {
-          unlockOrientation();
+      
+      // Use canplay instead of loadedmetadata for better timing
+      videoRef.addEventListener('canplay', handleCanPlay);
+      
+      // Fallback
+      setTimeout(() => {
+        if (!plyr) {
+          console.log('Fallback: Creating Plyr instance');
+          createPlyrInstance();
         }
-      });
-
-      // Alternative fullscreen detection for better compatibility
-      art.on('fullscreenWeb', (isFullscreen: boolean) => {
-        console.log('Web fullscreen changed:', isFullscreen);
-        if (isFullscreen && isMobileDevice()) {
-          lockToLandscape();
-        } else if (!isFullscreen && isMobileDevice()) {
-          unlockOrientation();
-        }
-      });
-
-    } catch (error) {
-      console.error('Failed to create player:', error);
-      throw error;
+      }, 1500);
     }
   }
 
-  function getResponsiveFontSize(fontSize: any) {
-    if (typeof fontSize === 'string') return fontSize;
-    // Use window.matchMedia to detect mobile
-    return window.matchMedia('(max-width: 600px)').matches
-      ? fontSize.mobile
-      : fontSize.desktop;
-  }
-
-  // NEW: Get responsive margin-bottom
-  function getResponsiveMarginBottom(marginBottom: any) {
-    if (typeof marginBottom === 'string') return marginBottom;
-    return window.matchMedia('(max-width: 600px)').matches
-      ? marginBottom.mobile
-      : marginBottom.desktop;
-  }
-
-  function isMobile() {
-    return window.matchMedia('(max-width: 600px)').matches;
-  }
-
-  // Automatically update subtitle style on resize for responsiveness
-  if (browser) {
-    let lastMobile = isMobile();
-    window.addEventListener('resize', () => {
-      const nowMobile = isMobile();
-      if (nowMobile !== lastMobile) {
-        lastMobile = nowMobile;
-        updateSubtitleStyle();
-      }
-    });
-
-    // Add fullscreen change event listener as backup
-    document.addEventListener('fullscreenchange', () => {
-      const isFullscreen = !!document.fullscreenElement;
-      if (isFullscreen && isMobileDevice()) {
-        lockToLandscape();
-      } else if (!isFullscreen && isMobileDevice()) {
-        unlockOrientation();
-      }
-    });
-
-    // Alternative fullscreen events for better browser compatibility
-    document.addEventListener('webkitfullscreenchange', () => {
-      const isFullscreen = !!document.webkitFullscreenElement;
-      if (isFullscreen && isMobileDevice()) {
-        lockToLandscape();
-      } else if (!isFullscreen && isMobileDevice()) {
-        unlockOrientation();
-      }
-    });
-
-    document.addEventListener('mozfullscreenchange', () => {
-      const isFullscreen = !!document.mozFullScreenElement;
-      if (isFullscreen && isMobileDevice()) {
-        lockToLandscape();
-      } else if (!isFullscreen && isMobileDevice()) {
-        unlockOrientation();
-      }
-    });
-
-    document.addEventListener('msfullscreenchange', () => {
-      const isFullscreen = !!document.msFullscreenElement;
-      if (isFullscreen && isMobileDevice()) {
-        lockToLandscape();
-      } else if (!isFullscreen && isMobileDevice()) {
-        unlockOrientation();
-      }
-    });
-  }
-
-  function updateSubtitleStyle() {
-    if (art && art.subtitle) {
-      const subtitleElement = art.template.$subtitle;
-      if (subtitleElement) {
-        // Detect fullscreen (Artplayer or browser fullscreen)
-        const isFullscreen =
-          (art.fullscreen || art.fullscreenWeb) ||
-          document.fullscreenElement ||
-          document.webkitFullscreenElement ||
-          document.mozFullScreenElement ||
-          document.msFullscreenElement;
-
-        // Calculate font size
-        let fontSize = getResponsiveFontSize(subtitleSettings.fontSize);
-        if (isFullscreen) {
-          // Increase font size by 25% in fullscreen
-          if (typeof fontSize === 'string' && fontSize.endsWith('px')) {
-            const num = parseFloat(fontSize);
-            fontSize = `${Math.round(num * 1.25)}px`;
-          }
-        }
-
-        subtitleElement.style.color = subtitleSettings.color;
-        subtitleElement.style.fontSize = fontSize;
-        subtitleElement.style.fontFamily = subtitleSettings.fontFamily;
-        subtitleElement.style.textShadow = subtitleSettings.textShadow;
-        // Lower subtitle on mobile
-        subtitleElement.style.marginBottom = isMobile() ? '60px' : '20px';
-        // Reduce padding on mobile
-        subtitleElement.style.padding = isMobile() ? '0.1em 0.3em' : subtitleSettings.padding;
-        subtitleElement.style.borderRadius = subtitleSettings.borderRadius;
-        subtitleElement.style.display = subtitleSettings.display;
-        subtitleElement.style.boxShadow = subtitleSettings.boxShadow;
-        subtitleElement.style.fontWeight = subtitleSettings.fontWeight;
-        subtitleElement.style.letterSpacing = subtitleSettings.letterSpacing;
-        subtitleElement.style.textAlign = 'center';
-        subtitleElement.style.lineHeight = '1.35';
-        subtitleElement.style.whiteSpace = 'pre-line';
-        subtitleElement.style.wordBreak = 'break-word';
+  // Watch for changes in src or subtitles
+  $: {
+    if (browser && Plyr && Hls) {
+      const subsString = JSON.stringify(plyrSubtitles);
+      if (
+        videoRef &&
+        (src !== lastSrc || subsString !== lastSubs) &&
+        src // Only initialize if we have a source
+      ) {
+        lastSrc = src;
+        lastSubs = subsString;
+        initializePlayer();
       }
     }
   }
 
-  // Keyboard shortcuts
-  if (browser) {
-    document.addEventListener('keydown', (event) => {
-      if (!art) return;
-
-      switch (event.key.toLowerCase()) {
-        case 'm':
-          art.muted = !art.muted;
-          break;
-        case 'f':
-          art.fullscreen = !art.fullscreen;
-          break;
-        case ' ':
-          event.preventDefault();
-          if (art.playing) {
-            art.pause();
-          } else {
-            art.play();
-          }
-          break;
+  onMount(async () => {
+    if (browser) {
+      await loadLibraries();
+      if (videoRef && src && Plyr && Hls) {
+        await initializePlayer();
       }
-    });
-  }
-
-  onMount(() => {
-    if (src) createPlayer();
-  });
-
-  afterUpdate(() => {
-    if (src && src !== previousSrc) {
-      createPlayer();
     }
   });
 
   onDestroy(() => {
-    // Unlock orientation when component is destroyed
-    if (isMobileDevice()) {
+    cleanup();
+    // Also unlock orientation on destroy
+    if (browser) {
       unlockOrientation();
     }
-    
-    if (art) {
-      try {
-        art.destroy();
-      } catch (e) {
-        console.warn('Error during cleanup:', e);
-      }
-      art = null;
-    }
   });
-
-  export { fetchWatchData };
 </script>
 
-<div class="player-wrapper">
-  {#if isLoading}
-    <div class="loading-overlay">
-      <div class="spinner"></div>
-      <p>Loading video...</p>
-    </div>
-  {/if}
-  
-  {#if error}
-    <div class="error-overlay">
-      <p class="error-message">❌ {error}</p>
-      <button 
-        class="retry-button" 
-        on:click={() => {
-          error = null;
-          if (src) createPlayer();
-        }}
-      >
-        🔄 Retry
-      </button>
-    </div>
-  {/if}
-  
-  <div 
-    bind:this={container} 
-    class="w-full h-full rounded-xl overflow-hidden bg-black" 
-    style="aspect-ratio:16/9"
-  ></div>
+<div class="player-container">
+  <video
+    bind:this={videoRef}
+    controls
+    playsinline
+    {poster}
+    class="responsive-video"
+    preload="metadata"
+  >
+    <!-- Subtitle tracks are added dynamically in JavaScript -->
+    <track kind="captions" label="No captions available" srclang="en" default>
+    Your browser does not support the video tag.
+  </video>
 </div>
 
 <style>
-  .player-wrapper {
+  .player-container {
     position: relative;
     width: 100%;
-    height: 100%;
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
+    background: black;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center; 
+    min-height: 120px;
+    box-sizing: border-box;
+    border-radius: 0.25rem; /* Reduced from 0.75rem to 0.25rem */
   }
 
-  .loading-overlay,
-  .error-overlay {
-    position: absolute;
-    top: 0;
+  .responsive-video {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    background: black;
+    display: block;
+    box-sizing: border-box;
+    border-radius: 0.25rem; /* Reduced from 0.75rem to 0.25rem */
+  }
+
+  /* Reddish accent for Plyr */
+  :global(.plyr) {
+    --plyr-color-main: #ff003c; /* reddish accent */
+    --plyr-control-color: #fff;
+    --plyr-control-hover-background: #ff003c;
+    --plyr-tooltip-background: #2a0008;
+    --plyr-tooltip-color: #fff;
+    --plyr-menu-background: #2a0008;
+    --plyr-menu-color: #fff;
+    background: transparent !important;
+    color: #fff !important;
+    border-radius: 0.25rem; /* Reduced from 0.75rem to 0.25rem */
+  }
+
+  :global(.plyr__control) {
+    color: #fff !important;
+    background: transparent !important;
+    border-radius: 0.25rem !important; /* Reduced from 0.5rem to 0.25rem */
+    transition: background 0.2s, color 0.2s;
+  }
+
+  :global(.plyr__control[aria-pressed="true"]),
+  :global(.plyr__control:hover),
+  :global(.plyr__control:focus) {
+    background: unset !important;
+    color: #ff003c !important;
+  }
+
+  :global(.plyr__control[aria-expanded="true"]) {
+    background: #ff003c !important;
+    color: #fff !important;
+  }
+
+  :global(.plyr__control[aria-expanded="false"]) {
+    background: unset !important;
+    color: #fff !important;
+  }
+
+  :global(.plyr__progress input[type="range"]) {
+    color: #ff003c !important;
+  }
+
+  :global(.plyr__menu__container) {
+    background: #2a0008 !important;
+    color: #fff !important;
+    border-radius: 0.25rem; /* Reduced from 0.5rem to 0.25rem */
+  }
+
+  :global(.plyr__menu__container .plyr__control[role="menuitemradio"][aria-checked="true"]) {
+    color: #ff003c !important;
+  }
+
+  :global(.plyr__tooltip) {
+    background: #2a0008 !important;
+    color: #fff !important;
+  }
+
+  :global(.plyr__captions) {
+    font-size: 1.1em !important;
+    color: #fff !important;
+    text-shadow: 0 2px 4px #000, 0 0 2px #000 !important;
+    background: none !important;
+    padding: 0.2em 0.6em !important;
+    border-radius: 0.15rem !important; /* Reduced from 0.3em to 0.15rem */
+    line-height: 1.4 !important;
+    bottom: 3% !important;
+    position: absolute !important;
+    width: 100%;
     left: 0;
     right: 0;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    z-index: 10;
-    border-radius: 0.75rem;
-  }
-
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #333;
-    border-top: 4px solid #fff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-
-  .error-message {
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
     text-align: center;
   }
 
-  .retry-button {
-    background: #4f46e5;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    font-size: 1rem;
-  }
-
-  .retry-button:hover {
-    background: #4338ca;
-  }
-
-  /* Artplayer Subtitle Styles */
-  :global(.art-subtitle) {
-    padding-inline: 0px !important;
-    gap: 2px !important;
-    margin-bottom: 1rem !important;
-  }
-
-  :global(.art-subtitle-line) {
-    min-width: fit-content;
-    background-color: transparent !important;
-    padding-inline: 3px !important;
-  }
-
-  :global(.art-subtitle-line),
-  :global(.art-subtitle-line *) {
-    font-size: inherit !important;
-    color: inherit !important;
-    line-height: inherit !important;
-    font-weight: inherit !important;
-    white-space: inherit !important;
-  }
-
-  /* Artplayer Controls Styles */
-  :global(.art-volume-panel) {
-    padding-bottom: 20px !important;
-  }
-
-  :global(.art-settings) {
-    margin-bottom: 20px !important;
-  }
-
-  /* Mobile Responsive Styles */
-  @media screen and (max-width: 370px) {
-    :global(.art-progress) {
-      padding-bottom: 5px !important;
+  @media (max-width: 768px) {
+    :global(.plyr__captions) {
+      font-size: 12px !important;
     }
-
-    :global(.art-controls-left .art-control) {
-      justify-content: flex-start !important;
+    :global(.plyr__controls .plyr__volume input[type="range"]) {
+      display: none !important;
     }
-
-    :global(.art-controls-right .art-control) {
-      justify-content: flex-end !important;
-    }
-
-    :global(.art-controls-right .art-control svg) {
-      width: 22px;
-      height: 22px;
-    }
-
-    :global(.art-controls-left .art-control svg) {
-      width: 22px;
-      height: 22px;
-    }
-
-    :global(.art-state .art-icon svg) {
-      width: 50px;
-      height: 50px;
+    :global(.plyr__controls .plyr__volume) {
+      min-width: 0 !important;
+      width: auto !important;
     }
   }
 
-  @media screen and (max-width: 350px) {
-    :global(.art-controls-right .art-control svg) {
-      width: 20px;
-      height: 20px;
-    }
+  /* Hide subtitle button except fullscreen */
+  :global(.plyr__controls .plyr__control[data-plyr="captions"]) {
+    display: none !important;
+  }
+  :global(.plyr--fullscreen-active .plyr__controls .plyr__control[data-plyr="captions"]) {
+    display: inline-flex !important;
+  }
 
-    :global(.art-controls-left .art-control svg) {
-      width: 20px;
-      height: 20px;
-    }
+  /* Always keep the fullscreen icon white */
+  :global(.plyr__control[data-plyr="fullscreen"]),
+  :global(.plyr__control[data-plyr="fullscreen"]:hover),
+  :global(.plyr__control[data-plyr="fullscreen"]:focus),
+  :global(.plyr__control[data-plyr="fullscreen"][aria-pressed="true"]) {
+    color: #fff !important;
+    background: unset !important;
+  }
+
+  /* Play, pause, and captions (CC/sub) icons: always white */
+  :global(.plyr__control[data-plyr="play"] svg),
+  :global(.plyr__control[data-plyr="pause"] svg),
+  :global(.plyr__control[data-plyr="captions"] svg) {
+    fill: #fff !important;
+    color: #fff !important;
+  }
+
+  :global(.plyr__control--overlaid) {
+    background: #ff003c !important;    /* Reddish background */
+    color: #fff !important;
+    border-radius: 50% !important;
+    box-shadow: 0 2px 8px #0005;
+    opacity: 0.95;
+    transition: background 0.2s, color 0.2s;
+  }
+  :global(.plyr__control--overlaid:hover),
+  :global(.plyr__control--overlaid:focus) {
+    background: #c2002f !important;    /* Slightly darker on hover */
+    color: #fff !important;
   }
 </style>

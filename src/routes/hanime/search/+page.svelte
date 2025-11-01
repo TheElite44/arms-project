@@ -11,6 +11,7 @@
   let page = 1;
   let totalPages = 1;
   let showWarning = true;
+  let imageLoadedStates: { [key: string]: boolean } = {};
 
   // Cookie helpers
   function getCookie(name: string) {
@@ -57,6 +58,8 @@
   async function fetchSearchResults() {
     try {
       loading = true;
+      imageLoadedStates = {}; // Reset image loaded states
+      
       const resp = await fetch(`/api/hanime/search?query=${encodeURIComponent(query)}&page=${page}`);
       const json = await resp.json();
       if (json.status === 'success') {
@@ -80,6 +83,10 @@
       window.history.pushState({}, '', `/hanime/search?query=${encodeURIComponent(query)}&page=${page}`);
     }
   }
+
+  function handleImageLoad(id: string) {
+    imageLoadedStates[id] = true;
+  }
 </script>
 
 <svelte:head>
@@ -97,19 +104,19 @@
 {/if}
 
 <div class="flex flex-col min-h-screen bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106] text-white pt-16">
-  <div class="flex-1 w-full">
-    <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-2 sm:px-6">
-      {#if loading}
-        <div class="flex items-center justify-center min-h-[60vh] w-full">
-          <img
-            src="/assets/loader.gif"
-            alt="Loading..."
-            class="object-contain"
-            style="max-width: 120px; max-height: 110px; aspect-ratio: 1 / 1;"
-          />
-        </div>
-      {:else if error}
-        <div class="bg-[#ff003c]/10 border border-[#ff003c]/30 text-[#ff003c] p-6 rounded-xl mb-8 backdrop-blur-sm">
+  {#if loading}
+    <div class="flex items-center justify-center flex-1">
+      <img
+        src="/assets/loader.gif"
+        alt="Loading..."
+        class="object-contain"
+        style="max-width: 120px; max-height: 110px; aspect-ratio: 1 / 1;"
+      />
+    </div>
+  {:else if error}
+    <div class="flex-1 w-full">
+      <div class="max-w-[125rem] mx-auto px-2 sm:px-6">
+        <div class="bg-[#ff003c]/10 border-l-4 border-[#ff003c] text-[#ff003c] p-4 rounded-xl my-4 backdrop-blur-sm">
           <div class="flex items-center gap-3">
             <svg class="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
@@ -120,7 +127,11 @@
             </div>
           </div>
         </div>
-      {:else}
+      </div>
+    </div>
+  {:else}
+    <div class="flex-1 w-full">
+      <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-2 sm:px-6">
         <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 class="text-xl sm:text-2xl font-bold text-[#ff003c] mb-4 sm:mb-6 flex items-center gap-3">
             <svg class="w-6 h-6 sm:w-7 sm:h-7 text-[#ff003c]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20m10-10H2" /></svg>
@@ -134,13 +145,19 @@
                 <a
                   href={`/hanime/info/${hanime.id}`}
                   class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block hover:scale-[1.03]"
+                  style="min-height: 120px;"
                 >
                   <div class="relative aspect-[3/4]">
+                    <!-- Skeleton loader -->
+                    {#if !imageLoadedStates[`hanime-${hanime.id}`]}
+                      <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                    {/if}
                     <img
                       src={hanime.image}
                       alt={hanime.title}
-                      class="w-full h-full object-cover"
+                      class="w-full h-full object-cover {imageLoadedStates[`hanime-${hanime.id}`] ? 'opacity-100' : 'opacity-0'}"
                       loading={index < 12 ? 'eager' : 'lazy'}
+                      on:load={() => handleImageLoad(`hanime-${hanime.id}`)}
                     />
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                     <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
@@ -181,22 +198,44 @@
           <!-- Add spacing before footer -->
           <div class="h-8"></div>
         </section>
-      {/if}
+      </div>
     </div>
-  </div>
+  {/if}
   <Footer />
 </div>
 
 <style>
-  @keyframes spin {
-    0% { transform: rotate(0deg);}
-    100% { transform: rotate(360deg);}
-  }
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  /* Skeleton Loader Animation */
+  .skeleton-loader {
+    background: linear-gradient(
+      90deg,
+      #3a0d16 0%,
+      #5a1526 20%,
+      #3a0d16 40%,
+      #3a0d16 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  img {
+    transition: opacity 0.3s ease-in-out;
   }
 </style>

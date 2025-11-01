@@ -541,7 +541,7 @@
     max-width: 100%;
     aspect-ratio: 16 / 9;
     background: black;
-    border-radius: 0.75rem;
+    border-radius: 0.25rem; /* Reduced from 0.75rem to 0.25rem */
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -559,7 +559,7 @@
     height: 100% !important;
     object-fit: contain !important;
     background: black;
-    border-radius: 0.75rem;
+    border-radius: 0.25rem; /* Reduced from 0.75rem to 0.25rem */
     display: block;
     box-sizing: border-box;
   }
@@ -571,7 +571,7 @@
     /* Remove background for subtitles */
     background: none !important;
     padding: 0.2em 0.6em;
-    border-radius: 0.3em;
+    border-radius: 0.15rem; /* Reduced from 0.3em to 0.15rem */
     line-height: 1.4;
   }
 
@@ -611,7 +611,7 @@
   /* Remove custom controller background, use Plyr's default */
   :global(.plyr__controls) {
     background: unset !important;
-    border-radius: 0 0 0.75rem 0.75rem;
+    border-radius: 0 0 0.25rem 0.25rem; /* Reduced from 0.75rem to 0.25rem */
   }
 
   /* Restore Plyr's default controller background for video */
@@ -649,7 +649,7 @@
     --plyr-audio-control-hover-background: #f97316;
     background: #18181b !important;
     color: #fff !important;
-    border-radius: 0.75rem;
+    border-radius: 0.25rem; /* Reduced from 0.75rem to 0.25rem */
   }
 
   :global(.plyr__control) {
@@ -683,7 +683,7 @@
     /* DO NOT set display: block or display: flex here! */
     background: #27272a !important;
     color: #fff !important;
-    border-radius: 0.5rem;
+    border-radius: 0.25rem; /* Reduced from 0.5rem to 0.25rem */
   }
 
   :global(.plyr__menu__container .plyr__control[role="menuitemradio"][aria-checked="true"]) {
@@ -709,7 +709,7 @@
       max-width: 140px !important;
       font-size: 0.75rem !important;
       padding: 0.15rem 0.3rem !important;
-      border-radius: 0.3rem !important;
+      border-radius: 0.15rem !important; /* Reduced from 0.3rem to 0.15rem */
       overflow-y: auto !important;
       overscroll-behavior: contain;
     }

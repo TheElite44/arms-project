@@ -125,8 +125,13 @@
           .sort((a, b) => a.serverName.localeCompare(b.serverName));
         servers = servers.filter((server) => server.serverName);
 
-        // --- Default server logic ---
-        let preferred = servers.find(s => s.serverName.toLowerCase() === 'hd-2');
+        // --- Default server logic with localStorage ---
+        const animeId = data.anime?.info?.id;
+        let lastServerKey = animeId ? `lastServer:${animeId}` : null;
+        let lastServer = lastServerKey ? localStorage.getItem(lastServerKey) : null;
+        let preferred = servers.find(s => s.serverName === lastServer);
+
+        if (!preferred) preferred = servers.find(s => s.serverName.toLowerCase() === 'hd-2');
         if (!preferred) preferred = servers.find(s => s.serverName.toLowerCase() === 'hd-1');
         if (!preferred) preferred = servers[0];
 
@@ -161,8 +166,12 @@
   function changeServerManual(serverName: string, cat: 'sub' | 'dub' | 'raw') {
     currentServer = serverName;
     category = cat;
+    // Save last server per anime
+    const animeId = data.anime?.info?.id;
+    if (animeId) {
+      localStorage.setItem(`lastServer:${animeId}`, serverName);
+    }
     fetchWatchData(currentEpisodeId, currentServer, category, false);
-    useIframePlayer = false; // Reset iframe player when server changes
   }
 
   function changeCategoryManual(cat: 'sub' | 'dub' | 'raw') {
@@ -248,6 +257,33 @@
     updateIsMobile();
     window.addEventListener('resize', updateIsMobile);
   }
+
+  let showPageDropdown = false;
+
+  // Helper to format ranges as "EPS: 1-50"
+  function formatRange(range: string, i: number) {
+    const [start, end] = range.split('-');
+    return `EPS: ${start}-${end}`;
+  }
+
+  // Optional: Close dropdown on click outside
+  function handleClickOutside(event: MouseEvent) {
+    const dropdown = document.getElementById('page-dropdown');
+    if (dropdown && !dropdown.contains(event.target as Node)) {
+      showPageDropdown = false;
+    }
+  }
+
+  if (browser) {
+    // Add/remove event listener for click outside
+    $: {
+      if (showPageDropdown) {
+        window.addEventListener('mousedown', handleClickOutside);
+      } else {
+        window.removeEventListener('mousedown', handleClickOutside);
+      }
+    }
+  }
 </script>
 
 <svelte:head>
@@ -268,7 +304,7 @@
         {safe(data.error, 'An unknown error occurred.')}
       </div>
     {:else}
-      <div class="max-w-7xl mx-auto flex flex-col gap-10">
+      <div class="max-w-[1920px] w-full mx-auto flex flex-col gap-10">
         <section class="flex-1 flex flex-col gap-8 mb-6"> <!-- was mb-12 -->
           <!-- Player Card -->
           <div class="flex flex-col gap-2 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-3 sm:p-8">
@@ -297,14 +333,16 @@
             />
 
             <!-- Use PlayerController component here -->
-            <PlayerController
-              {autoPlay}
-              {autoSkipIntro}
-              {autoNext}
-              setAutoPlay={v => { autoPlay = v; saveToggle(AUTO_PLAY_KEY, v); }}
-              setAutoSkipIntro={v => { autoSkipIntro = v; saveToggle(AUTO_SKIP_INTRO_KEY, v); }}
-              setAutoNext={v => { autoNext = v; saveToggle(AUTO_NEXT_KEY, v); }}
-            />
+            <div class="sm:block flex justify-center"> <!-- Center on mobile, block on desktop -->
+              <PlayerController
+                {autoPlay}
+                {autoSkipIntro}
+                {autoNext}
+                setAutoPlay={v => { autoPlay = v; saveToggle(AUTO_PLAY_KEY, v); }}
+                setAutoSkipIntro={v => { autoSkipIntro = v; saveToggle(AUTO_SKIP_INTRO_KEY, v); }}
+                setAutoNext={v => { autoNext = v; saveToggle(AUTO_NEXT_KEY, v); }}
+              />
+            </div>
 
             <ServerSelector
               {servers}
@@ -316,22 +354,70 @@
             <PlayerSelector
               {useIframePlayer}
               setUseIframePlayer={setUseIframePlayer}
+              animeId={data.anime?.info?.id}
+              serverName={currentServer}
             />
 
-            <EpisodeSelector
-              {episodes}
-              {pagedEpisodes}
-              {episodeRanges}
-              {currentPage}
-              {currentEpisodeId}
-              {handlePageChange}
-              {goToEpisode}
-            />
+            <!-- Paging dropdown OUTSIDE the scroll area -->
+            {#if episodes.length > 1 && totalPages > 1}
+              <div class="flex items-center gap-2 mb-2 relative z-10">
+                <span class="font-semibold text-orange-400 text-xs">Pages:</span>
+                <div class="relative w-32" id="page-dropdown">
+                  <button
+                    class="w-full px-2 py-1 rounded bg-gray-800 text-white text-xs flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-orange-400 font-bold"
+                    on:click={() => showPageDropdown = !showPageDropdown}
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded={showPageDropdown}
+                  >
+                    {formatRange(episodeRanges[currentPage - 1], currentPage - 1)}
+                    <svg class="w-3 h-3 ml-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </button>
+                  {#if showPageDropdown}
+                    <ul
+                      class="absolute z-20 mt-1 w-full bg-gray-900 border border-gray-700 rounded shadow max-h-48 overflow-y-auto"
+                    >
+                      {#each episodeRanges as range, i}
+                        <button
+                          type="button"
+                          class="w-full text-left px-3 py-2 cursor-pointer flex items-center hover:bg-orange-400 hover:text-gray-900 text-xs
+                            {currentPage === i + 1 ? 'bg-gray-800 font-bold' : ''}"
+                          on:click={() => { goToPage(i + 1); showPageDropdown = false; }}
+                          aria-current={currentPage === i + 1 ? "page" : undefined}
+                        >
+                          {formatRange(range, i)}
+                          {#if currentPage === i + 1}
+                            <svg class="w-4 h-4 ml-auto text-orange-400" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                            </svg>
+                          {/if}
+                        </button>
+                      {/each}
+                    </ul>
+                  {/if}
+                </div>
+              </div>
+            {/if}
+
+            <!-- EpisodeSelector with mobile scroll -->
+            <div class="episode-selector-scroll">
+              <EpisodeSelector
+                {episodes}
+                {pagedEpisodes}
+                {episodeRanges}
+                {currentPage}
+                {currentEpisodeId}
+                {handlePageChange}
+                {goToEpisode}
+              />
+            </div>
           </div>
 
           <!-- Anime Info Card -->
           {#if data.anime && data.anime.info && data.anime.moreInfo}
-            <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-6 md:p-10">
+            <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-6 md:p-10 w-full">
               <!-- Move icon to the left column -->
               <div class="flex flex-col items-center md:items-start flex-shrink-0 mx-auto md:mx-0">
                 <img
@@ -510,9 +596,9 @@
 
       <!-- Recommended and Related Animes Sections -->
       {#if data.recommendedAnimes && data.recommendedAnimes.length}
-        <section class="max-w-7xl mx-auto mt-6"> <!-- was mt-12 -->
+        <section class="max-w-[1920px] w-full mx-auto mt-6"> <!-- Updated from max-w-7xl -->
           <h2 class="text-xl font-bold text-orange-400 mb-4">Recommended Anime</h2>
-          <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2">
             {#each data.recommendedAnimes as rec}
               <a 
                 href={`/info/${rec.id}`}
@@ -544,9 +630,9 @@
       {/if}
 
       {#if data.relatedAnimes && data.relatedAnimes.length}
-        <section class="max-w-7xl mx-auto mt-5"> <!-- was mt-10 -->
+        <section class="max-w-[1920px] w-full mx-auto mt-5"> <!-- Updated from max-w-7xl -->
           <h2 class="text-xl font-bold text-orange-400 mb-4">Related Anime</h2>
-          <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2">
             {#each data.relatedAnimes as rel}
               <a 
                 href={`/info/${rel.id}`}
@@ -581,6 +667,7 @@
   <Footer/>
 </div>
 
+<!-- Add responsive styles -->
 <style>
   @media (max-width: 768px) {
     .flex-shrink-0 {
@@ -603,4 +690,39 @@
     line-clamp: 5;
   }
 }
+
+  /* Mobile scroll for EpisodeSelector */
+  .episode-selector-scroll {
+    /* Only apply on mobile */
+    max-height: none;
+    overflow: visible;
+  }
+  @media (max-width: 768px) {
+    .episode-selector-scroll {
+      max-height: 220px;
+      overflow-y: auto;
+      margin-bottom: 0.5rem;
+      /* Optional: smooth scroll on iOS */
+      -webkit-overflow-scrolling: touch;
+      /* Optional: add a subtle border or shadow for clarity */
+      border-radius: 0.5rem;
+      background: rgba(31, 41, 55, 0.7);
+    }
+  }
+
+  /* Add responsive container widths */
+  @media (min-width: 1920px) {
+    .max-w-\[1920px\] {
+      max-width: 90vw;
+    }
+  }
+
+  /* Adjust player aspect ratio for wider screens */
+  @media (min-width: 1440px) {
+    .aspect-video {
+      max-height: 80vh;
+      width: auto;
+      margin: 0 auto;
+    }
+  }
 </style>

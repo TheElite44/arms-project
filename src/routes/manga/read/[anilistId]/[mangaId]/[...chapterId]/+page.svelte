@@ -1,7 +1,7 @@
 <script lang="ts">
   import Footer from '$lib/components/Footer.svelte';
   import { goto } from '$app/navigation';
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
 
   export let data: {
     pages: { page: number, img: string, headerForImage?: Record<string, string> }[],
@@ -22,26 +22,37 @@
   let mangaId = data.mangaId;
   let chapterId = data.chapterId;
   let anilistId = data.anilistId;
+  let previousChapterId = chapterId;
 
   let error = '';
   let loading = false;
+  let imageLoaded: boolean[] = [];
   let imageLoadingStates: boolean[] = [];
   let imageErrors: boolean[] = [];
   let showSidebar = false;
   let currentPage = 0;
   let zoomed = false;
+  let isFullscreen = false;
   let isMobile = false;
   let observers: IntersectionObserver[] = [];
+  let isHorizontal: boolean[] = [];
 
-  $: {
+  $: if (pages.length > 0) {
+    imageLoaded = new Array(pages.length).fill(false);
+    imageLoadingStates = new Array(pages.length).fill(true);
+  }
+
+  function initializeLoadingStates() {
     imageLoadingStates = new Array(pages.length).fill(true);
     imageErrors = new Array(pages.length).fill(false);
   }
 
+  $: if (pages.length > 0) {
+    initializeLoadingStates();
+  }
+
   function getProxiedImageUrl(page: { img: string }) {
-    if (page.img.startsWith('/api/manga?type=image&url=')) {
-      return page.img;
-    }
+    if (page.img.startsWith('/api/manga?type=image&url=')) return page.img;
     return `/api/manga?type=image&url=${encodeURIComponent(page.img)}`;
   }
 
@@ -64,55 +75,82 @@
   }
 
   function observePages() {
-    // Clean up old observers
     observers.forEach((obs) => obs.disconnect());
     observers = [];
-
     if (!isMobile) return;
-
     pages.forEach((_, idx) => {
       const el = document.getElementById(`page-${idx}`);
       if (!el) return;
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              currentPage = idx;
-            }
+            if (entry.isIntersecting) currentPage = idx;
           });
         },
-        {
-          root: null,
-          threshold: 0.5, // 50% of the page is visible
-        }
+        { root: null, threshold: 0.5 }
       );
       observer.observe(el);
       observers.push(observer);
     });
   }
 
-  onMount(() => {
-    // Check if mobile
-    isMobile = window.innerWidth < 768;
-    const handleResize = () => {
-      isMobile = window.innerWidth < 768;
-    };
-    window.addEventListener('resize', handleResize);
+  function enterFullscreen() {
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen();
+    } else if ((document.documentElement as any).webkitRequestFullscreen) {
+      (document.documentElement as any).webkitRequestFullscreen();
+    } else if ((document.documentElement as any).msRequestFullscreen) {
+      (document.documentElement as any).msRequestFullscreen();
+    }
+  }
 
-    document.addEventListener('keydown', handleKeydown);
+  function exitFullscreen() {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if ((document as any).webkitExitFullscreen) {
+      (document as any).webkitExitFullscreen();
+    } else if ((document as any).msExitFullscreen) {
+      (document as any).msExitFullscreen();
+    }
+  }
+
+  function handleFullscreenChange() {
+    isFullscreen = !!(document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).msFullscreenElement);
+    if (!isFullscreen && zoomed) zoomed = false;
+  }
+
+  onMount(() => {
+    isMobile = window.innerWidth < 768;
+    const handleResize = () => { isMobile = window.innerWidth < 768; };
+    window.addEventListener('resize', handleResize);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('msfullscreenchange', handleFullscreenChange);
+    // document.addEventListener('keydown', handleKeydown); // Removed keyboard control
     observePages();
     window.addEventListener('resize', observePages);
     return () => {
       observers.forEach((obs) => obs.disconnect());
       window.removeEventListener('resize', observePages);
-      document.removeEventListener('keydown', handleKeydown);
+      // document.removeEventListener('keydown', handleKeydown); // Removed keyboard control
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('msfullscreenchange', handleFullscreenChange);
     };
   });
 
   function handleImageLoad(idx: number) {
     imageLoadingStates[idx] = false;
     imageErrors[idx] = false;
+    // Detect orientation
+    const img = document.querySelector(`#page-${idx} img`) as HTMLImageElement;
+    if (img) {
+      isHorizontal[idx] = img.naturalWidth > img.naturalHeight;
+      isHorizontal = [...isHorizontal];
+    }
     imageLoadingStates = [...imageLoadingStates];
   }
 
@@ -120,12 +158,25 @@
     imageLoadingStates[idx] = false;
     imageErrors[idx] = true;
     imageLoadingStates = [...imageLoadingStates];
-    if (idx === 0) {
-      error = 'Failed to load current page image.';
-    }
+    if (idx === 0) error = 'Failed to load current page image.';
   }
 
-  $: if (data.chapterId !== chapterId) {
+  function retryImageLoad(idx: number) {
+    imageErrors[idx] = false;
+    imageLoadingStates[idx] = true;
+    imageLoadingStates = [...imageLoadingStates];
+    imageErrors = [...imageErrors];
+    setTimeout(() => {
+      const img = document.querySelector(`#page-${idx} img`) as HTMLImageElement;
+      if (img) {
+        const originalSrc = img.src;
+        img.src = '';
+        img.src = originalSrc + (originalSrc.includes('?') ? '&' : '?') + 't=' + Date.now();
+      }
+    }, 100);
+  }
+
+  $: if (data.chapterId !== previousChapterId) {
     pages = data.pages;
     chapterList = data.chapterList;
     currentIndex = data.currentIndex;
@@ -134,94 +185,51 @@
     mangaId = data.mangaId;
     chapterId = data.chapterId;
     anilistId = data.anilistId;
+    previousChapterId = chapterId;
     error = '';
     loading = false;
-    imageLoadingStates = new Array(pages.length).fill(true);
-    imageErrors = new Array(pages.length).fill(false);
+    currentPage = 0;
+    zoomed = false;
+    setTimeout(() => {
+      initializeLoadingStates();
+      observePages();
+    }, 50);
   }
 
   $: prevChapter = currentIndex > 0 ? chapterList[currentIndex - 1] : null;
   $: nextChapter = currentIndex < chapterList.length - 1 ? chapterList[currentIndex + 1] : null;
 
-  function handleKeydown(event: KeyboardEvent) {
-    if (
-      event.target instanceof HTMLInputElement ||
-      event.target instanceof HTMLTextAreaElement ||
-      event.target instanceof HTMLSelectElement
-    ) {
-      return;
-    }
-    switch (event.key) {
-      case 'ArrowLeft':
-      case 'a':
-      case 'A':
-        event.preventDefault();
-        if (currentPage > 0) currentPage--;
-        break;
-      case 'ArrowRight':
-      case 'd':
-      case 'D':
-        event.preventDefault();
-        if (currentPage < pages.length - 1) currentPage++;
-        break;
-      case 'ArrowUp':
-      case 'w':
-      case 'W':
-        event.preventDefault();
-        goToPrevChapter();
-        break;
-      case 'ArrowDown':
-      case 's':
-      case 'S':
-        event.preventDefault();
-        goToNextChapter();
-        break;
-      case 'Escape':
-        event.preventDefault();
-        if (zoomed) toggleZoom();
-        else showSidebar = false;
-        break;
-      case ' ':
-        event.preventDefault();
-        if (currentPage < pages.length - 1) currentPage++;
-        break;
-    }
-  }
-
   function toggleZoom() {
     zoomed = !zoomed;
+    if (zoomed && !isFullscreen) enterFullscreen();
+    else if (!zoomed && isFullscreen) exitFullscreen();
     document.body.style.overflow = zoomed ? 'hidden' : '';
+  }
+
+  function toggleFullscreen() {
+    if (isFullscreen) exitFullscreen();
+    else enterFullscreen();
   }
 
   function scrollToCurrentPage() {
     const pageElement = document.getElementById(`page-${currentPage}`);
-    if (pageElement) {
-      pageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    if (pageElement) pageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   let touchStartX = 0;
   let touchEndX = 0;
 
   function handleTouchStart(event: TouchEvent) {
-    if (event.touches.length === 1) {
-      touchStartX = event.touches[0].clientX;
-    }
+    if (event.touches.length === 1) touchStartX = event.touches[0].clientX;
   }
 
   function handleTouchEnd(event: TouchEvent) {
     if (event.changedTouches.length === 1) {
       touchEndX = event.changedTouches[0].clientX;
       const deltaX = touchEndX - touchStartX;
-      // Swipe threshold (in px)
       if (Math.abs(deltaX) > 60) {
-        if (deltaX < 0) {
-          // Swipe left: next page
-          if (currentPage < pages.length - 1) currentPage++;
-        } else {
-          // Swipe right: previous page
-          if (currentPage > 0) currentPage--;
-        }
+        if (deltaX < 0 && currentPage < pages.length - 1) currentPage++;
+        else if (deltaX > 0 && currentPage > 0) currentPage--;
       }
     }
   }
@@ -232,12 +240,14 @@
     const rect = img.getBoundingClientRect();
     const x = event.clientX - rect.left;
     if (x < rect.width / 2) {
-      // Left side: previous page
       if (currentPage > 0) currentPage--;
     } else {
-      // Right side: next page
       if (currentPage < pages.length - 1) currentPage++;
     }
+  }
+
+  $: if (pages.length > 0) {
+    imageLoaded = new Array(pages.length).fill(false);
   }
 </script>
 
@@ -308,6 +318,21 @@
           <span class="hidden xs:inline">Prev</span>
         </button>
         <button
+          class="bg-gradient-to-r from-purple-500 to-purple-400 hover:from-purple-400 hover:to-purple-300 text-white px-3 py-2 rounded-xl transition-all duration-200 shadow-lg text-sm flex items-center justify-center gap-1"
+          on:click={toggleFullscreen}
+          title="Toggle Fullscreen (F)"
+        >
+          {#if isFullscreen}
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9l6 6m0-6l-6 6M3 12h18M12 3v18" />
+            </svg>
+          {:else}
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" />
+            </svg>
+          {/if}
+        </button>
+        <button
           class="bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-400 hover:to-orange-300 text-white px-3 py-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg text-sm flex-1 min-w-0 flex items-center justify-center gap-1"
           on:click={goToNextChapter}
           disabled={!nextChapter}
@@ -320,7 +345,7 @@
       </div>
     </header>
   {:else}
-    <!-- Desktop Header (old look) -->
+    <!-- Desktop Header -->
     <header class="sticky top-0 z-50 bg-gray-900/90 backdrop-blur-xl border-b border-gray-800 shadow-2xl">
       <div class="flex items-center px-6 py-2">
         <button
@@ -364,8 +389,25 @@
             </svg>
           </button>
 
+          <!-- Fullscreen Button -->
           <button
-            class="ml-4 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-orange-400 px-3 py-2 rounded-xl transition-all duration-200 shadow-lg"
+            class="bg-gradient-to-r from-purple-500 to-purple-400 hover:from-purple-400 hover:to-purple-300 text-white p-2 rounded-xl transition-all duration-200 shadow-lg"
+            on:click={toggleFullscreen}
+            title="Toggle Fullscreen (F)"
+          >
+            {#if isFullscreen}
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9l6 6m0-6l-6 6M3 12h18M12 3v18" />
+              </svg>
+            {:else}
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" />
+              </svg>
+            {/if}
+          </button>
+
+          <button
+            class="bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-orange-400 px-3 py-2 rounded-xl transition-all duration-200 shadow-lg"
             on:click={() => showSidebar = !showSidebar}
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -444,7 +486,7 @@
     on:touchend={handleTouchEnd}
   >
     {#if loading}
-      <div class="flex items-center justify-center flex-1 py-20">
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
         <div class="flex flex-col items-center gap-4">
           <div class="animate-spin rounded-full h-12 w-12 border-4 border-gray-700 border-t-orange-400"></div>
           <p class="text-gray-400">Loading chapter...</p>
@@ -478,58 +520,32 @@
       </div>
     {:else}
       <div class="max-w-4xl mx-auto">
-        <div class="space-y-4 md:space-y-6">
+        <div class="flex flex-col gap-2 md:gap-4">
           {#each pages as page, idx}
             <div id="page-{idx}" class="flex flex-col items-center">
-              {#if imageLoadingStates[idx]}
-                <div class="w-full h-80 md:h-[600px] bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl md:rounded-2xl flex items-center justify-center shadow-xl">
-                  <div class="flex flex-col items-center gap-3">
+              <div
+                class="relative w-full flex justify-center"
+                style="{isHorizontal[idx] ? '' : 'min-height: 400px; background: black;'}"
+              >
+                {#if imageLoadingStates[idx]}
+                  <div class="absolute inset-0 flex items-center justify-center loading-bg z-10" style="min-height: 400px;">
                     <div class="animate-spin rounded-full h-8 w-8 border-4 border-gray-700 border-t-orange-400"></div>
-                    <p class="text-gray-400 text-sm">Loading page {idx + 1}...</p>
                   </div>
-                </div>
-              {/if}
-              
-              {#if imageErrors[idx]}
-                <div class="w-full h-80 md:h-[600px] bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl md:rounded-2xl flex flex-col items-center justify-center border-2 border-red-500/50 shadow-xl">
-                  <svg class="w-12 h-12 text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  <div class="text-red-100 text-center mb-4">
-                    <p class="font-bold text-lg">Failed to load page {idx + 1}</p>
-                    <p class="text-sm text-red-200">Check your connection or try refreshing</p>
+                {/if}
+                <img
+                  src={getProxiedImageUrl(page)}
+                  alt={`Page ${page.page ?? (idx + 1)}`}
+                  class="w-full max-w-[900px] h-auto select-none bg-black cursor-pointer transition-opacity duration-300"
+                  loading="lazy"
+                  style="object-fit: contain; {isHorizontal[idx] ? '' : 'min-height: 400px;'} opacity: {imageLoadingStates[idx] ? 0 : 1};"
+                  on:load={() => { imageLoaded[idx] = true; handleImageLoad(idx); }}
+                  on:error={() => { imageLoaded[idx] = false; imageLoadingStates[idx] = false; }}
+                />
+                {#if imageLoaded[idx]}
+                  <div class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-gray-300 px-3 py-1 rounded text-xs">
+                    {idx + 1} / {pages.length}
                   </div>
-                  <button 
-                    class="bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-400 hover:to-orange-300 text-white px-6 py-3 rounded-xl transition-all duration-200 shadow-lg"
-                    on:click={() => {
-                      imageErrors[idx] = false;
-                      imageLoadingStates[idx] = true;
-                      imageLoadingStates = [...imageLoadingStates];
-                    }}
-                  >
-                    Retry
-                  </button>
-                </div>
-              {:else}
-                <div class="relative group">
-                  <img
-                    src={getProxiedImageUrl(page)}
-                    alt={`Page ${page.page ?? (idx + 1)}`}
-                    class="w-full h-auto max-h-[70vh] md:max-h-[600px] rounded-xl md:rounded-2xl shadow-2xl bg-gray-900 cursor-zoom-in transition-all duration-300 {imageLoadingStates[idx] ? 'opacity-0' : 'opacity-100'} hover:shadow-orange-400/20"
-                    loading="lazy"
-                    on:click={() => { currentPage = idx; toggleZoom(); }}
-                    on:load={() => handleImageLoad(idx)}
-                    on:error={() => handleImageError(idx)}
-                    style="object-fit: contain;"
-                  />
-                  <div class="absolute bottom-2 right-2 md:bottom-4 md:right-4 bg-black/70 backdrop-blur-sm text-white px-2 py-1 md:px-3 md:py-1 rounded-lg text-xs md:text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    Tap to zoom
-                  </div>
-                </div>
-              {/if}
-              
-              <div class="mt-2 md:mt-3 text-center">
-                <span class="text-xs text-gray-400 bg-gray-800/50 px-3 py-1 rounded-full">Page {idx + 1}</span>
+                {/if}
               </div>
             </div>
           {/each}
@@ -577,10 +593,10 @@
 
   <Footer />
 
-  <!-- Zoom Overlay -->
+  <!-- Zoom Overlay with Fullscreen -->
   {#if zoomed}
     <div 
-      class="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      class="fixed inset-0 bg-black z-50 flex items-center justify-center p-4"
       on:click={toggleZoom}
       on:keydown={(e) => e.key === 'Escape' && toggleZoom()}
       tabindex="0"
@@ -590,14 +606,43 @@
       <img
         src={getProxiedImageUrl(pages[currentPage])}
         alt={`Page ${pages[currentPage].page ?? (currentPage + 1)}`}
-        class="max-w-full max-h-full object-contain cursor-zoom-out shadow-2xl rounded-lg"
+        class="max-w-full max-h-full object-contain cursor-zoom-out shadow-2xl"
         on:click|stopPropagation={zoomed && isMobile ? handleZoomedImageClick : undefined}
       />
-      <div class="absolute top-6 right-6 bg-black/70 backdrop-blur-sm text-white px-4 py-2 rounded-xl shadow-lg">
+      
+      <!-- Navigation arrows for zoomed view -->
+      <div class="absolute inset-y-0 left-4 flex items-center">
+        <button
+          class="bg-black/70 backdrop-blur-sm text-white p-3 rounded-full hover:bg-black/80 transition-all duration-200 {currentPage === 0 ? 'opacity-50 cursor-not-allowed' : ''}"
+          on:click|stopPropagation={() => currentPage > 0 && currentPage--}
+          disabled={currentPage === 0}
+        >
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      </div>
+      
+      <div class="absolute inset-y-0 right-4 flex items-center">
+        <button
+          class="bg-black/70 backdrop-blur-sm text-white p-3 rounded-full hover:bg-black/80 transition-all duration-200 {currentPage === pages.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}"
+          on:click|stopPropagation={() => currentPage < pages.length - 1 && currentPage++}
+          disabled={currentPage === pages.length - 1}
+        >
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Page info and controls overlay -->
+      <div class="absolute top-6 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-sm text-white px-4 py-2 rounded-xl shadow-lg">
         <span class="text-sm font-medium">Page {currentPage + 1} of {pages.length}</span>
       </div>
+      
+      <!-- Close button -->
       <button
-        class="absolute top-6 left-6 bg-black/70 backdrop-blur-sm text-white p-2 rounded-xl hover:bg-black/80 transition-all duration-200"
+        class="absolute top-6 right-6 bg-black/70 backdrop-blur-sm text-white p-2 rounded-xl hover:bg-black/80 transition-all duration-200"
         on:click|stopPropagation={toggleZoom}
         tabindex="0"
       >
@@ -605,11 +650,36 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
+
+      <!-- Fullscreen toggle in zoom mode -->
+      <button
+        class="absolute bottom-6 right-6 bg-black/70 backdrop-blur-sm text-white p-2 rounded-xl hover:bg-black/80 transition-all duration-200"
+        on:click|stopPropagation={toggleFullscreen}
+        title="Toggle Fullscreen"
+      >
+        {#if isFullscreen}
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9l6 6m0-6l-6 6M3 12h18M12 3v18" />
+          </svg>
+        {:else}
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" />
+          </svg>
+        {/if}
+      </button>
+
+      <!-- Keyboard shortcuts help -->
+      <div class="absolute bottom-6 left-6 bg-black/70 backdrop-blur-sm text-white px-3 py-2 rounded-xl text-xs">
+        <div class="flex flex-col gap-1">
+          <span>← → Arrow keys or A/D: Navigate</span>
+          <span>F: Fullscreen • ESC: Exit zoom</span>
+        </div>
+      </div>
     </div>
   {/if}
 
   <!-- Mobile Reading Progress Bar -->
-  {#if isMobile}
+  {#if isMobile && !zoomed}
     <div class="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm border-t border-gray-800 p-3 z-30">
       <div class="flex items-center gap-3">
         <span class="text-xs text-gray-400 min-w-0">Progress</span>
@@ -640,6 +710,7 @@
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
   }
+  
   /* Hide scrollbars for dropdown and chapters list */
   .no-scrollbar {
     scrollbar-width: none; /* Firefox */
@@ -648,10 +719,61 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
   }
+  
   select.touch-manipulation {
     /* Makes dropdown easier to use on touch devices */
     font-size: 1.05rem;
     min-height: 2.5rem;
     /* Optional: increase tap target */
+  }
+
+  /* Loading/error page backgrounds */
+  .loading-bg {
+    background: linear-gradient(135deg, #23272f 0%, #18181b 100%) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Remove border-radius and shadow from images for clean look */
+  img {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+  
+  .relative .absolute {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Smooth transitions for image loading */
+  img {
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  /* Mobile zoom styles */
+  .mobile-zoom-container {
+    touch-action: none;
+    overflow: hidden;
+  }
+  
+  .mobile-zoom-image {
+    touch-action: none;
+    transform-origin: center center;
+    will-change: transform;
+  }
+  
+  /* Prevent text selection during zoom gestures */
+  .mobile-zoom-image,
+  .mobile-zoom-container {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  /* Smooth zoom transitions */
+  .zoom-transition {
+    transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1);
   }
 </style>

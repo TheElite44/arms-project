@@ -34,9 +34,9 @@
 </script>
 
 <nav class="fixed top-0 left-0 w-full z-50 bg-gray-900/80 backdrop-blur-md shadow">
-  <div class="max-w-7xl mx-auto flex items-center justify-between px-4 py-2">
+  <div class="w-full mx-auto flex items-center justify-between px-4 lg:px-6 xl:px-8 py-2">
     <!-- Left: Logo & Hamburger -->
-    <div class="flex items-center gap-3 z-50">
+    <div class="flex items-center gap-3 z-50 flex-shrink-0">
       <!-- Hamburger Icon -->
       <button class="p-2" on:click={toggleSidebar} aria-label="Toggle sidebar">
         <svg class="h-6 w-6 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -52,10 +52,10 @@
       </a>
     </div>
 
-    <!-- Right: Desktop Search & Mobile Search -->
-    <div class="flex items-center gap-3">
-      <!-- Desktop Search Bar -->
-      <form class="hidden md:flex items-center relative w-[28rem]" on:submit={handleSearch}>
+    <!-- Center/Right: Desktop Search Bar -->
+    <div class="flex items-center gap-3 flex-1 justify-end ml-4">
+      <!-- Desktop Search Bar - Centered with max width -->
+      <form class="hidden md:flex items-center relative w-full max-w-md" on:submit={handleSearch}>
         <input
           class="w-full h-10 rounded bg-gray-800 text-white pl-4 pr-12 focus:outline-none focus:ring-2 focus:ring-orange-400"
           placeholder="Search anime or manga..."
@@ -70,7 +70,7 @@
         </button>
       </form>
       <!-- Mobile Search Button -->
-      <button class="md:hidden p-2" on:click={toggleMobileSearch} aria-label="Open search">
+      <button class="md:hidden p-2 flex-shrink-0" on:click={toggleMobileSearch} aria-label="Open search">
         <svg class="h-6 w-6 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -104,9 +104,6 @@
 <NavBarSidebar {isOpen} onClose={() => (isOpen = false)} />
 
 <style>
-  @media (max-width: 768px) {
-    nav .w-\[28rem\] { width: 100% !important; }
-  }
   .animate-fade-in-down {
     animation: fade-in-down 0.2s;
   }

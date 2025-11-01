@@ -16,6 +16,7 @@
   let topUpcomingAnimes: any[] = [];
   let top10Animes: { today?: any[]; week?: any[]; month?: any[] } = {};
   let sidebarTab: 'today' | 'week' | 'month' = 'today';
+  let imageLoadedStates: { [key: string]: boolean } = {};
 
   onMount(async () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -34,6 +35,8 @@
   async function fetchSearchResults() {
     try {
       loading = true;
+      imageLoadedStates = {}; // Reset image loaded states
+      
       // Fetch anime
       const animeResp = await fetch(`/api/search?type=anime&q=${encodeURIComponent(query)}&page=${page}`);
       const animeJson = await animeResp.json();
@@ -78,6 +81,10 @@
   function setSidebarTab(tab: 'today' | 'week' | 'month') {
     sidebarTab = tab;
   }
+
+  function handleImageLoad(id: string) {
+    imageLoadedStates[id] = true;
+  }
 </script>
 
 <svelte:head>
@@ -86,23 +93,27 @@
 </svelte:head>
 <Navbar />
 
-<div class="min-h-screen flex flex-col bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white pt-16">
-  <div class="flex-1 w-full">
-    <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-2 sm:px-6">
-      {#if loading}
-        <div class="fixed inset-0 flex items-center justify-center z-50">
-          <img
-            src="/assets/loader.gif"
-            alt="Loading..."
-            class="object-contain"
-            style="max-width: 120px; max-height: 110px; aspect-ratio: 1 / 1;"
-          />
-        </div>
-      {:else if error}
+<div class="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white pt-16">
+  {#if loading}
+    <div class="flex items-center justify-center flex-1">
+      <img
+        src="/assets/loader.gif"
+        alt="Loading..."
+        class="object-contain"
+        style="max-width: 120px; max-height: 110px; aspect-ratio: 1 / 1;"
+      />
+    </div>
+  {:else if error}
+    <div class="flex-1 w-full">
+      <div class="max-w-[125rem] mx-auto px-2 sm:px-6">
         <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-xl my-4">
           <p class="font-bold">ERROR: {error}</p>
         </div>
-      {:else}
+      </div>
+    </div>
+  {:else}
+    <div class="flex-1 w-full">
+      <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-2 sm:px-6">
         <div class="flex flex-col xl:flex-row gap-6 sm:gap-10 w-full">
           <!-- Main content -->
           <div class="flex-1 flex flex-col gap-6 sm:gap-10">
@@ -127,11 +138,16 @@
                         Anime
                       </span>
                       <div class="relative aspect-[3/4]">
+                        <!-- Skeleton loader -->
+                        {#if !imageLoadedStates[`anime-${anime.id}`]}
+                          <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                        {/if}
                         <img
                           src={anime.poster}
                           alt={anime.name}
-                          class="w-full h-full object-cover"
+                          class="w-full h-full object-cover {imageLoadedStates[`anime-${anime.id}`] ? 'opacity-100' : 'opacity-0'}"
                           loading="lazy"
+                          on:load={() => handleImageLoad(`anime-${anime.id}`)}
                         />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                       </div>
@@ -176,11 +192,16 @@
                         Manga
                       </span>
                       <div class="relative aspect-[3/4]">
+                        <!-- Skeleton loader -->
+                        {#if !imageLoadedStates[`manga-${manga.id}`]}
+                          <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                        {/if}
                         <img
                           src={manga.image}
                           alt={manga.title?.english || manga.title?.romaji || manga.title?.native || manga.title}
-                          class="w-full h-full object-cover"
+                          class="w-full h-full object-cover {imageLoadedStates[`manga-${manga.id}`] ? 'opacity-100' : 'opacity-0'}"
                           loading="lazy"
+                          on:load={() => handleImageLoad(`manga-${manga.id}`)}
                         />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                       </div>
@@ -207,16 +228,16 @@
           </div>
           <!-- Sidebar Section -->
           <Sidebar
-  sidebarTab={sidebarTab}
-  setSidebarTab={(tab) => sidebarTab = tab}
-  top10Today={top10Animes.today ?? []}
-  top10Week={top10Animes.week ?? []}
-  top10Month={top10Animes.month ?? []}
-/>
+            sidebarTab={sidebarTab}
+            setSidebarTab={(tab) => sidebarTab = tab}
+            top10Today={top10Animes.today ?? []}
+            top10Week={top10Animes.week ?? []}
+            top10Month={top10Animes.month ?? []}
+          />
         </div>
-      {/if}
+      </div>
     </div>
-  </div>
+  {/if}
   <Footer />
 </div>
 
@@ -229,18 +250,13 @@
     background-color: #fbbf24; /* orange-400 */
   }
 
-
   .bg-gray-800 {
     background-color: #1f2937; /* gray-800 */
   }
 
-
-
   .text-gray-400 {
     color: #9ca3af; /* gray-400 */
   }
-
-
 
   /* Button Styles */
   button {
@@ -259,4 +275,29 @@
     border-color: #fbbf24; /* orange-400 */
   }
 
+  /* Skeleton Loader Animation */
+  .skeleton-loader {
+    background: linear-gradient(
+      90deg,
+      #374151 0%,
+      #4b5563 20%,
+      #374151 40%,
+      #374151 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  img {
+    transition: opacity 0.3s ease-in-out;
+  }
 </style>
